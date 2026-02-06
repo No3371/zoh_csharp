@@ -152,6 +152,11 @@ public class VerbRegistry
 
         Register(new Store.WriteDriver());
         Register(new Store.ReadDriver());
+
+        Register(new OpenVerbDriver());
+        Register(new PushVerbDriver());
+        Register(new PullVerbDriver());
+        Register(new CloseVerbDriver());
     }
 }
 

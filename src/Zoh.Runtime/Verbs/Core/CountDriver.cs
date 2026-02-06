@@ -26,7 +26,7 @@ public class CountDriver : IVerbDriver
         if (target is ZohStr s) return VerbResult.Ok(new ZohInt(s.Value.Length));
         if (target is ZohList list) return VerbResult.Ok(new ZohInt(list.Items.Length));
         if (target is IZohMap map) return VerbResult.Ok(new ZohInt(map.Count));
-        if (target is ZohChannel channel) return VerbResult.Ok(new ZohInt(context.GetChannelSize(channel.Name)));
+        if (target is ZohChannel channel) return VerbResult.Ok(new ZohInt(context.ChannelManager.Count(channel.Name)));
 
         return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", $"Cannot count type {target.Type}", verb.Start));
     }

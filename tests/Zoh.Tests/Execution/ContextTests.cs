@@ -17,7 +17,7 @@ public class ContextTests
     public ContextTests()
     {
         _store = new VariableStore(new Dictionary<string, Variable>());
-        _context = new Context(_store, new InMemoryStorage());
+        _context = new Context(_store, new InMemoryStorage(), new ChannelManager());
     }
 
     [Fact]

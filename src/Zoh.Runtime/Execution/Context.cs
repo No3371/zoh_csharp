@@ -31,10 +31,13 @@ public class Context : IExecutionContext
         return VerbExecutor?.Invoke(verb, context) ?? VerbResult.Ok();
     }
 
-    public Context(VariableStore variables, IPersistentStorage storage)
+    public ChannelManager ChannelManager { get; }
+
+    public Context(VariableStore variables, IPersistentStorage storage, ChannelManager channels)
     {
         Variables = variables;
         Storage = storage;
+        ChannelManager = channels;
         // Break circular dependency by injecting interpolator factory
         Evaluator = new ExpressionEvaluator(Variables);
     }
@@ -67,12 +70,5 @@ public class Context : IExecutionContext
         }
     }
 
-    public Func<string, int>? ChannelCountResolver { get; set; }
-
     public IPersistentStorage Storage { get; }
-
-    public int GetChannelSize(string name)
-    {
-        return ChannelCountResolver?.Invoke(name) ?? 0;
-    }
 }

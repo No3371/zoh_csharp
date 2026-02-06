@@ -4,6 +4,7 @@ using Zoh.Runtime.Types;
 using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Diagnostics;
 using Zoh.Runtime.Verbs;
+using Zoh.Runtime.Storage;
 
 namespace Zoh.Runtime.Execution;
 
@@ -33,7 +34,7 @@ public interface IExecutionContext
     /// </summary>
     VerbResult ExecuteVerb(ValueAst verb, IExecutionContext context);
 
-    int GetChannelSize(string name);
+    ChannelManager ChannelManager { get; }
 
-    Zoh.Runtime.Storage.IPersistentStorage Storage { get; }
+    IPersistentStorage Storage { get; }
 }
