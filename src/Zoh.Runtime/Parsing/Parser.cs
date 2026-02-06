@@ -784,20 +784,7 @@ public sealed class Parser
         Consume(TokenType.Hash, "Expected '#'");
         var directive = Consume(TokenType.Identifier, "Expected directive name").Lexeme;
 
-        // For now, treat #flag as a verb call
-        if (directive.Equals("flag", StringComparison.OrdinalIgnoreCase))
-        {
-            var flagName = Consume(TokenType.Identifier, "Expected flag name").Lexeme;
-            var value = ParseValue();
-            Consume(TokenType.Semicolon, "Expected ';'");
-
-            return new StatementAst.VerbCall(new VerbCallAst(
-                "core", "flag", false, [],
-                ImmutableDictionary<string, ValueAst>.Empty,
-                [new ValueAst.String(flagName), value], pos));
-        }
-
-        // Other preprocessor directives should be handled earlier
+        // All preprocessor directives should be handled in preprocessing phase
         throw Error(pos, $"Unknown directive: #{directive}");
     }
 

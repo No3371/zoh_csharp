@@ -210,19 +210,6 @@ version: 1.0
         var verb2 = Assert.IsType<ValueAst.Verb>(block.UnnamedParams[1]);
         Assert.Equal("capture", verb2.Call.Name);
     }
-    [Fact]
-    public void Spec_FlagSugar_Hash()
-    {
-        // Spec: #flag name value; -> /flag "name", value;
-        var source = "#flag debug true;";
-        var result = Parse(source);
-        Assert.True(result.Success);
 
-        var call = ((StatementAst.VerbCall)result.Story!.Statements[0]).Call;
-        Assert.Equal("flag", call.Name);
 
-        Assert.Equal(2, call.UnnamedParams.Length);
-        Assert.Equal("debug", ((ValueAst.String)call.UnnamedParams[0]).Value);
-        Assert.True(((ValueAst.Boolean)call.UnnamedParams[1]).Value);
-    }
 }
