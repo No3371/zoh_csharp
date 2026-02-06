@@ -64,7 +64,7 @@ public class ZohRuntime
     public Context CreateContext(CompiledStory story)
     {
         var store = new VariableStore(new Dictionary<string, Variable>());
-        var ctx = new Context(store, Storage);
+        var ctx = new Context(store, Storage, Channels);
 
         ctx.VerbExecutor = ExecuteVerb;
         _contexts.Add(ctx);

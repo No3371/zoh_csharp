@@ -30,7 +30,7 @@ public class TestExecutionContext : IExecutionContext
         _drivers[name] = driver;
     }
 
-    public int GetChannelSize(string name) => 0;
+    public ChannelManager ChannelManager { get; } = new();
 
     public VerbResult ExecuteVerb(ValueAst verb, IExecutionContext context)
     {
