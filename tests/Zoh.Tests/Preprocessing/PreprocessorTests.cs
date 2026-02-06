@@ -178,4 +178,120 @@ Line2|%|
         // Expect exact newline preservation
         Assert.Contains("Line1\nLine2", result.ProcessedText.Replace("\r\n", "\n"));
     }
+    [Fact]
+    public void Macro_Expands_RelativeForward()
+    {
+        var processor = new MacroPreprocessor();
+        var source = @"
+|%REL%|
+/log ""|%|"", ""|%+1|"";
+|%REL%|
+
+|%REL|A|B|C|%|
+";
+        var context = new PreprocessorContext(source, "/test.zoh");
+        var result = processor.Process(context);
+
+        if (!result.Success) throw new Exception("Macro RelFor failed: " + string.Join(", ", result.Diagnostics));
+        // |%| = A (auto=0, then auto=1)
+        // |%+1| = args[1+1] = args[2] = C
+        Assert.Contains("/log \"A\", \"C\";", result.ProcessedText);
+    }
+
+    [Fact]
+    public void Macro_Expands_RelativeBackward()
+    {
+        var processor = new MacroPreprocessor();
+        var source = @"
+|%REL%|
+/log ""|%|"", ""|%|"", ""|%-1|"";
+|%REL%|
+
+|%REL|A|B|C|%|
+";
+        var context = new PreprocessorContext(source, "/test.zoh");
+        var result = processor.Process(context);
+
+        if (!result.Success) throw new Exception("Macro RelBack failed: " + string.Join(", ", result.Diagnostics));
+        // |%| = A (auto=0->1), |%| = B (auto=1->2)
+        // |%-1| (at usage 2) = args[2-1] = args[1] = B
+        Assert.Contains("/log \"A\", \"B\", \"B\";", result.ProcessedText);
+    }
+
+    [Fact]
+    public void Macro_PreservesIndentation()
+    {
+        var processor = new MacroPreprocessor();
+        var source = @"
+|%BLOCK%|
+/if *x,
+    /log ""yes"";
+;
+|%BLOCK%|
+
+    |%BLOCK|%|
+";
+        var context = new PreprocessorContext(source, "/test.zoh");
+        var result = processor.Process(context);
+
+        if (!result.Success) throw new Exception("Macro Indent failed: " + string.Join(", ", result.Diagnostics));
+        // Expanded lines should be indented by 4 spaces
+        Assert.Contains("    /if *x,", result.ProcessedText);
+        Assert.Contains("        /log \"yes\";", result.ProcessedText);
+    }
+
+    [Fact]
+    public void Macro_SymmetricTrim_Basic()
+    {
+        var processor = new MacroPreprocessor();
+        // "  A  " (2,2) -> "A"
+        // " A " (1,1) -> "A"
+        // " A  " (1,2) -> "A "
+        // "  A " (2,1) -> " A"
+        var source = @"
+|%T%|
+/v ""|%0|"";
+|%T%|
+
+|%T|  A  |%|
+|%T| A |%|
+|%T| A  |%|
+|%T|  A |%|
+";
+        var context = new PreprocessorContext(source, "/test.zoh");
+        var result = processor.Process(context);
+
+        if (!result.Success) throw new Exception("Macro Trim failed: " + string.Join(", ", result.Diagnostics));
+        Assert.Contains("/v \"A\";", result.ProcessedText);
+        Assert.Contains("/v \"A \";", result.ProcessedText);
+        Assert.Contains("/v \" A\";", result.ProcessedText);
+    }
+
+    [Fact]
+    public void Macro_Escaping_Percent()
+    {
+        var processor = new MacroPreprocessor();
+        var source = @"
+|%E%|
+/v ""|%0|"";
+|%E%|
+
+|%E| \% |%|
+|%E| 100\% |%|
+";
+        // Note: In C# string literal @"...", backslash is just backslash.
+        // So " \% " passes " \% " to the preprocessor.
+        // The preprocessor should unescape it to "%".
+
+        var context = new PreprocessorContext(source, "/test.zoh");
+        var result = processor.Process(context);
+
+        if (!result.Success) throw new Exception("Macro Escape failed: " + string.Join(", ", result.Diagnostics));
+
+        // " \% " -> trimmed " \% " -> unescaped "%" (Wait, if trimmed first, it handles spaces)
+        // With symmetric trim: " \% " (1,1) -> "\%" -> unescape -> "%"
+        Assert.DoesNotContain("\\%", result.ProcessedText);
+        Assert.Contains("/v \"%\";", result.ProcessedText);
+        Assert.Contains("/v \"100%\";", result.ProcessedText);
+    }
 }

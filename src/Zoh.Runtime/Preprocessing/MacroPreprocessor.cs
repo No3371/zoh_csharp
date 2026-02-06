@@ -159,7 +159,61 @@ public class MacroPreprocessor : IPreprocessor
                     if (macros.TryGetValue(name, out var macro))
                     {
                         var args = ParseArgs(argsContent);
-                        sb.Append(ExpandBody(macro.Body, args));
+
+                        // Capture indentation
+                        int lineStart = source.LastIndexOf('\n', index); // Index is currently at |%... openIdx
+                                                                         // openIdx is passed as index to this logic, but wait. 
+                                                                         // In the loop: index = openIdx; 
+                                                                         // So 'index' is the start of |%.
+
+                        // lineStart is the index of newline before |%.
+                        // If -1, start of string.
+                        int scanStart = lineStart == -1 ? 0 : lineStart + 1;
+                        var indent = new StringBuilder();
+                        for (int k = scanStart; k < index; k++)
+                        {
+                            if (char.IsWhiteSpace(source[k]))
+                                indent.Append(source[k]);
+                            else
+                                indent.Clear(); // Not reliable indentation if non-whitespace exists? 
+                                                // Actually, spec says "continuous white spaces from line start".
+                                                // If there are non-whitespaces, strict indentation might preserve them or restart?
+                                                // "found before the |% token" implies immediately preceding?
+                                                // "Indentation (continuous white spaces from line start)"
+                                                // So if we have "  abc  |%MACRO|", indentation is "  abc  "?
+                                                // Or does it mean line must ONLY contain whitespace?
+                                                // Spec: "The macro expansion preserves the indentation (continuous white spaces from line start) of the usage line."
+                                                // This implies we take all whitespace from line start.
+                        }
+
+                        // Re-scanning correctly:
+                        string indentStr = "";
+                        int lastNewline = source.LastIndexOf('\n', index - 1); // index is |%
+                        int checkStart = lastNewline == -1 ? 0 : lastNewline + 1;
+                        bool referenceIsLineStart = true;
+
+                        var indentSb = new StringBuilder();
+                        for (int k = checkStart; k < index; k++)
+                        {
+                            if (!char.IsWhiteSpace(source[k]))
+                            {
+                                referenceIsLineStart = false;
+                                break;
+                            }
+                            indentSb.Append(source[k]);
+                        }
+
+                        if (referenceIsLineStart)
+                        {
+                            indentStr = indentSb.ToString();
+                        }
+
+                        var expanded = ExpandBody(macro.Body, args);
+                        if (!string.IsNullOrEmpty(indentStr) && expanded.Contains('\n'))
+                        {
+                            expanded = expanded.Replace("\n", "\n" + indentStr);
+                        }
+                        sb.Append(expanded);
                     }
                     else
                     {
@@ -213,9 +267,14 @@ public class MacroPreprocessor : IPreprocessor
                 currentArg.Append('|'); // Unescape
                 i++;
             }
+            else if (argsContent[i] == '\\' && i + 1 < argsContent.Length && argsContent[i + 1] == '%')
+            {
+                currentArg.Append('%'); // Unescape
+                i++;
+            }
             else if (argsContent[i] == '|')
             {
-                args.Add(currentArg.ToString());
+                args.Add(SymmetricTrim(currentArg.ToString()));
                 currentArg.Clear();
             }
             else
@@ -223,8 +282,25 @@ public class MacroPreprocessor : IPreprocessor
                 currentArg.Append(argsContent[i]);
             }
         }
-        args.Add(currentArg.ToString()); // Add last arg
+        args.Add(SymmetricTrim(currentArg.ToString())); // Add last arg
         return args;
+    }
+
+    private string SymmetricTrim(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return input;
+
+        int leading = 0;
+        while (leading < input.Length && char.IsWhiteSpace(input[leading])) leading++;
+
+        if (leading == input.Length) return ""; // All whitespace
+
+        int trailing = 0;
+        while (trailing < input.Length && char.IsWhiteSpace(input[input.Length - 1 - trailing])) trailing++;
+
+        int toRemove = Math.Min(leading, trailing);
+
+        return input.Substring(toRemove, input.Length - (toRemove * 2));
     }
 
     private string ExpandBody(string body, List<string> args)
