@@ -14,7 +14,7 @@ public class VerbRegistry
 
     public void Register(IVerbDriver driver)
     {
-        var ns = driver.Namespace.ToLowerInvariant();
+        var ns = driver.Namespace?.ToLowerInvariant() ?? "";
         var name = driver.Name.ToLowerInvariant();
 
         // 1. Exact storage
@@ -26,7 +26,7 @@ public class VerbRegistry
 
     public void Register(string alias, IVerbDriver driver)
     {
-        var ns = driver.Namespace.ToLowerInvariant();
+        var ns = driver.Namespace?.ToLowerInvariant() ?? "";
         var name = alias.ToLowerInvariant();
 
         // 1. Exact storage
@@ -157,6 +157,20 @@ public class VerbRegistry
         Register(new PushVerbDriver());
         Register(new PullVerbDriver());
         Register(new CloseVerbDriver());
+
+        // Flow Verbs
+        Register(new Flow.IfDriver());
+        Register(new Flow.LoopDriver());
+        Register(new Flow.WhileDriver());
+        Register(new Flow.ForeachDriver());
+        Register(new Flow.SwitchDriver());
+        Register(new Flow.SequenceDriver());
+
+        Register(new Flow.JumpDriver());
+        Register(new Flow.ForkDriver());
+        Register(new Flow.CallDriver());
+        Register(new Flow.ExitDriver());
+        Register(new Flow.SleepDriver());
     }
 }
 

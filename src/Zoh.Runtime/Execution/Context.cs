@@ -25,6 +25,8 @@ public class Context : IExecutionContext
 
     // To be injected or set by Runtime
     public Func<ValueAst, IExecutionContext, VerbResult>? VerbExecutor { get; set; }
+    public Func<string, CompiledStory?>? StoryLoader { get; set; }
+    public Action<Context>? ContextScheduler { get; set; }
 
     public VerbResult ExecuteVerb(ValueAst verb, IExecutionContext context)
     {
@@ -70,5 +72,30 @@ public class Context : IExecutionContext
         }
     }
 
+    public void ExitStory()
+    {
+        ExecuteDefers(_storyDefers);
+        Variables.ClearStory();
+    }
+
     public IPersistentStorage Storage { get; }
+
+    public int InstructionPointer { get; set; }
+    public CompiledStory? CurrentStory { get; set; }
+    public object? WaitCondition { get; set; }
+
+    public Context Clone()
+    {
+        var newVars = Variables.Clone();
+        var newContext = new Context(newVars, Storage, ChannelManager)
+        {
+            InstructionPointer = InstructionPointer,
+            CurrentStory = CurrentStory,
+            VerbExecutor = VerbExecutor,
+            StoryLoader = StoryLoader,
+            ContextScheduler = ContextScheduler,
+            LastResult = LastResult // Should we copy last result? Probably harmless.
+        };
+        return newContext;
+    }
 }

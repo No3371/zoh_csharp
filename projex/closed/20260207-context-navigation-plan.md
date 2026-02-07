@@ -1,10 +1,11 @@
 # Plan: Implement Context Navigation & Concurrency
 
-> **Status:** Draft
+> **Status:** Completed
 > **Created:** 2026-02-07
 > **Author:** Antigravity
 > **Source:** Direct request (Phase 3 of C# Runtime Roadmap)
-> **Related Projex:** [20260207-csharp-runtime-nav.md](../projex/20260207-csharp-runtime-nav.md)
+> **Related Projex:** [20260207-csharp-runtime-nav.md](../../20260207-csharp-runtime-nav.md)
+> **Walkthrough:** [20260207-context-navigation-walkthrough.md](./20260207-context-navigation-walkthrough.md)
 
 ---
 

@@ -18,6 +18,9 @@ public class ZohRuntime
     public ChannelManager Channels { get; } = new();
     public Storage.IPersistentStorage Storage { get; } = new Storage.InMemoryStorage();
 
+
+
+    public IReadOnlyList<Context> Contexts => _contexts;
     private readonly List<Context> _contexts = new();
     private readonly Dictionary<string, CompiledStory> _storyCache = new();
 
@@ -61,14 +64,29 @@ public class ZohRuntime
         return compiled;
     }
 
+    public CompiledStory? GetCompiledStory(string name)
+    {
+        if (_storyCache.TryGetValue(name, out var story)) return story;
+        return null;
+    }
+
     public Context CreateContext(CompiledStory story)
     {
         var store = new VariableStore(new Dictionary<string, Variable>());
         var ctx = new Context(store, Storage, Channels);
 
         ctx.VerbExecutor = ExecuteVerb;
+        ctx.StoryLoader = GetCompiledStory;
+        ctx.ContextScheduler = AddContext;
+        ctx.CurrentStory = story;
+
         _contexts.Add(ctx);
         return ctx;
+    }
+
+    public void AddContext(Context ctx)
+    {
+        _contexts.Add(ctx);
     }
 
     public VerbResult ExecuteVerb(ValueAst verb, IExecutionContext ctx)
@@ -116,12 +134,26 @@ public class ZohRuntime
 
     public void Run(Context ctx, CompiledStory story)
     {
-        int ip = 0;
-        int len = story.Statements.Length;
-
-        while (ctx.State == ContextState.Running && ip < len)
+        // Initialize context story if needed
+        if (ctx.CurrentStory == null)
         {
-            var stmt = story.Statements[ip];
+            ctx.CurrentStory = story;
+        }
+
+        while (ctx.State == ContextState.Running)
+        {
+            if (ctx.CurrentStory == null || ctx.InstructionPointer >= ctx.CurrentStory.Statements.Length)
+            {
+                ctx.Terminate();
+                break;
+            }
+
+            var stmt = ctx.CurrentStory.Statements[ctx.InstructionPointer];
+
+            // Capture state before execution to detect jumps
+            int entryIp = ctx.InstructionPointer;
+            CompiledStory entryStory = ctx.CurrentStory;
+
             if (stmt is StatementAst.VerbCall callStmt)
             {
                 var call = callStmt.Call;
@@ -157,13 +189,23 @@ public class ZohRuntime
                 // no-op
             }
 
-            if (ctx.State != ContextState.Running) break;
-            ip++;
+            // If we are still running and didn't jump (IP and Story unchanged), advance IP
+            if (ctx.State == ContextState.Running &&
+                ctx.InstructionPointer == entryIp &&
+                ctx.CurrentStory == entryStory)
+            {
+                ctx.InstructionPointer++;
+            }
         }
 
-        if (ctx.State == ContextState.Running)
+        // Run returns when context is no longer Running (Terminated, Waiting*, Sleeping)
+        // If Terminated, we ensure cleanup
+        if (ctx.State == ContextState.Terminated)
         {
-            ctx.Terminate();
+            // Already handled by Context.Terminate inside SetState or explicit call? 
+            // Context.Terminate() sets state to Terminated and runs defers.
+            // If we just break loop, we might need to ensure Terminate is called if we ran off end.
+            // (Handled by the bounds check at top)
         }
     }
 }

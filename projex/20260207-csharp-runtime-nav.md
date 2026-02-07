@@ -68,7 +68,7 @@ Work was previously halted to conduct a comprehensive review and validation agai
 
 **Milestones:**
 - [x] **Control Flow Verbs** — `If`, `Switch`, `Loop`, `While`, `Foreach`, `Sequence`.
-- [ ] **Context & Navigation** — Implement `Jump`, `Fork`, `Call`, `Exit`, `Sleep`. (Context class structure exists). [Plan](20260207-context-navigation-plan.md)
+- [x] **Context & Navigation** — Implement `Jump`, `Fork`, `Call`, `Exit`, `Sleep`. (Context class structure exists). [Plan](closed/20260207-context-navigation-plan.md)
 - [x] **Channel System** — Implemented `ChannelManager`, `Push`, `Pull` (with value/error result), `Close`.
 - [ ] **Signal System** — Implement `SignalManager`, `Broadcast`, `Wait`. [Plan](20260207-signal-system-plan.md)
 

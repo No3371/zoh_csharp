@@ -7,13 +7,25 @@ using Zoh.Runtime.Diagnostics; // For diagnostics if needed?
 
 namespace Zoh.Runtime.Variables;
 
-public class VariableStore(IDictionary<string, Variable> contextVariables)
+public class VariableStore
 {
     // Story variables are local to the current story execution and shadow context variables
-    private readonly Dictionary<string, Variable> _storyVariables = new();
+    private readonly IDictionary<string, Variable> _storyVariables;
 
     // Context variables are shared across the context (and potentially parent contexts if passed down)
-    private readonly IDictionary<string, Variable> _contextVariables = contextVariables;
+    private readonly IDictionary<string, Variable> _contextVariables;
+
+    public VariableStore(IDictionary<string, Variable> contextVariables)
+    {
+        _contextVariables = contextVariables;
+        _storyVariables = new Dictionary<string, Variable>();
+    }
+
+    public VariableStore(IDictionary<string, Variable> contextVariables, IDictionary<string, Variable> storyVariables)
+    {
+        _contextVariables = contextVariables;
+        _storyVariables = storyVariables;
+    }
 
     public ZohValue Get(string name)
     {
@@ -129,5 +141,28 @@ public class VariableStore(IDictionary<string, Variable> contextVariables)
         }
 
         return true;
+    }
+    public VariableStore Clone()
+    {
+        // Deep copy of context variables
+        var newContextVars = new Dictionary<string, Variable>(_contextVariables.Count);
+        foreach (var kvp in _contextVariables)
+        {
+            newContextVars[kvp.Key] = new Variable(kvp.Value.Value.DeepClone(), kvp.Value.TypeConstraint);
+        }
+
+        // Deep copy of story variables
+        var newStoryVars = new Dictionary<string, Variable>(_storyVariables.Count);
+        foreach (var kvp in _storyVariables)
+        {
+            newStoryVars[kvp.Key] = new Variable(kvp.Value.Value.DeepClone(), kvp.Value.TypeConstraint);
+        }
+
+        return new VariableStore(newContextVars, newStoryVars);
+    }
+
+    public void ClearStory()
+    {
+        _storyVariables.Clear();
     }
 }
