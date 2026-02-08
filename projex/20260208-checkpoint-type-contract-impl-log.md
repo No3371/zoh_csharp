@@ -21,3 +21,7 @@ Started: 2026-02-08
 ### 2026-02-08 - Verification
 **Action:** Created `CheckpointContractTests.cs` covering all proposed types and edge cases. Fixed type name alias issue to be strict.
 **Status:** Success - All tests passed.
+
+### 2026-02-08 - Bug Fix
+**Action:** Resolved parser ambiguity where `*count <- 0` was incorrectly parsed as a contract parameter of the preceding label. Added lookahead logic in `ParseLabel`.
+**Status:** Success - Regressions fixed.

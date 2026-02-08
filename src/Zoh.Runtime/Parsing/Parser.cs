@@ -190,8 +190,27 @@ public sealed class Parser
         var name = Consume(TokenType.Identifier, "Expected label name").Lexeme;
 
         var paramsBuilder = ImmutableArray.CreateBuilder<StatementAst.ContractParam>();
-        while (Match(TokenType.Star))
+        while (Check(TokenType.Star))
         {
+            // Disambiguate between contract param (*var) and Set statement (*var <- val; or *var;)
+            // Lookahead:
+            // * (Current)
+            // Identifier (Peek 1)
+            // If Peek 2 is Semicolon, ArrowLeft, LeftBracket, or Dot -> It's likely a statement. Stop.
+
+            if (Peek(1).Type == TokenType.Identifier)
+            {
+                var nextType = Peek(2).Type;
+                if (nextType == TokenType.Semicolon ||
+                    nextType == TokenType.ArrowLeft ||
+                    nextType == TokenType.LeftBracket ||
+                    nextType == TokenType.Dot)
+                {
+                    break;
+                }
+            }
+
+            Match(TokenType.Star); // Consume *
             var paramPos = Previous.Start;
             var paramName = Consume(TokenType.Identifier, "Expected parameter name after '*'").Lexeme;
             string? paramType = null;
