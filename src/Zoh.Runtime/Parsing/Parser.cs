@@ -188,7 +188,21 @@ public sealed class Parser
         var pos = Current.Start;
         Consume(TokenType.At, "Expected '@'");
         var name = Consume(TokenType.Identifier, "Expected label name").Lexeme;
-        return new StatementAst.Label(name, pos);
+
+        var paramsBuilder = ImmutableArray.CreateBuilder<StatementAst.ContractParam>();
+        while (Match(TokenType.Star))
+        {
+            var paramPos = Previous.Start;
+            var paramName = Consume(TokenType.Identifier, "Expected parameter name after '*'").Lexeme;
+            string? paramType = null;
+            if (Match(TokenType.Colon))
+            {
+                paramType = Consume(TokenType.Identifier, "Expected type name after ':'").Lexeme;
+            }
+            paramsBuilder.Add(new StatementAst.ContractParam(paramName, paramType, paramPos));
+        }
+
+        return new StatementAst.Label(name, paramsBuilder.ToImmutable(), pos);
     }
 
     private StatementAst.VerbCall ParseVerbCall()

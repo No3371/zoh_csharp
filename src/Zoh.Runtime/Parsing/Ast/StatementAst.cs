@@ -9,8 +9,13 @@ public abstract record StatementAst
 {
     private StatementAst() { }
 
+    /// <summary>
+    /// A contract parameter definition for checkpoints.
+    /// </summary>
+    public record ContractParam(string Name, string? Type, TextPosition Position);
+
     /// <summary>A label definition.</summary>
-    public sealed record Label(string Name, TextPosition Position) : StatementAst;
+    public sealed record Label(string Name, System.Collections.Immutable.ImmutableArray<ContractParam> Params, TextPosition Position) : StatementAst;
 
     /// <summary>A verb call statement.</summary>
     public sealed record VerbCall(VerbCallAst Call) : StatementAst;
