@@ -190,24 +190,11 @@ public sealed class Parser
         var name = Consume(TokenType.Identifier, "Expected label name").Lexeme;
 
         var paramsBuilder = ImmutableArray.CreateBuilder<StatementAst.ContractParam>();
-        while (Check(TokenType.Star))
+        while (!Check(TokenType.CheckpointEnd) && !IsAtEnd)
         {
-            // Disambiguate between contract param (*var) and Set statement (*var <- val; or *var;)
-            // Lookahead:
-            // * (Current)
-            // Identifier (Peek 1)
-            // If Peek 2 is Semicolon, ArrowLeft, LeftBracket, or Dot -> It's likely a statement. Stop.
-
-            if (Peek(1).Type == TokenType.Identifier)
+            if (!Check(TokenType.Star))
             {
-                var nextType = Peek(2).Type;
-                if (nextType == TokenType.Semicolon ||
-                    nextType == TokenType.ArrowLeft ||
-                    nextType == TokenType.LeftBracket ||
-                    nextType == TokenType.Dot)
-                {
-                    break;
-                }
+                throw Error(Current.Start, "Expected parameter starting with '*' or newline");
             }
 
             Match(TokenType.Star); // Consume *
@@ -220,6 +207,8 @@ public sealed class Parser
             }
             paramsBuilder.Add(new StatementAst.ContractParam(paramName, paramType, paramPos));
         }
+
+        Consume(TokenType.CheckpointEnd, "Expected newline after checkpoint definition");
 
         return new StatementAst.Label(name, paramsBuilder.ToImmutable(), pos);
     }

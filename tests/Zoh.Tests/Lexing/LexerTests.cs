@@ -201,4 +201,43 @@ public class LexerTests
         Assert.Equal(1, result.Tokens[0].Start.Line);
         Assert.Equal(2, result.Tokens[1].Start.Line);
     }
+
+    [Fact]
+    public void Scan_Checkpoint_EmitsCheckpointEnd()
+    {
+        var source = "@main\n";
+        var result = Lex(source);
+
+        Assert.Equal(4, result.Tokens.Length); // At, Identifier, CheckpointEnd, Eof
+        Assert.Equal(TokenType.At, result.Tokens[0].Type);
+        Assert.Equal(TokenType.Identifier, result.Tokens[1].Type);
+        Assert.Equal("main", result.Tokens[1].Value);
+        Assert.Equal(TokenType.CheckpointEnd, result.Tokens[2].Type);
+        Assert.Equal(TokenType.Eof, result.Tokens[3].Type);
+    }
+
+    [Fact]
+    public void Lex_MultipleCheckpoints_EmitsTokens()
+    {
+        var source = "@foo\n@bar";
+        var result = Lex(source);
+
+        Assert.Equal(7, result.Tokens.Length); // At, Id, End, At, Id, End, Eof
+        Assert.Equal("foo", result.Tokens[1].Value);
+        Assert.Equal(TokenType.CheckpointEnd, result.Tokens[2].Type);
+        Assert.Equal("bar", result.Tokens[4].Value);
+        Assert.Equal(TokenType.CheckpointEnd, result.Tokens[5].Type);
+    }
+
+    [Fact]
+    public void Lex_CheckpointAtEof_EmitsCheckpointEnd()
+    {
+        var source = "@main"; // No newline
+        var result = Lex(source);
+
+        Assert.Equal(4, result.Tokens.Length); // At, Id, End, Eof
+        Assert.Equal(TokenType.CheckpointEnd, result.Tokens[2].Type);
+    }
 }
+
+

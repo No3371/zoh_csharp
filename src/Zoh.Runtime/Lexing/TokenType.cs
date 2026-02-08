@@ -11,6 +11,9 @@ public enum TokenType
     // Error recovery
     Error,
 
+    // Virtual tokens
+    CheckpointEnd,
+
     // === Literals ===
     Integer,
     Double,

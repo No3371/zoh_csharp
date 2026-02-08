@@ -14,6 +14,9 @@ public sealed class Lexer
     private readonly List<Token> _tokens = [];
     private readonly List<LexError> _errors = [];
     private int _start;
+    // Context tracking for virtual tokens
+    private bool _inCheckpointDef;
+    private bool _isStartOfLine = true;
 
     private readonly int _initialOffset;
 
@@ -36,6 +39,13 @@ public sealed class Lexer
         {
             ScanToken();
         }
+
+        if (_inCheckpointDef)
+        {
+            AddToken(TokenType.CheckpointEnd, _position);
+            _inCheckpointDef = false;
+        }
+
         _tokens.Add(Token.Eof(_position));
         return new LexResult([.. _tokens], [.. _errors]);
     }
@@ -78,6 +88,18 @@ public sealed class Lexer
     private void ScanToken()
     {
         SkipWhitespaceAndComments();
+
+        // CheckpointEnd injection
+        if (_inCheckpointDef && Current == '\n')
+        {
+            var pos = _position;
+            Advance(); // Consume newline
+            AddToken(TokenType.CheckpointEnd, pos);
+            _inCheckpointDef = false;
+            _isStartOfLine = true;
+            return;
+        }
+
         if (IsAtEnd) return;
 
         var start = _position;
@@ -89,7 +111,10 @@ public sealed class Lexer
             // Single-char tokens
             case ';': AddToken(TokenType.Semicolon, start); break;
             case ',': AddToken(TokenType.Comma, start); break;
-            case '@': AddToken(TokenType.At, start); break;
+            case '@':
+                if (_isStartOfLine) _inCheckpointDef = true;
+                AddToken(TokenType.At, start);
+                break;
             case '*':
                 if (Match('*')) AddToken(TokenType.StarStar, start);
                 else AddToken(TokenType.Star, start);
@@ -263,7 +288,15 @@ public sealed class Lexer
             var c = Current;
             if (char.IsWhiteSpace(c))
             {
+                if (c == '\n' && _inCheckpointDef)
+                {
+                    // Do not consume newline if inside checkpoint def,
+                    // so ScanToken can emit CheckpointEnd.
+                    return;
+                }
+
                 Advance();
+                if (c == '\n') _isStartOfLine = true;
             }
             else if (c == ':' && Peek() == ':')
             {
@@ -549,6 +582,7 @@ public sealed class Lexer
         var localStart = start.Offset - _initialOffset;
         var lexeme = _source[localStart.._current];
         _tokens.Add(new Token(type, start, _position, lexeme, value));
+        _isStartOfLine = false;
     }
 
     private void ReportError(TextPosition pos, string message)
