@@ -185,9 +185,19 @@ public class ZohRuntime
                     ctx.LastDiagnostics = result.Diagnostics;
                 }
             }
-            else if (stmt is StatementAst.Label)
+            else if (stmt is StatementAst.Label label)
             {
-                // no-op
+                // Validate contract on fallthrough or initial start
+                var validation = ctx.ValidateContract(label.Name);
+                if (!validation.IsSuccess)
+                {
+                    if (validation.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Fatal))
+                    {
+                        ctx.LastDiagnostics = validation.Diagnostics;
+                        ctx.SetState(ContextState.Terminated);
+                        break;
+                    }
+                }
             }
 
             // If we are still running and didn't jump (IP and Story unchanged), advance IP

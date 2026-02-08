@@ -85,6 +85,9 @@ public class CallDriver : IVerbDriver
             return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_checkpoint", $"Label '{targetLabel}' not found.", call.Start));
         }
 
+        var validation = newCtx.ValidateContract(targetLabel);
+        if (!validation.IsSuccess) return validation;
+
         newCtx.InstructionPointer = ip;
 
         // Schedule child

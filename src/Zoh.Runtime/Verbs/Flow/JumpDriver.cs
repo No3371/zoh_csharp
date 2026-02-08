@@ -81,6 +81,9 @@ public class JumpDriver : IVerbDriver
             ctx.CurrentStory = story;
         }
 
+        var validation = ctx.ValidateContract(targetLabel);
+        if (!validation.IsSuccess) return validation;
+
         ctx.InstructionPointer = ip;
 
         return VerbResult.Ok();

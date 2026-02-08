@@ -102,4 +102,43 @@ public class Context : IExecutionContext
         };
         return newContext;
     }
+
+    public VerbResult ValidateContract(string checkpointName)
+    {
+        if (CurrentStory != null &&
+            CurrentStory.Contracts.TryGetValue(checkpointName, out var paramsList))
+        {
+            foreach (var param in paramsList)
+            {
+                var val = Variables.Get(param.Name);
+                if (val is ZohNothing)
+                {
+                    return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "checkpoint_violation", $"Contract violation: Variable '{param.Name}' is Nothing at checkpoint '@{checkpointName}'.", param.Position));
+                }
+
+                if (param.Type != null)
+                {
+                    if (!CheckType(val, param.Type))
+                    {
+                        return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "checkpoint_violation", $"Contract violation: Variable '{param.Name}' is not of type '{param.Type}' (got '{val.GetType().Name}') at checkpoint '@{checkpointName}'.", param.Position));
+                    }
+                }
+            }
+        }
+        return VerbResult.Ok();
+    }
+
+    private bool CheckType(ZohValue val, string type)
+    {
+        return (type.ToLowerInvariant()) switch
+        {
+            "string" or "str" => val is ZohStr,
+            "int" or "integer" => val is ZohInt,
+            "bool" or "boolean" => val is ZohBool,
+            "double" or "float" => val is ZohFloat,
+            "list" => val is ZohList,
+            "map" => val is ZohMap,
+            _ => true
+        };
+    }
 }

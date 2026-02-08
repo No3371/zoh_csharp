@@ -105,6 +105,9 @@ public class ForkDriver : IVerbDriver
             return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "label_not_found", $"Label '{targetLabel}' not found.", call.Start));
         }
 
+        var validation = newCtx.ValidateContract(targetLabel);
+        if (!validation.IsSuccess) return validation;
+
         newCtx.InstructionPointer = ip;
         // State is Running by default.
 
