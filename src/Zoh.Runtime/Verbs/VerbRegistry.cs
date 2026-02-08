@@ -171,6 +171,10 @@ public class VerbRegistry
         Register(new Flow.CallDriver());
         Register(new Flow.ExitDriver());
         Register(new Flow.SleepDriver());
+
+        // Signal Verbs
+        Register(new Signals.WaitDriver());
+        Register(new Signals.SignalDriver());
     }
 }
 

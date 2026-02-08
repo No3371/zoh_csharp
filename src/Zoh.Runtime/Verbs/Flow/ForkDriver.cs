@@ -68,7 +68,7 @@ public class ForkDriver : IVerbDriver
             // Fresh variable store
             var store = new VariableStore(new Dictionary<string, Variable>());
             // Reuse Storage and Channels
-            newCtx = new Context(store, ctx.Storage, ctx.ChannelManager)
+            newCtx = new Context(store, ctx.Storage, ctx.ChannelManager, ctx.SignalManager)
             {
                 VerbExecutor = ctx.VerbExecutor,
                 StoryLoader = ctx.StoryLoader,

@@ -34,12 +34,14 @@ public class Context : IExecutionContext
     }
 
     public ChannelManager ChannelManager { get; }
+    public SignalManager SignalManager { get; }
 
-    public Context(VariableStore variables, IPersistentStorage storage, ChannelManager channels)
+    public Context(VariableStore variables, IPersistentStorage storage, ChannelManager channels, SignalManager signalManager)
     {
         Variables = variables;
         Storage = storage;
         ChannelManager = channels;
+        SignalManager = signalManager;
         // Break circular dependency by injecting interpolator factory
         Evaluator = new ExpressionEvaluator(Variables);
     }
@@ -59,6 +61,8 @@ public class Context : IExecutionContext
         // Execute Defers (LIFO)
         ExecuteDefers(_storyDefers);
         ExecuteDefers(_contextDefers);
+
+        SignalManager.UnsubscribeContext(this);
 
         State = ContextState.Terminated;
     }
@@ -87,7 +91,7 @@ public class Context : IExecutionContext
     public Context Clone()
     {
         var newVars = Variables.Clone();
-        var newContext = new Context(newVars, Storage, ChannelManager)
+        var newContext = new Context(newVars, Storage, ChannelManager, SignalManager)
         {
             InstructionPointer = InstructionPointer,
             CurrentStory = CurrentStory,

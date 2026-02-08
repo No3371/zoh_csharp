@@ -18,7 +18,7 @@ public class NavigationTests
         var store = new VariableStore(new Dictionary<string, Variable>());
         var storage = new InMemoryStorage();
         var channels = new ChannelManager();
-        var ctx = new Context(store, storage, channels)
+        var ctx = new Context(store, storage, channels, new SignalManager())
         {
             CurrentStory = story,
             InstructionPointer = 0

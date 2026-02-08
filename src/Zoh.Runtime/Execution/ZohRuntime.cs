@@ -16,6 +16,7 @@ public class ZohRuntime
 {
     public VerbRegistry VerbRegistry { get; } = new();
     public ChannelManager Channels { get; } = new();
+    public SignalManager SignalManager { get; } = new();
     public Storage.IPersistentStorage Storage { get; } = new Storage.InMemoryStorage();
 
 
@@ -73,7 +74,7 @@ public class ZohRuntime
     public Context CreateContext(CompiledStory story)
     {
         var store = new VariableStore(new Dictionary<string, Variable>());
-        var ctx = new Context(store, Storage, Channels);
+        var ctx = new Context(store, Storage, Channels, SignalManager);
 
         ctx.VerbExecutor = ExecuteVerb;
         ctx.StoryLoader = GetCompiledStory;

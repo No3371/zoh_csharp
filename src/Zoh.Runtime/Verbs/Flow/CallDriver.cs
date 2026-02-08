@@ -57,7 +57,7 @@ public class CallDriver : IVerbDriver
         else
         {
             var store = new VariableStore(new Dictionary<string, Variable>());
-            newCtx = new Context(store, ctx.Storage, ctx.ChannelManager)
+            newCtx = new Context(store, ctx.Storage, ctx.ChannelManager, ctx.SignalManager)
             {
                 VerbExecutor = ctx.VerbExecutor,
                 StoryLoader = ctx.StoryLoader,
