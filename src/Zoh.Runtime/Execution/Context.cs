@@ -132,13 +132,16 @@ public class Context : IExecutionContext
     {
         return (type.ToLowerInvariant()) switch
         {
-            "string" or "str" => val is ZohStr,
-            "int" or "integer" => val is ZohInt,
-            "bool" or "boolean" => val is ZohBool,
-            "double" or "float" => val is ZohFloat,
+            "string" => val is ZohStr,
+            "integer" => val is ZohInt,
+            "boolean" => val is ZohBool,
+            "double" => val is ZohFloat,
             "list" => val is ZohList,
             "map" => val is ZohMap,
-            _ => true
+            "channel" => val is ZohChannel,
+            "verb" => val is ZohVerb,
+            "expression" => val is ZohExpr,
+            _ => false
         };
     }
 }
