@@ -18,9 +18,9 @@ public class ParserSpecComplianceTests
         _output = output;
     }
 
-    private ParseResult Parse(string source)
+    private ParseResult Parse(string source, bool header)
     {
-        var lexer = new Lexer(source);
+        var lexer = new Lexer(source, header);
         var lexResult = lexer.Tokenize();
         if (lexResult.Errors.Any())
         {
@@ -46,13 +46,13 @@ public class ParserSpecComplianceTests
     public void Spec_StoryStructure_HeaderAndSeparator()
     {
         // Spec Line 300+
-        var source = @"""My Story""
+        var source = @"My Story
 author: ""Author""
 version: 1.0
 ===
 @start
 ";
-        var result = Parse(source);
+        var result = Parse(source, true);
         Assert.True(result.Success);
         Assert.Equal("My Story", result.Story!.Name);
         Assert.Contains(result.Story.Metadata, kvp => kvp.Key == "author" && ((ValueAst.String)kvp.Value).Value == "Author");
@@ -67,7 +67,7 @@ version: 1.0
     {
         // Spec Line 120: /verb [attr:val] param1, named:param2;
         var source = "/dialogue [mood: \"happy\"] to: \"player\", \"Hello there!\";";
-        var result = Parse(source);
+        var result = Parse(source, false);
         Assert.True(result.Success);
 
         var call = ((StatementAst.VerbCall)result.Story!.Statements[0]).Call;
@@ -95,7 +95,7 @@ version: 1.0
     {
         // Spec: *var <- value;
         var source = "*score <- 100;";
-        var result = Parse(source);
+        var result = Parse(source, false);
         Assert.True(result.Success);
 
         var call = ((StatementAst.VerbCall)result.Story!.Statements[0]).Call;
@@ -124,7 +124,7 @@ version: 1.0
     {
         // Spec: <- *var;
         var source = "<- *input;";
-        var result = Parse(source);
+        var result = Parse(source, false);
         Assert.True(result.Success);
 
         var call = ((StatementAst.VerbCall)result.Story!.Statements[0]).Call;
@@ -140,7 +140,7 @@ version: 1.0
     {
         // Spec: /"Hello *name"; -> /interpolate "Hello *name";
         var source = "/\"Hello *name\";";
-        var result = Parse(source);
+        var result = Parse(source, false);
         Assert.True(result.Success);
 
         var call = ((StatementAst.VerbCall)result.Story!.Statements[0]).Call;
@@ -156,7 +156,7 @@ version: 1.0
     {
         // Spec: /`1 + 1`; -> /evaluate `1 + 1`;
         var source = "/`1 + 1`;";
-        var result = Parse(source);
+        var result = Parse(source, false);
         Assert.True(result.Success);
 
         var call = ((StatementAst.VerbCall)result.Story!.Statements[0]).Call;
@@ -173,7 +173,7 @@ version: 1.0
         // Spec: /log /get *x;;
         // "Verbs as values" - assume inner verb ends with ;
         var source = "/log /get *x;;";
-        var result = Parse(source);
+        var result = Parse(source, false);
         Assert.True(result.Success);
 
         var call = ((StatementAst.VerbCall)result.Story!.Statements[0]).Call;
@@ -194,7 +194,7 @@ version: 1.0
     -> *option1;
     -> *option2;
 /;";
-        var result = Parse(source);
+        var result = Parse(source, false);
         Assert.True(result.Success);
 
         var block = ((StatementAst.VerbCall)result.Story!.Statements[0]).Call;

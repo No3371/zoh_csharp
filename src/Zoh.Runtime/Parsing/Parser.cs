@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Zoh.Runtime.Lexing;
 using Zoh.Runtime.Parsing.Ast;
 using System.Text;
+using Microsoft.VisualBasic;
 
 namespace Zoh.Runtime.Parsing;
 
@@ -102,20 +103,26 @@ public sealed class Parser
             !Check(TokenType.Jump) && !Check(TokenType.Fork) && !Check(TokenType.Call))
         {
             // Try to parse story name
-            if (Check(TokenType.Identifier) || Check(TokenType.String))
+            var nameParts = new List<string>();
+            while (Check(TokenType.Identifier) && !IsAtEnd)
             {
-                var nameToken = Advance();
-                name = nameToken.Value?.ToString() ?? nameToken.Lexeme;
+                var nameToken = Consume(TokenType.Identifier, "Story Name");
+                nameParts.Add(nameToken.Value?.ToString() ?? nameToken.Lexeme);
+            }
+            if (nameParts.Count > 0)
+            {
+                name = string.Join(" ", nameParts);
+                Consume(TokenType.StoryNameEnd, "Story Name End");
             }
 
             // Parse metadata until we hit === or a statement
             while (!IsAtEnd && !Check(TokenType.StorySeparator) &&
-                   !Check(TokenType.Slash) && !Check(TokenType.At) &&
-                   !Check(TokenType.Star) && !Check(TokenType.Jump) &&
-                   !Check(TokenType.Fork) && !Check(TokenType.Call) &&
-                   !Check(TokenType.ArrowLeft) && !Check(TokenType.ArrowRight) &&
-                   !Check(TokenType.SlashBacktick) && !Check(TokenType.SlashQuote) &&
-                   !Check(TokenType.Hash))
+                    !Check(TokenType.Slash) && !Check(TokenType.At) &&
+                    !Check(TokenType.Star) && !Check(TokenType.Jump) &&
+                    !Check(TokenType.Fork) && !Check(TokenType.Call) &&
+                    !Check(TokenType.ArrowLeft) && !Check(TokenType.ArrowRight) &&
+                    !Check(TokenType.SlashBacktick) && !Check(TokenType.SlashQuote) &&
+                    !Check(TokenType.Hash))
             {
                 if (Check(TokenType.Identifier))
                 {

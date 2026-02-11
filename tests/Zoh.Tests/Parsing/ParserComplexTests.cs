@@ -8,9 +8,9 @@ namespace Zoh.Tests.Parsing;
 
 public class ParserComplexTests
 {
-    private static ParseResult Parse(string source)
+    private static ParseResult Parse(string source, bool header)
     {
-        var lexResult = new Lexer(source).Tokenize();
+        var lexResult = new Lexer(source, header).Tokenize();
         // If lexing fails, return failed parse result or handle?
         // Parser constructor takes tokens.
         return new Parser(lexResult.Tokens).Parse();
@@ -21,11 +21,13 @@ public class ParserComplexTests
     {
         // Block verb /list/ 
         // Elements are standard verbs.
-        var source = @"/list/ 
+        var source = @"test
+===
+/list/ 
     /set *x, 1; 
     /set *y, 2;
 /;";
-        var result = Parse(source);
+        var result = Parse(source, true);
         if (!result.Success) Assert.Fail(string.Join("\n", result.Errors));
         Assert.True(result.Success, "Should parse standard verbs inside block");
 
@@ -38,8 +40,10 @@ public class ParserComplexTests
     [Fact]
     public void Parse_StandardInsideBlock_MissingComma_Fails()
     {
-        var source = @"/list/ /set *x 1; /;"; // Missing comma in inner verb
-        var result = Parse(source);
+        var source = @"test
+===
+/list/ /set *x 1; /;"; // Missing comma in inner verb
+        var result = Parse(source, true);
         Assert.False(result.Success);
         Assert.Contains(result.Errors, e => e.Message.Contains("Expected comma"));
     }
@@ -49,8 +53,10 @@ public class ParserComplexTests
     {
         // Standard verb /defer taking a block verb as value
         // /defer /block/ arg1 arg2 /;;
-        var source = @"/defer /list/ 1 2 3 /;;";
-        var result = Parse(source);
+        var source = @"test
+===
+/defer /list/ 1 2 3 /;;";
+        var result = Parse(source, true);
         Assert.True(result.Success);
 
         var outer = Assert.IsType<StatementAst.VerbCall>(result.Story!.Statements[0]);
@@ -65,8 +71,10 @@ public class ParserComplexTests
     public void Parse_MixedNesting_ParsesCorrectly()
     {
         // /outer, /inner/ a b /;, /standard v1, v2;;
-        var source = @"/outer /inner/ a b /;, /standard v1, v2;;";
-        var result = Parse(source);
+        var source = @"test
+===
+/outer /inner/ a b /;, /standard v1, v2;;";
+        var result = Parse(source, true);
         Assert.True(result.Success);
 
         var outer = Assert.IsType<StatementAst.VerbCall>(result.Story!.Statements[0]);

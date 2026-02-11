@@ -30,7 +30,7 @@ public class ExpressionLexer(string source, TextPosition startPosition)
         // Let's check Lexer.cs
 
         // Pass reference position to allow correct error reporting
-        var lexer = new Lexer(source, startPosition);
+        var lexer = new Lexer(source, startPosition, false);
         // Lexer assumes new file context?
         // I might need to extended Lexer to accept start position.
 

@@ -11,7 +11,7 @@ public class ReferenceParsingTests
 {
     private ValueAst.Reference ParseRef(string input)
     {
-        var lexer = new Lexer(input);
+        var lexer = new Lexer(input, false);
         var tokens = lexer.Tokenize();
         var parser = new Parser(tokens.Tokens);
 

@@ -252,7 +252,7 @@ public class ExpressionEvaluator
 
     private ZohValue EvaluateExprString(string source)
     {
-        var lexer = new Lexer(source);
+        var lexer = new Lexer(source, false);
         var result = lexer.Tokenize();
         if (result.Errors.Length > 0)
             throw new Exception("Lexer error: " + result.Errors[0].Message);

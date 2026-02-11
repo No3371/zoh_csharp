@@ -46,8 +46,14 @@ public class CompiledStory
         // Convert metadata? AST metadata is Dictionary<string, ValueAst>. We need to resolve them?
         // Or store as is. The spec says Runtime Metadata is Map<string, Value>.
         // Let's assume empty metadata for the wrapper for now or basic conversion.
-        var meta = ImmutableDictionary<string, ZohValue>.Empty;
-
-        return new CompiledStory(ast.Name, meta, ast.Statements, labels.ToImmutableDictionary(), contracts.ToImmutableDictionary());
+        var b = ImmutableDictionary.CreateBuilder<string, ZohValue>();
+        foreach (var kvp in ast.Metadata)
+        {
+            b.Add(kvp.Key, ValueResolver.ResolveContextless(kvp.Value));
+        }
+        var name = ast.Name;
+        var meta = b.ToImmutableDictionary();
+        if (meta.ContainsKey("id") && meta["id"].Type == ZohValueType.String) name = meta["id"].AsString().Value;
+        return new CompiledStory(name, meta , ast.Statements, labels.ToImmutableDictionary(), contracts.ToImmutableDictionary());
     }
 }

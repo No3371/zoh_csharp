@@ -8,6 +8,21 @@ namespace Zoh.Runtime.Execution;
 
 public static class ValueResolver
 {
+    public static ZohValue ResolveContextless (ValueAst ast)
+    {
+        return ast switch
+        {
+            ValueAst.Nothing => ZohValue.Nothing,
+            ValueAst.Boolean b => b.Value ? ZohValue.True : ZohValue.False,
+            ValueAst.Integer i => new ZohInt(i.Value),
+            ValueAst.Double d => new ZohFloat(d.Value),
+            ValueAst.String s => new ZohStr(s.Value),
+            ValueAst.List l => ResolveListContextless(l),
+            ValueAst.Map m => ResolveMapContextless(m),
+            ValueAst.Verb v => new ZohVerb(v),
+            _ => throw new NotImplementedException($"Unknown ValueAst: {ast.GetType().Name}")
+        };
+    }
     public static ZohValue Resolve(ValueAst ast, IExecutionContext context)
     {
         return ast switch
@@ -45,6 +60,16 @@ public static class ValueResolver
         return context.Evaluator.Evaluate(exprAst);
     }
 
+    private static ZohValue ResolveListContextless(ValueAst.List l)
+    {
+        var builder = ImmutableArray.CreateBuilder<ZohValue>();
+        foreach (var item in l.Elements)
+        {
+            builder.Add(ResolveContextless(item));
+        }
+        return new ZohList(builder.ToImmutable());
+    }
+
     private static ZohValue ResolveList(ValueAst.List l, IExecutionContext context)
     {
         var builder = ImmutableArray.CreateBuilder<ZohValue>();
@@ -54,6 +79,21 @@ public static class ValueResolver
         }
         return new ZohList(builder.ToImmutable());
     }
+
+    private static ZohValue ResolveMapContextless(ValueAst.Map m)
+    {
+        var builder = ImmutableDictionary.CreateBuilder<string, ZohValue>();
+        foreach (var entry in m.Entries)
+        {
+            // Keys in Map AST are ValueAst. Assuming string for now, or resolving.
+            // ZohMap keys are strings. 
+            var keyVal = ResolveContextless(entry.Key);
+            string keyStr = keyVal is ZohStr ks ? ks.Value : keyVal.ToString(); // Or Force string? Spec?
+            builder[keyStr] = ResolveContextless(entry.Value);
+        }
+        return new ZohMap(builder.ToImmutable());
+    }
+
 
     private static ZohValue ResolveMap(ValueAst.Map m, IExecutionContext context)
     {

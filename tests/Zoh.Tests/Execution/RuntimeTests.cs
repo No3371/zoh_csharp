@@ -11,8 +11,10 @@ public class RuntimeTests
     public void LoadStory_ParsesSource()
     {
         var runtime = new ZohRuntime();
-        var source = "/set *x, 10;";
-        var story = runtime.LoadStory(source, "test");
+        var source = @"test story
+===
+/set *x, 10;";
+        var story = runtime.LoadStory(source);
 
         Assert.NotNull(story);
         Assert.Single(story.Statements);
@@ -22,11 +24,12 @@ public class RuntimeTests
     public void Run_ExecutesVerbs()
     {
         var runtime = new ZohRuntime();
-        var source = @"
+        var source = @"runtime requires story name
+===
 /set *x, 10;
 /increase *x, 5;
 ";
-        var story = runtime.LoadStory(source, "test");
+        var story = runtime.LoadStory(source);
         var ctx = runtime.CreateContext(story);
 
         runtime.Run(ctx, story);
@@ -39,11 +42,12 @@ public class RuntimeTests
     public void Run_Defer_ExecutesOnTermination()
     {
         var runtime = new ZohRuntime();
-        var source = @"
+        var source = @"test
+===
 /set *x, 0;
 /defer /increase *x, 1;;
 ";
-        var story = runtime.LoadStory(source, "test");
+        var story = runtime.LoadStory(source);
         var ctx = runtime.CreateContext(story);
 
         runtime.Run(ctx, story);

@@ -8,7 +8,7 @@ namespace Zoh.Tests.Lexing;
 /// </summary>
 public class LexerSpecComplianceTests
 {
-    private static LexResult Lex(string source) => new Lexer(source).Tokenize();
+    private static LexResult Lex(string source) => new Lexer(source, false).Tokenize();
     private static Token First(string source) => Lex(source).Tokens[0];
 
     #region String Literals (spec lines 293-308)

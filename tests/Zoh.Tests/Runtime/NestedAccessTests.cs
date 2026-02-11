@@ -21,7 +21,7 @@ public class NestedAccessTests
 
     private void Execute(string script)
     {
-        var lexer = new Zoh.Runtime.Lexing.Lexer(script);
+        var lexer = new Zoh.Runtime.Lexing.Lexer(script, false);
         var tokens = lexer.Tokenize();
         // LexResult has Tokens property
         var parser = new Zoh.Runtime.Parsing.Parser(tokens.Tokens);

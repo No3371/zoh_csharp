@@ -15,22 +15,22 @@ public sealed class Lexer
     private readonly List<LexError> _errors = [];
     private int _start;
     // Context tracking for virtual tokens
-    private bool _inCheckpointDef;
+    private bool _inCheckpointDef, _inCheckingStoryName;
     private bool _isStartOfLine = true;
-
     private readonly int _initialOffset;
 
-    public Lexer(string source) : this(source, new TextPosition(1, 1, 0))
+    public Lexer(string source, bool header) : this(source, new TextPosition(1, 1, 0), header)
     {
     }
 
-    public Lexer(string source, TextPosition startPosition)
+    public Lexer(string source, TextPosition startPosition, bool header)
     {
-        _source = source;
+        _source = source.Replace("\r\n", "\n");
         _position = startPosition;
         _initialOffset = startPosition.Offset;
         _start = 0;
         _current = 0;
+        _inCheckingStoryName = header;
     }
 
     public LexResult Tokenize()
@@ -38,6 +38,12 @@ public sealed class Lexer
         while (!IsAtEnd)
         {
             ScanToken();
+        }
+
+        if (_inCheckingStoryName)
+        {
+            AddToken(TokenType.StoryNameEnd, _position);
+            _inCheckingStoryName = false;
         }
 
         if (_inCheckpointDef)
@@ -85,9 +91,33 @@ public sealed class Lexer
         return _source.AsSpan(_current, expected.Length).SequenceEqual(expected);
     }
 
+    private void ScanStoryName (TextPosition start, int startOffset)
+    {
+        _isStartOfLine = true;
+        while (Current != '\n')
+        {
+            Advance();
+        }
+
+        var lexeme = _source[startOffset.._current];
+        AddToken(TokenType.Identifier, start, lexeme);
+        AddToken(TokenType.StoryNameEnd, _position);
+        Advance(); // Consume newline
+    }
+
     private void ScanToken()
     {
         SkipWhitespaceAndComments();
+
+        if (_inCheckingStoryName && Current == '\n')
+        {
+            var pos = _position;
+            Advance(); // Consume newline
+            AddToken(TokenType.StoryNameEnd, pos);
+            _inCheckingStoryName = false;
+            _isStartOfLine = true;
+            return;
+        }
 
         // CheckpointEnd injection
         if (_inCheckpointDef && Current == '\n')
@@ -269,12 +299,15 @@ public sealed class Lexer
                 else
                     ReportError(start, "Expected ` or \" or ' or ( or #( or ?( or * after $");
                 break;
+            
 
             default:
                 if (char.IsDigit(c))
                     ScanNumber(start, startOffset, isNegative: false);
                 else if (IsIdentifierStart(c))
+                {
                     ScanIdentifier(start, startOffset);
+                }
                 else
                     ReportError(start, $"Unexpected character: '{c}'");
                 break;
@@ -288,7 +321,7 @@ public sealed class Lexer
             var c = Current;
             if (char.IsWhiteSpace(c))
             {
-                if (c == '\n' && _inCheckpointDef)
+                if (c == '\n' && (_inCheckpointDef || _inCheckingStoryName))
                 {
                     // Do not consume newline if inside checkpoint def,
                     // so ScanToken can emit CheckpointEnd.
@@ -413,8 +446,6 @@ public sealed class Lexer
         var content = sb.ToString();
         if (content.StartsWith('\n'))
             content = content[1..];
-        else if (content.StartsWith("\r\n"))
-            content = content[2..];
 
         AddToken(TokenType.MultilineString, start, content);
     }

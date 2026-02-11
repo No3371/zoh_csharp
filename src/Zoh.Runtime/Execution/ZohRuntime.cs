@@ -30,10 +30,10 @@ public class ZohRuntime
         VerbRegistry.RegisterCoreVerbs();
     }
 
-    public CompiledStory LoadStory(string source, string storyName)
+    public CompiledStory LoadStory(string source)
     {
         // 1. Lex
-        var lexer = new Lexer(source);
+        var lexer = new Lexer(source, true);
         var tokens = lexer.Tokenize();
         if (tokens.HasErrors)
         {
@@ -49,8 +49,6 @@ public class ZohRuntime
         }
         var ast = parseResult.Story!;
 
-
-
         // 3. Validate
         var validator = new NamespaceValidator(VerbRegistry);
         var valResult = validator.Validate(ast);
@@ -61,7 +59,7 @@ public class ZohRuntime
 
         // 4. Compile (Wrap)
         var compiled = CompiledStory.FromAst(ast);
-        _storyCache[storyName] = compiled;
+        _storyCache[compiled.Name] = compiled;
         return compiled;
     }
 

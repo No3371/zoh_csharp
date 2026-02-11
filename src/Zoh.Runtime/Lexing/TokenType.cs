@@ -12,6 +12,7 @@ public enum TokenType
     Error,
 
     // Virtual tokens
+    StoryNameEnd,
     CheckpointEnd,
 
     // === Literals ===
