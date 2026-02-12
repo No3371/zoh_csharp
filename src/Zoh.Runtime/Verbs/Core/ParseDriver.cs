@@ -19,7 +19,7 @@ public class ParseDriver : IVerbDriver
         }
 
         var value = ValueResolver.Resolve(paramsList[0], context);
-        string str = value.AsString().Value;
+        string str = value.AsString().Value.Trim();
 
         string targetType;
         if (paramsList.Length > 1)
@@ -55,8 +55,8 @@ public class ParseDriver : IVerbDriver
         if (long.TryParse(str, out _)) return "integer";
         if (double.TryParse(str, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out _)) return "double";
         if (bool.TryParse(str, out _)) return "boolean";
-        if (str.TrimStart().StartsWith("[")) return "list";
-        if (str.TrimStart().StartsWith("{")) return "map";
+        if (str.StartsWith("[")) return "list";
+        if (str.StartsWith("{")) return "map";
         return "string";
     }
 }
