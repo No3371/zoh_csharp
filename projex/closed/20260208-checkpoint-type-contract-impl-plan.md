@@ -4,9 +4,9 @@
 > **Created:** 2026-02-08
 > **Completed:** 2026-02-08
 > **Author:** Antigravity (on behalf of User)
-> **Source:** [Proposal](file:///s:/repos/zoh/projex/20260208-checkpoint-type-contract-proposal.md)
-> **Walkthrough:** [Walkthrough](file:///s:/repos/zoh/c%23/projex/closed/20260208-checkpoint-type-contract-walkthrough.md)
-> **Related Projex:** [Spec Plan](file:///s:/repos/zoh/projex/20260208-checkpoint-type-contract-spec-plan.md)
+> **Source:** [Proposal](projex/20260208-checkpoint-type-contract-proposal.md)
+> **Walkthrough:** [Walkthrough](c%23/projex/closed/20260208-checkpoint-type-contract-walkthrough.md)
+> **Related Projex:** [Spec Plan](projex/20260208-checkpoint-type-contract-spec-plan.md)
 
 ---
 
@@ -56,7 +56,7 @@ The C# runtime currently parses checkpoints as simple labels, ignoring any contr
 | `src/Zoh.Runtime/Execution/ZohRuntime.cs` | Main Loop | Update `Run` loop to validate checkpoints on fall-through. |
 
 ### Dependencies
-- **Requires:** [Spec Plan](file:///s:/repos/zoh/projex/20260208-checkpoint-type-contract-spec-plan.md) (Conceptually)
+- **Requires:** [Spec Plan](projex/20260208-checkpoint-type-contract-spec-plan.md) (Conceptually)
 
 ---
 

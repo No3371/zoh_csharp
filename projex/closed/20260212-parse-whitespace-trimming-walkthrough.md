@@ -2,7 +2,7 @@
 
 > **Execution Date:** 2026-02-12
 > **Completed By:** Antigravity
-> **Source Plan:** [20260208-parse-whitespace-trimming-csharp-plan.md](file:///s:/Repos/zoh/c%23/projex/20260208-parse-whitespace-trimming-csharp-plan.md)
+> **Source Plan:** [20260208-parse-whitespace-trimming-csharp-plan.md](c%23/projex/20260208-parse-whitespace-trimming-csharp-plan.md)
 > **Duration:** 15 minutes
 > **Result:** Success
 
@@ -131,8 +131,8 @@ Tests pass, confirming `InferType` correctly identifies them without leading spa
 ### Documents to Update
 | Document | Update Needed |
 |----------|---------------|
-| [20260208-parse-whitespace-trimming-csharp-plan.md](file:///s:/Repos/zoh/c%23/projex/20260208-parse-whitespace-trimming-csharp-plan.md) | Mark as Complete (Done) |
-| [20260208-parse-whitespace-trimming-plan.md](file:///s:/Repos/zoh/projex/20260208-parse-whitespace-trimming-plan.md) | Reference this walkthrough. |
+| [20260208-parse-whitespace-trimming-csharp-plan.md](c%23/projex/20260208-parse-whitespace-trimming-csharp-plan.md) | Mark as Complete (Done) |
+| [20260208-parse-whitespace-trimming-plan.md](projex/20260208-parse-whitespace-trimming-plan.md) | Reference this walkthrough. |
 
 ---
 

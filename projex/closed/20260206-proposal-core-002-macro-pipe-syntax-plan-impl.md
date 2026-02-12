@@ -9,13 +9,13 @@ Implement the pipe-delimited macro syntax (`|%...|%|`) in the ZOH C# runtime.
 
 ## Proposed Changes
 ### Zoh.Runtime
-#### [MODIFY] [MacroPreprocessor.cs](file:///s:/repos/zoh/c%23/src/Zoh.Runtime/Preprocessing/MacroPreprocessor.cs)
+#### [MODIFY] [MacroPreprocessor.cs](c%23/src/Zoh.Runtime/Preprocessing/MacroPreprocessor.cs)
 - Implemented `CollectMacros` with regex `^\s*\|%(\w+)%\|\s*$`.
 - Implemented `ExpandMacros` with strict `|%NAME|...|%|` parsing.
 - Diagnostics for unterminated definitions (`PRE002`) and expansions (`PRE005`).
 
 ### Zoh.Tests
-#### [MODIFY] [PreprocessorTests.cs](file:///s:/repos/zoh/c%23/tests/Zoh.Tests/Preprocessing/PreprocessorTests.cs)
+#### [MODIFY] [PreprocessorTests.cs](c%23/tests/Zoh.Tests/Preprocessing/PreprocessorTests.cs)
 - Added tests for:
     - No-args expansion (`|%NAME|%|`)
     - Positional args (`|%0|`, `|%1|`)
