@@ -1,9 +1,9 @@
 # C# Runtime Implementation Roadmap
 
-> **Created:** 2026-02-07 | **Last Revised:** 2026-02-13
+> **Created:** 2026-02-07 | **Last Revised:** 2026-02-14
 > **Scope:** Full ZOH language runtime implementation in C#
 > **Parent Navigation:** None (Root for C# implementation)
-> **Related Projex:** [Review](20260207-csharp-runtime-nav-review.md)
+> **Related Projex:** [Review](20260207-csharp-runtime-nav-review.md), [Red Team](../../projex/20260207-spec-impl-redteam.md)
 
 ---
 
@@ -15,9 +15,9 @@ To build a robust, spec-compliant, and high-performance ZOH runtime in C# that s
 
 ## Current Position
 
-**As of 2026-02-13:**
+**As of 2026-02-14:**
 
-Phase 3 (Control Flow & Concurrency) is **complete**. All concurrency features including Contexts, Channels, Signals, and Navigation are fully implemented and tested. The implementation has been enhanced with virtual tokens (CheckpointEnd, StoryNameEnd), comprehensive macro support, robust CRLF handling, and parse verb improvements. The runtime now consists of 500+ passing tests and is ready for Phase 4 (Runtime Architecture).
+Phase 3 (Control Flow & Concurrency) is **complete**. The runtime stands at **515 passing tests** with all concurrency features, virtual tokens, macro support, CRLF handling, and parse verb improvements fully in place. Phase 4 (Runtime Architecture) is now the immediate next objective, with partial foundations already present — `ZohRuntime`, `Context`, `VerbRegistry`, and basic storage (Read/Write + InMemoryStorage) exist but need formalization into the handler-registry architecture described in `impl/09_runtime.md`.
 
 ### Recent Progress
 - **Phase 3 Complete**: All concurrency features (Context, Navigation, Channels, Signals) implemented and verified (2026-02-11)
@@ -27,8 +27,7 @@ Phase 3 (Control Flow & Concurrency) is **complete**. All concurrency features i
 - **Parse Improvements**: Whitespace trimming for `/parse` verb (2026-02-12)
 
 ### Active Work
-- **Phase 4 Planning**: Preparing for Runtime Architecture phase
-- **CRLF Investigation**: Ongoing exploration of line ending handling across the lexer
+- **Phase 4 Milestone 1**: Runtime Core formalization — handler registries, compilation pipeline, RuntimeConfig
 
 ### Known Blockers
 - None currently identified
@@ -78,36 +77,64 @@ Phase 3 (Control Flow & Concurrency) is **complete**. All concurrency features i
 
 ---
 
-### Phase 4: Runtime Architecture — [Status: Future]
+### Phase 4: Runtime Architecture — [Status: Next]
 
-**Goal:** Create a cohesive runtime environment capable of hosting multiple stories and providing external hooks.
+**Goal:** Formalize the runtime into a cohesive, extensible architecture with handler registries, a compilation pipeline, persistence, validation, and the standard verb interface — following `impl/09_runtime.md` through `impl/12_validation.md`.
+
+**Milestone sequencing rationale:** Runtime Core establishes the handler-registry pattern that Storage, Validation, and Standard Verbs all plug into. Storage is nearly complete (Read/Write drivers + InMemoryStorage exist). Validation provides developer guardrails before we surface the host-facing Standard Verbs.
 
 **Milestones:**
-- [ ] **Runtime Core** — Top-level coordinator, Handler registry, Compilation pipeline.
-- [ ] **Standard Verbs** — Input/Output (Converse, Choose, Prompt), Audio/Visual stubs.
-- [ ] **Persistence** — Save/Load functionality (Write, Read, Erase).
-- [ ] **Validation Pipeline** — Semantic analysis and diagnostics.
+
+- [ ] **4.1 Runtime Core Formalization** — `impl/09_runtime.md`
+  - Formalize `RuntimeConfig` (maxContexts, maxChannelDepth, resource limits per red-team findings)
+  - Implement ordered handler registries: preprocessor chain, compiler chain, story validators, verb validators, verb drivers
+  - Define the compilation pipeline: preprocess → parse → compile → validate → execute
+  - Existing code: `ZohRuntime.cs`, `Context.cs`, `CompiledStory.cs`, `VerbRegistry.cs`, `ValueResolver.cs`
+
+- [ ] **4.2 Storage Completion** — `impl/11_storage.md`
+  - Implement `EraseDriver` and `PurgeDriver`
+  - Define serialization format for persistent values (JSON-based, covering nothing/bool/int/double/string/list/map; reject non-serializable verb/channel/expression)
+  - Type-safe reads: respect `[typed]` and `[required]` attributes, scope handling
+  - Existing code: `IPersistentStorage.cs`, `InMemoryStorage.cs`, `ReadDriver.cs`, `WriteDriver.cs`
+
+- [ ] **4.3 Validation Pipeline** — `impl/12_validation.md`
+  - Story validators: duplicate labels, required verbs, jump target validation
+  - Verb validators: parameter counts and types for Set, Jump/Fork/Call, and other core verbs
+  - Diagnostic formatting and aggregation pipeline (`DiagnosticCollector`)
+  - Existing code: `NamespaceValidator.cs`, `Diagnostics/` directory
+
+- [ ] **4.4 Standard Verbs (Presentation)** — `impl/10_std_verbs.md`
+  - Define `IPresentationHandler` interface: the abstraction that lets host applications handle `/converse`, `/choose`, `/prompt` output
+  - Implement `ConverseDriver`, `ChooseDriver`, `ChooseFromDriver`, `PromptDriver`
+  - Include timeout support and `[Wait]`/`[Style]`/`[By]` attribute handling
+
+- [ ] **4.5 Standard Verbs (Media)** — `impl/10_std_verbs.md`
+  - Define `IMediaHandler` interface: host-facing abstraction for visual/audio media
+  - Implement `ShowDriver`, `HideDriver`, `PlayDriver`, `PlayOneDriver`, `StopDriver`, `PauseDriver`, `ResumeDriver`, `SetVolumeDriver`
+  - These are stubs that delegate to the handler — no actual media rendering
 
 ---
 
 ### Phase 5: Integration & Polish — [Status: Future]
 
-**Goal:** Ensure correctness, stability, and usability.
+**Goal:** Ensure correctness, stability, usability, and production readiness.
 
 **Milestones:**
-- [ ] **Integration Testing** — End-to-end scenarios from `13_testing.md`.
-- [ ] **Documentation** — Public API docs and usage examples.
-- [ ] **Performance** — Profiling and optimization.
+- [ ] **Integration Testing** — End-to-end scenarios from `13_testing.md`; multi-story, multi-context flows
+- [ ] **Storage Backends** — File-based backend (`.zohstore` files), optional SQLite backend
+- [ ] **Red-Team Remediation** — Address remaining findings from `20260207-spec-impl-redteam.md`: resource limit enforcement, defer error handling semantics, expression injection safe patterns
+- [ ] **Documentation** — Public API docs, usage examples, verb reference
+- [ ] **Performance** — Profiling, optimization, benchmark suite
 
 ---
 
 ## Priorities
 
-**Current focus:** Planning Phase 4 Runtime Architecture.
+**Current focus:** Phase 4.1 — Runtime Core Formalization. This is the architectural backbone: handler registries and the compilation pipeline that everything else plugs into.
 
-**Next up:** Runtime Core — Top-level coordinator, Handler registry, Compilation pipeline.
+**Next up:** Phase 4.2 — Storage Completion. Quick win — Read/Write already exist, need Erase/Purge and serialization.
 
-**Deferred:** Performance optimizations and advanced Standard Verbs until core runtime architecture is solidified.
+**Deferred:** File/SQLite storage backends, performance optimizations, and red-team remediation items deferred to Phase 5. In-memory storage is sufficient for development and testing throughout Phase 4.
 
 ---
 
@@ -115,8 +142,10 @@ Phase 3 (Control Flow & Concurrency) is **complete**. All concurrency features i
 
 - [x] Does the current `pull` implementation return a result object (old spec) or value/error (new spec)? **(Answer: Value/Error via VerbResult)**
 - [x] Are there other discrepancies from the recent "Spec/Impl Inconsistencies" finding that need to be addressed in C#? **(Answer: Addressed via multiple patches)**
-- [ ] Should Phase 4 begin with Runtime Core or Standard Verbs?
-- [ ] What persistence mechanism should be used for Save/Load (filesystem, database, custom)?
+- [x] Should Phase 4 begin with Runtime Core or Standard Verbs? **(Answer: Runtime Core — it defines the handler registries that Standard Verbs plug into)**
+- [x] What persistence mechanism should be used for Save/Load? **(Answer: InMemoryStorage for Phase 4 development/testing; file/SQLite backends deferred to Phase 5)**
+- [ ] How should `IPresentationHandler` handle async host responses (e.g., user choosing from a menu)? Blocking vs. callback vs. Task-based?
+- [ ] Should verb validators be opt-in (registered per verb) or mandatory (auto-generated from signatures)?
 
 ---
 
@@ -126,3 +155,4 @@ Phase 3 (Control Flow & Concurrency) is **complete**. All concurrency features i
 |------|--------------------|
 | 2026-02-07 | Initial roadmap created by converting `c#/task.md`. |
 | 2026-02-13 | Phase 3 marked complete. Signal System, Story Header Parsing, Virtual Tokens, CRLF handling, and multiple quality improvements completed. Ready for Phase 4. |
+| 2026-02-14 | Phase 4 restructured into five sequenced milestones (4.1–4.5) based on dependency analysis. Resolved ordering and persistence open questions. Added new questions for presentation handler async model and validator strategy. Red-team remediation items and storage backends moved to Phase 5. Updated test count to 515. |
