@@ -9,56 +9,88 @@ using Zoh.Runtime.Variables;
 using System.Linq;
 using Zoh.Runtime.Storage;
 using Zoh.Runtime.Validation;
+using Zoh.Runtime.Preprocessing;
 
 namespace Zoh.Runtime.Execution;
 
 public class ZohRuntime
 {
-    public VerbRegistry VerbRegistry { get; } = new();
+    public RuntimeConfig Config { get; }
+    public HandlerRegistry Handlers { get; }
     public ChannelManager Channels { get; } = new();
     public SignalManager SignalManager { get; } = new();
-    public Storage.IPersistentStorage Storage { get; } = new Storage.InMemoryStorage();
+    public Storage.IPersistentStorage Storage { get; set; }
 
-
+    // Backward compat: keep VerbRegistry accessor
+    public VerbRegistry VerbRegistry => Handlers.VerbDrivers;
 
     public IReadOnlyList<Context> Contexts => _contexts;
     private readonly List<Context> _contexts = new();
     private readonly Dictionary<string, CompiledStory> _storyCache = new();
 
-    public ZohRuntime()
+    public ZohRuntime() : this(RuntimeConfig.Default) { }
+
+    public ZohRuntime(RuntimeConfig config)
     {
-        VerbRegistry.RegisterCoreVerbs();
+        Config = config;
+        Storage = new Storage.InMemoryStorage();
+        Handlers = new HandlerRegistry();
+        Handlers.RegisterCoreHandlers();
     }
 
-    public CompiledStory LoadStory(string source)
+    /// <summary>
+    /// Loads a story through the compilation pipeline:
+    /// preprocess → lex → parse → compile → validate.
+    /// </summary>
+    public CompiledStory LoadStory(string source, string sourcePath = "")
     {
-        // 1. Lex
-        var lexer = new Lexer(source, true);
-        var tokens = lexer.Tokenize();
-        if (tokens.HasErrors)
+        var diagnostics = new DiagnosticBag();
+
+        // 1. Preprocess
+        string processed = source;
+        foreach (var pp in Handlers.Preprocessors)
         {
-            throw new Exception("Lexing failed: " + string.Join(", ", tokens.Errors));
+            var ctx = new PreprocessorContext(processed, sourcePath);
+            var result = pp.Process(ctx);
+            diagnostics.AddRange(result.Diagnostics);
+            if (diagnostics.HasFatalErrors)
+                throw new CompilationException("Preprocessing failed", diagnostics);
+            processed = result.ProcessedText;
         }
 
-        // 2. Parse
+        // 2. Lex
+        var lexer = new Lexer(processed, true);
+        var tokens = lexer.Tokenize();
+        if (tokens.HasErrors)
+            throw new CompilationException("Lexing failed: " + string.Join(", ", tokens.Errors), diagnostics);
+
+        // 3. Parse
         var parser = new Parser(tokens.Tokens);
         var parseResult = parser.Parse();
         if (!parseResult.Success)
-        {
-            throw new Exception("Parsing failed: " + string.Join(", ", parseResult.Errors));
-        }
-        var ast = parseResult.Story!;
+            throw new CompilationException("Parsing failed: " + string.Join(", ", parseResult.Errors), diagnostics);
 
-        // 3. Validate
-        var validator = new NamespaceValidator(VerbRegistry);
-        var valResult = validator.Validate(ast);
-        if (!valResult.IsSuccess)
+        // 4. Compile (currently: wrap AST)
+        var compiled = CompiledStory.FromAst(parseResult.Story!);
+
+        // 5. Validate
+        // 5a. Story validators
+        foreach (var validator in Handlers.StoryValidators)
         {
-            throw new Exception("Validation failed: " + string.Join(", ", valResult.Errors.Select(e => e.Message)));
+            var valDiags = validator.Validate(compiled);
+            diagnostics.AddRange(valDiags);
         }
 
-        // 4. Compile (Wrap)
-        var compiled = CompiledStory.FromAst(ast);
+        // 5b. Namespace validation (built-in, always runs)
+        var nsValidator = new NamespaceValidator(VerbRegistry);
+        var nsResult = nsValidator.Validate(parseResult.Story!);
+        if (!nsResult.IsSuccess)
+            throw new CompilationException("Validation failed: " + string.Join(", ", nsResult.Errors.Select(e => e.Message)), diagnostics);
+
+        // 5c. Check for fatal diagnostics from story validators
+        if (diagnostics.HasFatalErrors)
+            throw new CompilationException("Validation failed", diagnostics);
+
         _storyCache[compiled.Name] = compiled;
         return compiled;
     }

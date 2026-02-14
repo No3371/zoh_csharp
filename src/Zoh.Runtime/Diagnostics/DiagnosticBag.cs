@@ -30,4 +30,6 @@ public class DiagnosticBag : IEnumerable<Diagnostic>
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public bool HasErrors => _diagnostics.Any(d => d.Severity >= DiagnosticSeverity.Error);
+    public bool HasFatalErrors => _diagnostics.Any(d => d.Severity == DiagnosticSeverity.Fatal);
+    public int Count => _diagnostics.Count;
 }
