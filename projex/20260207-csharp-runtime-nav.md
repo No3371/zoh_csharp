@@ -17,17 +17,15 @@ To build a robust, spec-compliant, and high-performance ZOH runtime in C# that s
 
 **As of 2026-02-14:**
 
-Phase 3 (Control Flow & Concurrency) is **complete**. The runtime stands at **515 passing tests** with all concurrency features, virtual tokens, macro support, CRLF handling, and parse verb improvements fully in place. Phase 4 (Runtime Architecture) is now the immediate next objective, with partial foundations already present — `ZohRuntime`, `Context`, `VerbRegistry`, and basic storage (Read/Write + InMemoryStorage) exist but need formalization into the handler-registry architecture described in `impl/09_runtime.md`.
+Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)** and **Phase 4.2 (Storage Completion)** are **complete**. The runtime now features a formalized handler-registry architecture, comprehensive storage drivers (including Erase/Purge), and a robust compilation pipeline. **Phase 4.3 (Validation Pipeline)** is the immediate next objective to implement the validation layers defined in `impl/12_validation.md`.
 
 ### Recent Progress
+- **Phase 4.2 Complete**: Storage Completion — Implemented `EraseDriver`, `PurgeDriver`, and fixed `WriteDriver` type safety (2026-02-15)
+- **Phase 4.1 Complete**: Runtime Core Formalization — Implemented `HandlerRegistry`, `RuntimeConfig`, `CompilationException`, and refactored `ZohRuntime` (2026-02-15)
 - **Phase 3 Complete**: All concurrency features (Context, Navigation, Channels, Signals) implemented and verified (2026-02-11)
-- **Story Parsing**: Multi-word story names and virtual tokens (StoryNameEnd, CheckpointEnd) (2026-02-09)
-- **CRLF Handling**: Comprehensive analysis and normalization implemented (2026-02-11)
-- **Macro System**: Indentation preservation, symmetric trimming, and escaping (2026-02-06)
-- **Parse Improvements**: Whitespace trimming for `/parse` verb (2026-02-12)
 
 ### Active Work
-- **Phase 4 Milestone 1**: Runtime Core formalization — handler registries, compilation pipeline, RuntimeConfig
+- **Phase 4 Milestone 3**: Validation Pipeline — Story and Verb validators, Diagnostic aggregation
 
 ### Known Blockers
 - None currently identified
@@ -77,7 +75,7 @@ Phase 3 (Control Flow & Concurrency) is **complete**. The runtime stands at **51
 
 ---
 
-### Phase 4: Runtime Architecture — [Status: Next]
+### Phase 4: Runtime Architecture — [Status: In Progress]
 
 **Goal:** Formalize the runtime into a cohesive, extensible architecture with handler registries, a compilation pipeline, persistence, validation, and the standard verb interface — following `impl/09_runtime.md` through `impl/12_validation.md`.
 
@@ -85,22 +83,25 @@ Phase 3 (Control Flow & Concurrency) is **complete**. The runtime stands at **51
 
 **Milestones:**
 
-- [ ] **4.1 Runtime Core Formalization** — `impl/09_runtime.md`
+- [x] **4.1 Runtime Core Formalization** — `impl/09_runtime.md`
   - Formalize `RuntimeConfig` (maxContexts, maxChannelDepth, resource limits per red-team findings)
   - Implement ordered handler registries: preprocessor chain, compiler chain, story validators, verb validators, verb drivers
   - Define the compilation pipeline: preprocess → parse → compile → validate → execute
   - Existing code: `ZohRuntime.cs`, `Context.cs`, `CompiledStory.cs`, `VerbRegistry.cs`, `ValueResolver.cs`
+  - Execution: [Walkthrough](closed/20260215-runtime-core-formalization-walkthrough.md)
 
-- [ ] **4.2 Storage Completion** — `impl/11_storage.md`
+- [x] **4.2 Storage Completion** — `impl/11_storage.md`
   - Implement `EraseDriver` and `PurgeDriver`
   - Define serialization format for persistent values (JSON-based, covering nothing/bool/int/double/string/list/map; reject non-serializable verb/channel/expression)
   - Type-safe reads: respect `[typed]` and `[required]` attributes, scope handling
   - Existing code: `IPersistentStorage.cs`, `InMemoryStorage.cs`, `ReadDriver.cs`, `WriteDriver.cs`
+  - Execution: [Walkthrough](closed/20260214-storage-completion-walkthrough.md)
 
 - [ ] **4.3 Validation Pipeline** — `impl/12_validation.md`
   - Story validators: duplicate labels, required verbs, jump target validation
   - Verb validators: parameter counts and types for Set, Jump/Fork/Call, and other core verbs
   - Diagnostic formatting and aggregation pipeline (`DiagnosticCollector`)
+  - Migrate hardcoded `NamespaceValidator` to `HandlerRegistry`
   - Existing code: `NamespaceValidator.cs`, `Diagnostics/` directory
 
 - [ ] **4.4 Standard Verbs (Presentation)** — `impl/10_std_verbs.md`
@@ -130,11 +131,11 @@ Phase 3 (Control Flow & Concurrency) is **complete**. The runtime stands at **51
 
 ## Priorities
 
-**Current focus:** Phase 4.1 — Runtime Core Formalization. This is the architectural backbone: handler registries and the compilation pipeline that everything else plugs into.
+**Current focus:** Phase 4.3 — Validation Pipeline. Implementing the validation layer to provide safety and diagnostics before exposing standard verbs.
 
-**Next up:** Phase 4.2 — Storage Completion. Quick win — Read/Write already exist, need Erase/Purge and serialization.
+**Next up:** Phase 4.4 — Standard Verbs (Presentation).
 
-**Deferred:** File/SQLite storage backends, performance optimizations, and red-team remediation items deferred to Phase 5. In-memory storage is sufficient for development and testing throughout Phase 4.
+**Deferred:** File/SQLite storage backends, performance optimizations, and red-team remediation items deferred to Phase 5. In-memory storage is sufficient for Phase 4.
 
 ---
 
@@ -156,3 +157,4 @@ Phase 3 (Control Flow & Concurrency) is **complete**. The runtime stands at **51
 | 2026-02-07 | Initial roadmap created by converting `c#/task.md`. |
 | 2026-02-13 | Phase 3 marked complete. Signal System, Story Header Parsing, Virtual Tokens, CRLF handling, and multiple quality improvements completed. Ready for Phase 4. |
 | 2026-02-14 | Phase 4 restructured into five sequenced milestones (4.1–4.5) based on dependency analysis. Resolved ordering and persistence open questions. Added new questions for presentation handler async model and validator strategy. Red-team remediation items and storage backends moved to Phase 5. Updated test count to 515. |
+| 2026-02-15 | Phase 4.1 (Runtime Core) and 4.2 (Storage Completion) marked complete. Updated Active Work to Phase 4.3 (Validation Pipeline). |
