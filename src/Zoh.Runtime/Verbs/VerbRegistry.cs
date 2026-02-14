@@ -152,6 +152,8 @@ public class VerbRegistry
 
         Register(new Store.WriteDriver());
         Register(new Store.ReadDriver());
+        Register(new Store.EraseDriver());
+        Register(new Store.PurgeDriver());
 
         Register(new OpenVerbDriver());
         Register(new PushVerbDriver());

@@ -40,17 +40,10 @@ public class WriteDriver : IVerbDriver
 
             var value = ValueResolver.Resolve(varRef, context);
 
-            // Validation: Check if type is verb, channel, or expression (not serializable)
-            // Actually, Resolve evaluates Expression. So checking for ZohExpression type is unlikely unless passed literally?
-            // "expression" type usually means unevaluated expression? No, resolver evaluates.
-            // ZohVerb, ZohChannel are definitely non-serializable usually.
-
-            if (value is ZohVerb || value is ZohChannel)
+            if (value is ZohVerb || value is ZohChannel || value is ZohExpr)
             {
                 return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", $"Cannot persist type: {value.Type}", verb.Start));
             }
-            // What about ZohExpression? if `expr`.
-            // The type check in plan was "verb, channel, expression".
 
             context.Storage.Write(storeName, varRef.Name, value);
         }
