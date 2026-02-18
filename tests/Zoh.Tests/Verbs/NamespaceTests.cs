@@ -126,13 +126,22 @@ public class NamespaceTests
         // AST with /verb;
         var call = new VerbCallAst(null, "verb", false, [], ImmutableDictionary<string, ValueAst>.Empty, [], new TextPosition(1, 1, 0));
         var stmt = new StatementAst.VerbCall(call);
-        var story = new StoryAst("test", ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray.Create<StatementAst>(stmt), ImmutableDictionary<string, int>.Empty);
+        var storyAst = new StoryAst("test", ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray.Create<StatementAst>(stmt), ImmutableDictionary<string, int>.Empty);
+        var compiled = CompiledStory.FromAst(storyAst);
 
-        var validator = new NamespaceValidator(_registry);
-        var result = validator.Validate(story);
+        var handlers = new HandlerRegistry();
+        // We need to inject our registry into handlers. 
+        // HandlerRegistry creates its own VerbRegistry.
+        // We should probably register drivers into handlers.VerbDrivers.
 
-        Assert.False(result.IsSuccess);
-        Assert.Contains("Ambiguous verb", result.Errors[0].Message);
+        handlers.VerbDrivers.Register(new TestVerbDriver("a", "verb"));
+        handlers.VerbDrivers.Register(new TestVerbDriver("b", "verb"));
+
+        var validator = new VerbResolutionValidator(handlers);
+        var diagnostics = validator.Validate(compiled);
+
+        Assert.Contains(diagnostics, d => d.Code == "namespace_ambiguity");
+        Assert.DoesNotContain(diagnostics, d => d.Code == "unknown_verb");
     }
 
     [Fact]
@@ -140,12 +149,14 @@ public class NamespaceTests
     {
         var call = new VerbCallAst(null, "unknown", false, [], ImmutableDictionary<string, ValueAst>.Empty, [], new TextPosition(1, 1, 0));
         var stmt = new StatementAst.VerbCall(call);
-        var story = new StoryAst("test", ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray.Create<StatementAst>(stmt), ImmutableDictionary<string, int>.Empty);
+        var storyAst = new StoryAst("test", ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray.Create<StatementAst>(stmt), ImmutableDictionary<string, int>.Empty);
+        var compiled = CompiledStory.FromAst(storyAst);
 
-        var validator = new NamespaceValidator(_registry);
-        var result = validator.Validate(story);
+        var handlers = new HandlerRegistry();
+        var validator = new VerbResolutionValidator(handlers);
+        var diagnostics = validator.Validate(compiled);
 
-        Assert.False(result.IsSuccess);
-        Assert.Contains("Unknown verb", result.Errors[0].Message);
+        Assert.NotEmpty(diagnostics);
+        Assert.Equal("unknown_verb", diagnostics[0].Code);
     }
 }

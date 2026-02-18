@@ -1,5 +1,6 @@
 using Zoh.Runtime.Preprocessing;
 using Zoh.Runtime.Validation;
+using Zoh.Runtime.Validation.CoreVerbs;
 using Zoh.Runtime.Verbs;
 
 namespace Zoh.Runtime.Execution;
@@ -58,5 +59,17 @@ public class HandlerRegistry
     public void RegisterCoreHandlers()
     {
         VerbDrivers.RegisterCoreVerbs();
+
+        // Story Validators
+        RegisterStoryValidator(new LabelValidator());
+        RegisterStoryValidator(new JumpTargetValidator());
+        RegisterStoryValidator(new RequiredVerbsValidator(VerbDrivers));
+        RegisterStoryValidator(new VerbResolutionValidator(this));
+
+        // Verb Validators
+        RegisterVerbValidator(new SetValidator());
+        RegisterVerbValidator(new JumpValidator());
+        RegisterVerbValidator(new ForkValidator());
+        RegisterVerbValidator(new CallValidator());
     }
 }

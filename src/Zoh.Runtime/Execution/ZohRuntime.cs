@@ -81,13 +81,7 @@ public class ZohRuntime
             diagnostics.AddRange(valDiags);
         }
 
-        // 5b. Namespace validation (built-in, always runs)
-        var nsValidator = new NamespaceValidator(VerbRegistry);
-        var nsResult = nsValidator.Validate(parseResult.Story!);
-        if (!nsResult.IsSuccess)
-            throw new CompilationException("Validation failed: " + string.Join(", ", nsResult.Errors.Select(e => e.Message)), diagnostics);
-
-        // 5c. Check for fatal diagnostics from story validators
+        // 5b. Check for fatal diagnostics from story validators
         if (diagnostics.HasFatalErrors)
             throw new CompilationException("Validation failed", diagnostics);
 

@@ -1,7 +1,8 @@
 # Validation Pipeline Implementation Plan
 
-> **Status:** Ready
-> **Created:** 2026-02-16
+> **Status:** Complete
+> **Completed:** 2026-02-16
+> **Walkthrough:** [20260216-validation-pipeline-walkthrough.md](./20260216-validation-pipeline-walkthrough.md)
 > **Author:** Antigravity (Agent)
 > **Source:** Direct request from `c#/projex/20260207-csharp-runtime-nav.md`
 > **Related Projex:** `c#/projex/20260207-csharp-runtime-nav.md`
