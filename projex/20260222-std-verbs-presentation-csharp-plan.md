@@ -4,7 +4,7 @@
 > **Created:** 2026-02-22
 > **Author:** Antigravity
 > **Source:** Direct request from user / Phase 4.4 Roadmap
-> **Related Projex:** [Navigation Roadmap](../../20260207-csharp-runtime-nav.md)
+> **Related Projex:** [Navigation Roadmap](./20260207-csharp-runtime-nav.md)
 
 ---
 
@@ -47,7 +47,7 @@ Phase 4.3 completed the validation pipeline. Context blocking uses `VerbContinua
 |------|---------|----------------|
 | `Zoh.Runtime/Execution/IExecutionContext.cs` | Context abstraction | Add `Resume(ZohValue? value = null)` |
 | `Zoh.Runtime/Execution/Context.cs` | Context implementation | Implement `Resume` to unset `WaitCondition` and set `State = Running` |
-| `Zoh.Runtime/Verbs/VerbContinuation.cs` | Continuation records | Add `PresentationContinuation(string Type)` |
+| `Zoh.Runtime/Verbs/VerbContinuation.cs` | Continuation records | Add `HostContinuation(string Type)` |
 | `Zoh.Runtime/Verbs/Standard/Presentation/*Driver.cs` | Verb logic | Create `ConverseDriver`, `ChooseDriver`, `ChooseFromDriver`, `PromptDriver` |
 | `Zoh.Runtime/Verbs/Standard/Presentation/I*Handler.cs` | Host hooks | Create `IConverseHandler`, `IChooseHandler`, `IChooseFromHandler`, `IPromptHandler` |
 | `Zoh.Runtime/Validation/Standard/*Validator.cs` | AST Validation | Create validators for new verbs |
@@ -98,10 +98,10 @@ public void Resume(ZohValue? value = null)
 }
 
 // In VerbContinuation.cs
-public sealed record PresentationContinuation(string InteractionType) : VerbContinuation;
+public sealed record HostContinuation(string InteractionType) : VerbContinuation;
 ```
 
-**Rationale:** Hosts implementing the handler interfaces will be passed the `IExecutionContext`. Once the user interacts with the UI (clicks a button, types text), the host simply calls `context.Resume(selectedValue)` and schedules the runtime to tick again.
+**Rationale:** Hosts implementing the handler interfaces will be passed the `IExecutionContext`. Once the user interacts with the UI (clicks a button, types text), the host simply calls `context.Resume(selectedValue)` and schedules the runtime to tick again. This continuation is generic enough (`HostContinuation`) to represent any interaction where the runtime delegates to the host and waits.
 
 ---
 
@@ -167,7 +167,7 @@ public class ConverseDriver : IVerbDriver
 **Changes:**
 Establish `ChoiceItem(string Text, ZohValue Value)` and `ChooseRequest(string? Speaker, string? Portrait, string Style, string? Prompt, double? TimeoutMs, IReadOnlyList<ChoiceItem> Choices)`.
 
-**ChooseDriver**: Look at `call.UnnamedParams`. Step by 3 (visible, text, value). Evaluate `visible`. If true, evaluate/interpolate text and add to list. Call `_handler?.OnChoose(context, request)`. Yield `PresentationContinuation`.
+**ChooseDriver**: Look at `call.UnnamedParams`. Step by 3 (visible, text, value). Evaluate `visible`. If true, evaluate/interpolate text and add to list. Call `_handler?.OnChoose(context, request)`. Yield `HostContinuation`.
 
 **ChooseFromDriver**: Expects 1 list param of maps. Extract text/value pairs into `ChoiceItem` list. Call `_handler?.OnChoose(context, request)`. Yield.
 
@@ -183,7 +183,7 @@ Establish `ChoiceItem(string Text, ZohValue Value)` and `ChooseRequest(string? S
 
 **Changes:**
 Establish `PromptRequest(string Style, string? PromptText, double? TimeoutMs)`.
-Call `_handler?.OnPrompt(context, request)`. Yield `PresentationContinuation`.
+Call `_handler?.OnPrompt(context, request)`. Yield `HostContinuation`.
 
 ---
 
