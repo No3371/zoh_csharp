@@ -1,6 +1,6 @@
 # C# Runtime Implementation Roadmap
 
-> **Created:** 2026-02-07 | **Last Revised:** 2026-02-14
+> **Created:** 2026-02-07 | **Last Revised:** 2026-02-22
 > **Scope:** Full ZOH language runtime implementation in C#
 > **Parent Navigation:** None (Root for C# implementation)
 > **Related Projex:** [Review](20260207-csharp-runtime-nav-review.md), [Red Team](../../projex/20260207-spec-impl-redteam.md)
@@ -25,7 +25,7 @@ Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)**, *
 - **Phase 4.1 Complete**: Runtime Core Formalization — Implemented `HandlerRegistry`, `RuntimeConfig`, `CompilationException`, and refactored `ZohRuntime` (2026-02-15)
 
 ### Active Work
-- **Phase 4 Milestone 4**: Standard Verbs (Presentation) — `IPresentationHandler`, `ConverseDriver`, `ChooseDriver`, `PromptDriver`
+- **Phase 4 Milestone 4**: Standard Verbs (Presentation) — `ConverseDriver`, `ChooseDriver`, `PromptDriver` (Per-Driver model)
 
 ### Known Blockers
 - None currently identified
@@ -106,14 +106,13 @@ Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)**, *
   - Execution: [Walkthrough](closed/20260216-validation-pipeline-walkthrough.md)
 
 - [ ] **4.4 Standard Verbs (Presentation)** — `impl/10_std_verbs.md`
-  - Define `IPresentationHandler` interface: the abstraction that lets host applications handle `/converse`, `/choose`, `/prompt` output
-  - Implement `ConverseDriver`, `ChooseDriver`, `ChooseFromDriver`, `PromptDriver`
+  - Implement `ConverseDriver`, `ChooseDriver`, `ChooseFromDriver`, `PromptDriver` using the standard Per-Driver continuation model
+  - Expose driver-specific interfaces (e.g., `IConverseHandler`, `IChooseHandler`) for host applications to hook actual presentation logic
   - Include timeout support and `[Wait]`/`[Style]`/`[By]` attribute handling
 
 - [ ] **4.5 Standard Verbs (Media)** — `impl/10_std_verbs.md`
-  - Define `IMediaHandler` interface: host-facing abstraction for visual/audio media
-  - Implement `ShowDriver`, `HideDriver`, `PlayDriver`, `PlayOneDriver`, `StopDriver`, `PauseDriver`, `ResumeDriver`, `SetVolumeDriver`
-  - These are stubs that delegate to the handler — no actual media rendering
+  - Implement `ShowDriver`, `HideDriver`, `PlayDriver`, `PlayOneDriver`, `StopDriver`, `PauseDriver`, `ResumeDriver`, `SetVolumeDriver` using the independent driver model
+  - Expose driver-specific media handler interfaces for platform integration
 
 ---
 
@@ -132,7 +131,7 @@ Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)**, *
 
 ## Priorities
 
-**Current focus:** Phase 4.4 — Standard Verbs (Presentation). Focus is on defining the `IPresentationHandler` and implementing drivers for `/converse`, `/choose`, `/prompt`.
+**Current focus:** Phase 4.4 — Standard Verbs (Presentation). Focus is on implementing drivers for `/converse`, `/choose`, `/prompt` utilizing the continuation model.
 
 **Next up:** Phase 4.5 — Standard Verbs (Media).
 
@@ -149,7 +148,7 @@ Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)**, *
 - [x] Should Phase 4 begin with Runtime Core or Standard Verbs? **(Answer: Runtime Core — it defines the handler registries that Standard Verbs plug into)**
 - [x] What persistence mechanism should be used for Save/Load? **(Answer: InMemoryStorage for Phase 4 development/testing; file/SQLite backends deferred to Phase 5)**
 - [x] Should verb validators be opt-in (registered per verb) or mandatory (auto-generated from signatures)? **(Answer: Opt-in, explicitly implemented per verb as specific classes, e.g. `SetValidator`)**
-- [x] How should `IPresentationHandler` handle async host responses (e.g., user choosing from a menu)? **(Answer: Suspend the context using Contextstate and rely on the scheduler to unblock them, similar to channel wait behavior)**
+- [x] How should interactive drivers handle async host responses (e.g., user choosing from a menu)? **(Answer: Return a Continuation discriminated union so the runtime can decide how to fulfill it without a monolithic handler, while providing driver-specific interfaces for the presentation logic itself)**
 
 ---
 
@@ -162,3 +161,4 @@ Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)**, *
 | 2026-02-14 | Phase 4 restructured into five sequenced milestones (4.1–4.5) based on dependency analysis. Resolved ordering and persistence open questions. Added new questions for presentation handler async model and validator strategy. Red-team remediation items and storage backends moved to Phase 5. Updated test count to 515. |
 | 2026-02-15 | Phase 4.1 (Runtime Core) and 4.2 (Storage Completion) marked complete. Updated Active Work to Phase 4.3 (Validation Pipeline). |
 | 2026-02-22 | Phase 4.3 marked complete based on `20260216-validation-pipeline-walkthrough.md`. Updated Active Work to Phase 4.4 (Standard Verbs - Presentation). Resolved open questions regarding verb validators and async host responses. |
+| 2026-02-22 | Adopted Per-Driver continuation model for Phase 4.4 and 4.5, replacing monolithic `IPresentationHandler` and `IMediaHandler` with driver-specific interfaces to maximize logic reuse. |
