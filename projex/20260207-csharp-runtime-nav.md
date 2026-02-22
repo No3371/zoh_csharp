@@ -15,17 +15,17 @@ To build a robust, spec-compliant, and high-performance ZOH runtime in C# that s
 
 ## Current Position
 
-**As of 2026-02-14:**
+**As of 2026-02-22:**
 
-Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)** and **Phase 4.2 (Storage Completion)** are **complete**. The runtime now features a formalized handler-registry architecture, comprehensive storage drivers (including Erase/Purge), and a robust compilation pipeline. **Phase 4.3 (Validation Pipeline)** is the immediate next objective to implement the validation layers defined in `impl/12_validation.md`.
+Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)**, **Phase 4.2 (Storage Completion)**, and **Phase 4.3 (Validation Pipeline)** are **complete**. The runtime now features a formalized handler-registry architecture, comprehensive storage drivers, a robust compilation pipeline, and a complete validation layer. **Phase 4.4 (Standard Verbs - Presentation)** is the immediate next objective, focusing on host application abstractions for interactive verbs.
 
 ### Recent Progress
+- **Phase 4.3 Complete**: Validation Pipeline — Implemented Story and Verb validators, diagnostic aggregation, and VerbResolutionValidator (2026-02-16)
 - **Phase 4.2 Complete**: Storage Completion — Implemented `EraseDriver`, `PurgeDriver`, and fixed `WriteDriver` type safety (2026-02-15)
 - **Phase 4.1 Complete**: Runtime Core Formalization — Implemented `HandlerRegistry`, `RuntimeConfig`, `CompilationException`, and refactored `ZohRuntime` (2026-02-15)
-- **Phase 3 Complete**: All concurrency features (Context, Navigation, Channels, Signals) implemented and verified (2026-02-11)
 
 ### Active Work
-- **Phase 4 Milestone 3**: Validation Pipeline — Story and Verb validators, Diagnostic aggregation
+- **Phase 4 Milestone 4**: Standard Verbs (Presentation) — `IPresentationHandler`, `ConverseDriver`, `ChooseDriver`, `PromptDriver`
 
 ### Known Blockers
 - None currently identified
@@ -97,12 +97,13 @@ Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)** an
   - Existing code: `IPersistentStorage.cs`, `InMemoryStorage.cs`, `ReadDriver.cs`, `WriteDriver.cs`
   - Execution: [Walkthrough](closed/20260214-storage-completion-walkthrough.md)
 
-- [ ] **4.3 Validation Pipeline** — `impl/12_validation.md`
+- [x] **4.3 Validation Pipeline** — `impl/12_validation.md`
   - Story validators: duplicate labels, required verbs, jump target validation
   - Verb validators: parameter counts and types for Set, Jump/Fork/Call, and other core verbs
   - Diagnostic formatting and aggregation pipeline (`DiagnosticCollector`)
-  - Migrate hardcoded `NamespaceValidator` to `HandlerRegistry`
-  - Existing code: `NamespaceValidator.cs`, `Diagnostics/` directory
+  - Migrate hardcoded `NamespaceValidator` to `HandlerRegistry` using `VerbResolutionValidator`
+  - Existing code: `LabelValidator.cs`, `SetValidator.cs`, `VerbResolutionValidator.cs`
+  - Execution: [Walkthrough](closed/20260216-validation-pipeline-walkthrough.md)
 
 - [ ] **4.4 Standard Verbs (Presentation)** — `impl/10_std_verbs.md`
   - Define `IPresentationHandler` interface: the abstraction that lets host applications handle `/converse`, `/choose`, `/prompt` output
@@ -131,9 +132,9 @@ Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)** an
 
 ## Priorities
 
-**Current focus:** Phase 4.3 — Validation Pipeline. Implementing the validation layer to provide safety and diagnostics before exposing standard verbs.
+**Current focus:** Phase 4.4 — Standard Verbs (Presentation). Focus is on defining the `IPresentationHandler` and implementing drivers for `/converse`, `/choose`, `/prompt`.
 
-**Next up:** Phase 4.4 — Standard Verbs (Presentation).
+**Next up:** Phase 4.5 — Standard Verbs (Media).
 
 **Deferred:** File/SQLite storage backends, performance optimizations, and red-team remediation items deferred to Phase 5. In-memory storage is sufficient for Phase 4.
 
@@ -141,12 +142,14 @@ Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)** an
 
 ## Open Questions
 
+## Open Questions
+
 - [x] Does the current `pull` implementation return a result object (old spec) or value/error (new spec)? **(Answer: Value/Error via VerbResult)**
 - [x] Are there other discrepancies from the recent "Spec/Impl Inconsistencies" finding that need to be addressed in C#? **(Answer: Addressed via multiple patches)**
 - [x] Should Phase 4 begin with Runtime Core or Standard Verbs? **(Answer: Runtime Core — it defines the handler registries that Standard Verbs plug into)**
 - [x] What persistence mechanism should be used for Save/Load? **(Answer: InMemoryStorage for Phase 4 development/testing; file/SQLite backends deferred to Phase 5)**
-- [ ] How should `IPresentationHandler` handle async host responses (e.g., user choosing from a menu)? Blocking vs. callback vs. Task-based?
-- [ ] Should verb validators be opt-in (registered per verb) or mandatory (auto-generated from signatures)?
+- [x] Should verb validators be opt-in (registered per verb) or mandatory (auto-generated from signatures)? **(Answer: Opt-in, explicitly implemented per verb as specific classes, e.g. `SetValidator`)**
+- [x] How should `IPresentationHandler` handle async host responses (e.g., user choosing from a menu)? **(Answer: Suspend the context using Contextstate and rely on the scheduler to unblock them, similar to channel wait behavior)**
 
 ---
 
@@ -158,3 +161,4 @@ Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)** an
 | 2026-02-13 | Phase 3 marked complete. Signal System, Story Header Parsing, Virtual Tokens, CRLF handling, and multiple quality improvements completed. Ready for Phase 4. |
 | 2026-02-14 | Phase 4 restructured into five sequenced milestones (4.1–4.5) based on dependency analysis. Resolved ordering and persistence open questions. Added new questions for presentation handler async model and validator strategy. Red-team remediation items and storage backends moved to Phase 5. Updated test count to 515. |
 | 2026-02-15 | Phase 4.1 (Runtime Core) and 4.2 (Storage Completion) marked complete. Updated Active Work to Phase 4.3 (Validation Pipeline). |
+| 2026-02-22 | Phase 4.3 marked complete based on `20260216-validation-pipeline-walkthrough.md`. Updated Active Work to Phase 4.4 (Standard Verbs - Presentation). Resolved open questions regarding verb validators and async host responses. |
