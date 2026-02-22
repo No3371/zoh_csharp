@@ -17,15 +17,17 @@ To build a robust, spec-compliant, and high-performance ZOH runtime in C# that s
 
 **As of 2026-02-22:**
 
-Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)**, **Phase 4.2 (Storage Completion)**, and **Phase 4.3 (Validation Pipeline)** are **complete**. The runtime now features a formalized handler-registry architecture, comprehensive storage drivers, a robust compilation pipeline, and a complete validation layer. **Phase 4.4 (Standard Verbs - Presentation)** is the immediate next objective, focusing on host application abstractions for interactive verbs.
+Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)**, **Phase 4.2 (Storage Completion)**, **Phase 4.3 (Validation Pipeline)**, and **Phase 4.4 (Standard Verbs - Presentation)** are **complete**. The runtime now features a formalized handler-registry architecture, comprehensive storage drivers, a robust compilation pipeline, a complete validation layer, and a decoupled host-continuation model for interactive verbs. **Phase 4.5 (Standard Verbs - Media)** is the immediate next objective, focusing on continuing the host abstraction for media operations.
 
 ### Recent Progress
+- **Phase 4.4 Complete**: Standard Verbs (Presentation) — Implemented `ConverseDriver`, `ChooseDriver`, `ChooseFromDriver`, `PromptDriver` using fully decoupled host handler interfaces, accompanied by their respective `*Validator`s (2026-02-22)
+  - Execution: [Plan](closed/20260222-std-verbs-presentation-csharp-plan.md) | [Walkthrough](closed/20260222-std-verbs-presentation-csharp-walkthrough.md) | [Audit](20260222-std-verbs-presentation-csharp-audit.md)
+- **Architecture Refactor**: Verb Driver Continuation — Decoupled blocking verbs from the tick-loop scheduler via a `VerbContinuation` discriminated union (`HostContinuation`, `SleepContinuation`, `ContextContinuation`, `MessageContinuation`). Deprecated `Context.SetState()` in favor of functional yields (2026-02-22)
+  - Execution: [Walkthrough](closed/20260222-verb-driver-continuation-csharp-walkthrough.md)
 - **Phase 4.3 Complete**: Validation Pipeline — Implemented Story and Verb validators, diagnostic aggregation, and VerbResolutionValidator (2026-02-16)
-- **Phase 4.2 Complete**: Storage Completion — Implemented `EraseDriver`, `PurgeDriver`, and fixed `WriteDriver` type safety (2026-02-15)
-- **Phase 4.1 Complete**: Runtime Core Formalization — Implemented `HandlerRegistry`, `RuntimeConfig`, `CompilationException`, and refactored `ZohRuntime` (2026-02-15)
 
 ### Active Work
-- **Phase 4 Milestone 4**: Standard Verbs (Presentation) — `ConverseDriver`, `ChooseDriver`, `PromptDriver` (Per-Driver model)
+- **Phase 4 Milestone 5**: Standard Verbs (Media) — Media driver definitions decouple from execution loop.
 
 ### Known Blockers
 - None currently identified
@@ -105,12 +107,13 @@ Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)**, *
   - Existing code: `LabelValidator.cs`, `SetValidator.cs`, `VerbResolutionValidator.cs`
   - Execution: [Walkthrough](closed/20260216-validation-pipeline-walkthrough.md)
 
-- [ ] **4.4 Standard Verbs (Presentation)** — `impl/10_std_verbs.md`
+- [x] **4.4 Standard Verbs (Presentation)** — `impl/10_std_verbs.md`
   - Implement `ConverseDriver`, `ChooseDriver`, `ChooseFromDriver`, `PromptDriver` using the standard Per-Driver continuation model
   - Expose driver-specific interfaces (e.g., `IConverseHandler`, `IChooseHandler`) for host applications to hook actual presentation logic
   - Include timeout support and `[Wait]`/`[Style]`/`[By]` attribute handling
+  - Execution: [Walkthrough](closed/20260222-std-verbs-presentation-csharp-walkthrough.md)
 
-- [ ] **4.5 Standard Verbs (Media)** — `impl/10_std_verbs.md`
+- [/] **4.5 Standard Verbs (Media)** — `impl/10_std_verbs.md`
   - Implement `ShowDriver`, `HideDriver`, `PlayDriver`, `PlayOneDriver`, `StopDriver`, `PauseDriver`, `ResumeDriver`, `SetVolumeDriver` using the independent driver model
   - Expose driver-specific media handler interfaces for platform integration
 
@@ -131,9 +134,9 @@ Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)**, *
 
 ## Priorities
 
-**Current focus:** Phase 4.4 — Standard Verbs (Presentation). Focus is on implementing drivers for `/converse`, `/choose`, `/prompt` utilizing the continuation model.
+**Current focus:** Phase 4.5 — Standard Verbs (Media). Focus is on implementing decoupled media playback drivers utilizing the host continuation models introduced in Phase 4.4.
 
-**Next up:** Phase 4.5 — Standard Verbs (Media).
+**Next up:** Phase 5 — Integration & Polish.
 
 **Deferred:** File/SQLite storage backends, performance optimizations, and red-team remediation items deferred to Phase 5. In-memory storage is sufficient for Phase 4.
 
@@ -162,3 +165,5 @@ Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)**, *
 | 2026-02-15 | Phase 4.1 (Runtime Core) and 4.2 (Storage Completion) marked complete. Updated Active Work to Phase 4.3 (Validation Pipeline). |
 | 2026-02-22 | Phase 4.3 marked complete based on `20260216-validation-pipeline-walkthrough.md`. Updated Active Work to Phase 4.4 (Standard Verbs - Presentation). Resolved open questions regarding verb validators and async host responses. |
 | 2026-02-22 | Adopted Per-Driver continuation model for Phase 4.4 and 4.5, replacing monolithic `IPresentationHandler` and `IMediaHandler` with driver-specific interfaces to maximize logic reuse. |
+| 2026-02-22 | Phase 4.4 (Standard Verbs - Presentation) marked complete based on `20260222-std-verbs-presentation-csharp-walkthrough.md`. Updated Active Work to Phase 4.5 (Standard Verbs - Media). Logged architectural refactor of `VerbContinuation` discriminated union. |
+
