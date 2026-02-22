@@ -102,9 +102,10 @@ public class ConcurrencyTests
         var result = driver.Execute(ctx, call);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(ContextState.WaitingContext, ctx.State);
+        var cont = Assert.IsType<ContextContinuation>(result.Continuation);
         Assert.Single(scheduled);
-        Assert.Same(scheduled[0], ctx.WaitCondition);
+        Assert.Same(scheduled[0], cont.ChildContext);
+        Assert.Equal(ContextState.Running, ctx.State); // driver no longer mutates state
     }
 
     [Fact]

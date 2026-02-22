@@ -94,9 +94,6 @@ public class CallDriver : IVerbDriver
         ctx.ContextScheduler(newCtx);
 
         // Suspend parent
-        ctx.SetState(ContextState.WaitingContext);
-        ctx.WaitCondition = newCtx; // Wait for child context
-
-        return VerbResult.Ok();
+        return VerbResult.Yield(new ContextContinuation(newCtx));
     }
 }

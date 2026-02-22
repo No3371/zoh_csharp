@@ -29,13 +29,6 @@ public class WaitDriver : IVerbDriver
 
         string signalName = s.Value;
 
-        // Subscribe
-        ctx.SignalManager.Subscribe(signalName, ctx);
-
-        // Set state
-        ctx.SetState(ContextState.WaitingMessage);
-        ctx.WaitCondition = signalName; // Set simple string for now as per out-of-scope timeout
-
-        return VerbResult.Ok();
+        return VerbResult.Yield(new MessageContinuation(signalName));
     }
 }

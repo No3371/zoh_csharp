@@ -20,8 +20,6 @@ public interface IExecutionContext
     ZohValue LastResult { get; set; }
     ContextState State { get; }
 
-    void SetState(ContextState state);
-
     // Defers
     void AddStoryDefer(ValueAst verb);
     void AddContextDefer(ValueAst verb); // Or CompiledVerbCall if we had compilation, using ValueAst for now as VerbValue/Reference

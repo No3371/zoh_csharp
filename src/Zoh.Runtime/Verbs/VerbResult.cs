@@ -20,4 +20,12 @@ public sealed record VerbResult(ZohValue Value, ImmutableArray<Diagnostic> Diagn
 
     public static VerbResult Fatal(Diagnostic diagnostic)
         => new(ZohNothing.Instance, ImmutableArray.Create(diagnostic));
+
+    public VerbContinuation? Continuation { get; init; }
+
+    /// <summary>
+    /// Driver is yielding — context must block until continuation is fulfilled.
+    /// </summary>
+    public static VerbResult Yield(VerbContinuation continuation)
+        => new(ZohNothing.Instance, ImmutableArray<Diagnostic>.Empty) { Continuation = continuation };
 }

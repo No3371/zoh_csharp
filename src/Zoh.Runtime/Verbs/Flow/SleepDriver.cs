@@ -30,10 +30,6 @@ public class SleepDriver : IVerbDriver
 
         if (durationSeconds < 0) durationSeconds = 0;
 
-        ctx.SetState(ContextState.Sleeping);
-        // WaitCondition is DateTimeOffset of wake time (UTC)
-        ctx.WaitCondition = DateTimeOffset.UtcNow.AddSeconds(durationSeconds);
-
-        return VerbResult.Ok();
+        return VerbResult.Yield(new SleepContinuation(durationSeconds * 1000));
     }
 }

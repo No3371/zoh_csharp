@@ -207,6 +207,12 @@ public class ZohRuntime
                     }
                     ctx.LastResult = result.Value;
                     ctx.LastDiagnostics = result.Diagnostics;
+
+                    if (result.Continuation != null)
+                    {
+                        ctx.Block(result.Continuation);
+                        break;
+                    }
                 }
             }
             else if (stmt is StatementAst.Label label)

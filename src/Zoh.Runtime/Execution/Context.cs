@@ -67,6 +67,37 @@ public class Context : IExecutionContext
         State = ContextState.Terminated;
     }
 
+    /// <summary>
+    /// Applies a blocking continuation returned by a verb driver.
+    /// Sets context state and handles all registrations (signal subscribe, etc.).
+    /// This is the only place context state is set for blocking — drivers must
+    /// return a VerbContinuation instead of calling SetState() directly.
+    /// </summary>
+    public void Block(VerbContinuation continuation)
+    {
+        switch (continuation)
+        {
+            case SleepContinuation s:
+                WaitCondition = DateTimeOffset.UtcNow.AddMilliseconds(s.DurationMs);
+                SetState(ContextState.Sleeping);
+                break;
+
+            case MessageContinuation m:
+                SignalManager.Subscribe(m.MessageName, this);
+                WaitCondition = m.MessageName;
+                SetState(ContextState.WaitingMessage);
+                break;
+
+            case ContextContinuation c:
+                WaitCondition = c.ChildContext;
+                SetState(ContextState.WaitingContext);
+                break;
+
+            default:
+                throw new InvalidOperationException($"Unhandled continuation type: {continuation.GetType().Name}");
+        }
+    }
+
     private void ExecuteDefers(Stack<ValueAst> defers)
     {
         while (defers.Count > 0)
