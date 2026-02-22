@@ -7,5 +7,6 @@ public enum ContextState
     WaitingMessage,
     WaitingContext,
     Sleeping,
+    WaitingHost,
     Terminated
 }

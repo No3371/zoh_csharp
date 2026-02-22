@@ -17,3 +17,6 @@ public sealed record MessageContinuation(string MessageName, double? TimeoutMs =
 
 /// <summary>/call — block until a child context terminates.</summary>
 public sealed record ContextContinuation(IExecutionContext ChildContext) : VerbContinuation;
+
+/// <summary>Presentation/interactive verbs — block until the host application provides input.</summary>
+public sealed record HostContinuation(string InteractionType) : VerbContinuation;

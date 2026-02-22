@@ -1,7 +1,9 @@
 # Standard Verbs (Presentation) Plan
 
-> **Status:** Draft
+> **Status:** Complete
 > **Created:** 2026-02-22
+> **Completed:** 2026-02-22
+> **Walkthrough:** [20260222-std-verbs-presentation-csharp-walkthrough.md](./20260222-std-verbs-presentation-csharp-walkthrough.md)
 > **Author:** Antigravity
 > **Source:** Direct request from user / Phase 4.4 Roadmap
 > **Related Projex:** [Navigation Roadmap](./20260207-csharp-runtime-nav.md)

@@ -1,6 +1,7 @@
 using Zoh.Runtime.Preprocessing;
 using Zoh.Runtime.Validation;
 using Zoh.Runtime.Validation.CoreVerbs;
+using Zoh.Runtime.Validation.Standard;
 using Zoh.Runtime.Verbs;
 
 namespace Zoh.Runtime.Execution;
@@ -71,5 +72,11 @@ public class HandlerRegistry
         RegisterVerbValidator(new JumpValidator());
         RegisterVerbValidator(new ForkValidator());
         RegisterVerbValidator(new CallValidator());
+
+        // Standard Presentation Validators
+        RegisterVerbValidator(new ConverseValidator());
+        RegisterVerbValidator(new ChooseValidator());
+        RegisterVerbValidator(new ChooseFromValidator());
+        RegisterVerbValidator(new PromptValidator());
     }
 }

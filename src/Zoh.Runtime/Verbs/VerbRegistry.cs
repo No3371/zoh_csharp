@@ -55,6 +55,10 @@ public class VerbRegistry
                 {
                     lock (list)
                     {
+                        // Remove any existing driver with the exact same Namespace and Name to support overriding
+                        list.RemoveAll(d => string.Equals(d.Namespace ?? "", driver.Namespace ?? "", StringComparison.OrdinalIgnoreCase) &&
+                                            string.Equals(d.Name, driver.Name, StringComparison.OrdinalIgnoreCase));
+
                         if (!list.Contains(driver)) list.Add(driver);
                     }
                     return list;
@@ -177,6 +181,12 @@ public class VerbRegistry
         // Signal Verbs
         Register(new Signals.WaitDriver());
         Register(new Signals.SignalDriver());
+
+        // Presentation Verbs
+        Register(new Standard.Presentation.ConverseDriver());
+        Register(new Standard.Presentation.ChooseDriver());
+        Register(new Standard.Presentation.ChooseFromDriver());
+        Register(new Standard.Presentation.PromptDriver());
     }
 }
 

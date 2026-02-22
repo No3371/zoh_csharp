@@ -93,9 +93,26 @@ public class Context : IExecutionContext
                 SetState(ContextState.WaitingContext);
                 break;
 
+            case HostContinuation h:
+                WaitCondition = h.InteractionType;
+                SetState(ContextState.WaitingHost);
+                break;
+
             default:
                 throw new InvalidOperationException($"Unhandled continuation type: {continuation.GetType().Name}");
         }
+    }
+
+    /// <summary>
+    /// Resumes a context that was blocked by a host continuation (e.g., waiting for UI input).
+    /// </summary>
+    public void Resume(ZohValue? value = null)
+    {
+        if (State == ContextState.Terminated) return;
+
+        LastResult = value ?? ZohNothing.Instance;
+        WaitCondition = null;
+        SetState(ContextState.Running);
     }
 
     private void ExecuteDefers(Stack<ValueAst> defers)
