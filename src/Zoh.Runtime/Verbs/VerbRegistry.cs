@@ -129,6 +129,7 @@ public class VerbRegistry
         Register(new Core.DropDriver());
         Register(new Core.CaptureDriver());
         Register(new Core.TypeDriver());
+        Register(new Core.AssertDriver());
 
         Register(new Core.IncreaseDriver());
         Register(new Core.DecreaseDriver());

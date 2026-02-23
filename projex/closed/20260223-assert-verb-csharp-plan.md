@@ -1,7 +1,9 @@
 # Plan: Assert Verb C# Implementation
 
-> **Status:** Ready
+> **Status:** Complete
 > **Created:** 2026-02-23
+> **Completed:** 2026-02-23
+> **Walkthrough:** [20260223-assert-verb-csharp-walkthrough.md](file:///s:/repos/zoh/c%23/projex/closed/20260223-assert-verb-csharp-walkthrough.md)
 > **Author:** agent
 > **Source:** Direct request
 > **Related Projex:** [20260223-assert-verb-impl-plan.md](../../impl/projex/closed/20260223-assert-verb-impl-plan.md), `20260207-csharp-runtime-nav.md`
@@ -23,12 +25,12 @@ Implement the `Core.Assert` verb in the C# ZOH runtime. This involves creating t
 We recently added the `Core.Assert` verb to the ZOH language specification (`spec/2_verbs.md`) and the implementation specification (`impl/06_core_verbs.md`). The C# runtime needs to implement this new verb to remain conformant with the specifications.
 
 ### Success Criteria
-- [ ] `AssertDriver` class implements `IVerbDriver` and is placed in `Zoh.Runtime.Verbs.Core`.
-- [ ] `AssertDriver` evaluates the `subject` condition and `is:` parameter, mirroring `IfDriver`'s truthy and equality semantics.
-- [ ] `AssertDriver` evaluates and formats the optional `message` argument only upon assertion failure.
-- [ ] `AssertDriver` returns a `VerbResult.Fatal` with diagnostic code `"assertion_failed"` on condition mismatch.
-- [ ] `VerbRegistry.cs` registers `Core.AssertDriver`.
-- [ ] `AssertDriverTests.cs` contains tests covering success, failure, custom messages, and default values.
+- [x] `AssertDriver` class implements `IVerbDriver` and is placed in `Zoh.Runtime.Verbs.Core`.
+- [x] `AssertDriver` evaluates the `subject` condition and `is:` parameter, mirroring `IfDriver`'s truthy and equality semantics.
+- [x] `AssertDriver` evaluates and formats the optional `message` argument only upon assertion failure.
+- [x] `AssertDriver` returns a `VerbResult.Fatal` with diagnostic code `"assertion_failed"` on condition mismatch.
+- [x] `VerbRegistry.cs` registers `Core.AssertDriver`.
+- [x] `AssertDriverTests.cs` contains tests covering success, failure, custom messages, and default values.
 
 ### Out of Scope
 - Modifying other core verbs.
