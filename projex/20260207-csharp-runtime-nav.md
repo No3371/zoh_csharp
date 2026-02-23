@@ -15,11 +15,13 @@ To build a robust, spec-compliant, and high-performance ZOH runtime in C# that s
 
 ## Current Position
 
-**As of 2026-02-22:**
+**As of 2026-02-23:**
 
-Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)**, **Phase 4.2 (Storage Completion)**, **Phase 4.3 (Validation Pipeline)**, and **Phase 4.4 (Standard Verbs - Presentation)** are **complete**. The runtime now features a formalized handler-registry architecture, comprehensive storage drivers, a robust compilation pipeline, a complete validation layer, and a decoupled host-continuation model for interactive verbs. **Phase 4.5 (Standard Verbs - Media)** is the immediate next objective, focusing on continuing the host abstraction for media operations.
+Phase 4 (Runtime Architecture) is **complete**. The runtime now features a formalized handler-registry architecture, comprehensive storage drivers, a robust compilation pipeline, a complete validation layer, and a decoupled host-continuation model for interactive verbs, including full support for Standard Presentation and Media verbs. **Phase 5 (Integration & Polish)** is the immediate next objective, focusing on end-to-end testing, storage backends, red-team remediation, and documentation.
 
 ### Recent Progress
+- **Phase 4.5 Complete**: Standard Verbs (Media) — Implemented `ShowDriver`, `HideDriver`, `PlayDriver`, `PlayOneDriver`, `StopDriver`, `PauseDriver`, `ResumeDriver`, `SetVolumeDriver` with their respective validators and decoupled media handler interfaces (2026-02-23).
+  - Execution: [Plan](closed/20260222-std-verbs-media-csharp-plan.md) | [Walkthrough](closed/20260222-std-verbs-media-csharp-walkthrough.md)
 - **Phase 4.4 Complete**: Standard Verbs (Presentation) — Implemented `ConverseDriver`, `ChooseDriver`, `ChooseFromDriver`, `PromptDriver` using fully decoupled host handler interfaces, accompanied by their respective `*Validator`s (2026-02-22)
   - Execution: [Plan](closed/20260222-std-verbs-presentation-csharp-plan.md) | [Walkthrough](closed/20260222-std-verbs-presentation-csharp-walkthrough.md) | [Audit](20260222-std-verbs-presentation-csharp-audit.md)
 - **Architecture Refactor**: Verb Driver Continuation — Decoupled blocking verbs from the tick-loop scheduler via a `VerbContinuation` discriminated union (`HostContinuation`, `SleepContinuation`, `ContextContinuation`, `MessageContinuation`). Deprecated `Context.SetState()` in favor of functional yields (2026-02-22)
@@ -27,7 +29,7 @@ Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)**, *
 - **Phase 4.3 Complete**: Validation Pipeline — Implemented Story and Verb validators, diagnostic aggregation, and VerbResolutionValidator (2026-02-16)
 
 ### Active Work
-- **Phase 4 Milestone 5**: Standard Verbs (Media) — Media driver definitions decouple from execution loop.
+- **Phase 5**: Integration & Polish — Preparing for end-to-end scenario testing and addressing remaining technical debt.
 
 ### Known Blockers
 - None currently identified
@@ -77,7 +79,7 @@ Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)**, *
 
 ---
 
-### Phase 4: Runtime Architecture — [Status: In Progress]
+### Phase 4: Runtime Architecture — [Status: Done]
 
 **Goal:** Formalize the runtime into a cohesive, extensible architecture with handler registries, a compilation pipeline, persistence, validation, and the standard verb interface — following `impl/09_runtime.md` through `impl/12_validation.md`.
 
@@ -113,13 +115,14 @@ Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)**, *
   - Include timeout support and `[Wait]`/`[Style]`/`[By]` attribute handling
   - Execution: [Walkthrough](closed/20260222-std-verbs-presentation-csharp-walkthrough.md)
 
-- [/] **4.5 Standard Verbs (Media)** — `impl/10_std_verbs.md`
+- [x] **4.5 Standard Verbs (Media)** — `impl/10_std_verbs.md`
   - Implement `ShowDriver`, `HideDriver`, `PlayDriver`, `PlayOneDriver`, `StopDriver`, `PauseDriver`, `ResumeDriver`, `SetVolumeDriver` using the independent driver model
   - Expose driver-specific media handler interfaces for platform integration
+  - Execution: [Plan](closed/20260222-std-verbs-media-csharp-plan.md) | [Walkthrough](closed/20260222-std-verbs-media-csharp-walkthrough.md)
 
 ---
 
-### Phase 5: Integration & Polish — [Status: Future]
+### Phase 5: Integration & Polish — [Status: In Progress]
 
 **Goal:** Ensure correctness, stability, usability, and production readiness.
 
@@ -134,11 +137,11 @@ Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)**, *
 
 ## Priorities
 
-**Current focus:** Phase 4.5 — Standard Verbs (Media). Focus is on implementing decoupled media playback drivers utilizing the host continuation models introduced in Phase 4.4.
+**Current focus:** Phase 5 — Integration & Polish. Evaluating the next immediate step, such as Integration Testing (end-to-end scenarios) or Storage Backends (File/SQLite).
 
-**Next up:** Phase 5 — Integration & Polish.
+**Next up:** Resolving red-team findings and public API documentation.
 
-**Deferred:** File/SQLite storage backends, performance optimizations, and red-team remediation items deferred to Phase 5. In-memory storage is sufficient for Phase 4.
+**Deferred:** Performance optimizations.
 
 ---
 
@@ -166,4 +169,5 @@ Phase 4 (Runtime Architecture) is well underway. **Phase 4.1 (Runtime Core)**, *
 | 2026-02-22 | Phase 4.3 marked complete based on `20260216-validation-pipeline-walkthrough.md`. Updated Active Work to Phase 4.4 (Standard Verbs - Presentation). Resolved open questions regarding verb validators and async host responses. |
 | 2026-02-22 | Adopted Per-Driver continuation model for Phase 4.4 and 4.5, replacing monolithic `IPresentationHandler` and `IMediaHandler` with driver-specific interfaces to maximize logic reuse. |
 | 2026-02-22 | Phase 4.4 (Standard Verbs - Presentation) marked complete based on `20260222-std-verbs-presentation-csharp-walkthrough.md`. Updated Active Work to Phase 4.5 (Standard Verbs - Media). Logged architectural refactor of `VerbContinuation` discriminated union. |
+| 2026-02-23 | Phase 4.5 (Standard Verbs - Media) marked complete based on `20260222-std-verbs-media-csharp-walkthrough.md`. Phase 4 is now fully complete. Updated Active Work to Phase 5 (Integration & Polish). |
 
