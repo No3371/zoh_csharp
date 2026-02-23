@@ -1,6 +1,8 @@
 # Standard Verbs (Media) Plan
 
-> **Status:** Draft
+> **Status:** Complete
+> **Completed:** 2026-02-23
+> **Walkthrough:** [20260222-std-verbs-media-csharp-walkthrough.md](20260222-std-verbs-media-csharp-walkthrough.md)
 > **Created:** 2026-02-22
 > **Author:** Antigravity
 > **Source:** Phase 4.5 of 20260207-csharp-runtime-nav.md

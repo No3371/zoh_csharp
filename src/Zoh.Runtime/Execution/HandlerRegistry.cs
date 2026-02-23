@@ -78,5 +78,14 @@ public class HandlerRegistry
         RegisterVerbValidator(new ChooseValidator());
         RegisterVerbValidator(new ChooseFromValidator());
         RegisterVerbValidator(new PromptValidator());
+
+        // Standard Media Validators
+        RegisterVerbValidator(new Validation.Standard.Media.ShowValidator());
+        RegisterVerbValidator(new Validation.Standard.Media.HideValidator());
+        RegisterVerbValidator(new Validation.Standard.Media.PlayValidator());
+        RegisterVerbValidator(new Validation.Standard.Media.PlayOneValidator());
+        RegisterVerbValidator(new Validation.Standard.Media.PauseValidator());
+        RegisterVerbValidator(new Validation.Standard.Media.ResumeValidator());
+        RegisterVerbValidator(new Validation.Standard.Media.SetVolumeValidator());
     }
 }

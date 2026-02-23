@@ -187,6 +187,16 @@ public class VerbRegistry
         Register(new Standard.Presentation.ChooseDriver());
         Register(new Standard.Presentation.ChooseFromDriver());
         Register(new Standard.Presentation.PromptDriver());
+
+        // Media Verbs
+        Register(new Standard.Media.ShowDriver());
+        Register(new Standard.Media.HideDriver());
+        Register(new Standard.Media.PlayDriver());
+        Register(new Standard.Media.PlayOneDriver());
+        Register(new Standard.Media.StopDriver());
+        Register(new Standard.Media.PauseDriver());
+        Register(new Standard.Media.ResumeDriver());
+        Register(new Standard.Media.SetVolumeDriver());
     }
 }
 
