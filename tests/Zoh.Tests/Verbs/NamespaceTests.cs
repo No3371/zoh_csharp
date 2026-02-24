@@ -127,7 +127,7 @@ public class NamespaceTests
         var call = new VerbCallAst(null, "verb", false, [], ImmutableDictionary<string, ValueAst>.Empty, [], new TextPosition(1, 1, 0));
         var stmt = new StatementAst.VerbCall(call);
         var storyAst = new StoryAst("test", ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray.Create<StatementAst>(stmt), ImmutableDictionary<string, int>.Empty);
-        var compiled = CompiledStory.FromAst(storyAst);
+        var compiled = CompiledStory.FromAst(storyAst, new DiagnosticBag());
 
         var handlers = new HandlerRegistry();
         // We need to inject our registry into handlers. 
@@ -150,7 +150,7 @@ public class NamespaceTests
         var call = new VerbCallAst(null, "unknown", false, [], ImmutableDictionary<string, ValueAst>.Empty, [], new TextPosition(1, 1, 0));
         var stmt = new StatementAst.VerbCall(call);
         var storyAst = new StoryAst("test", ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray.Create<StatementAst>(stmt), ImmutableDictionary<string, int>.Empty);
-        var compiled = CompiledStory.FromAst(storyAst);
+        var compiled = CompiledStory.FromAst(storyAst, new DiagnosticBag());
 
         var handlers = new HandlerRegistry();
         var validator = new VerbResolutionValidator(handlers);

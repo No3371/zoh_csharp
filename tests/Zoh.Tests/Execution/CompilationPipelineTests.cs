@@ -71,6 +71,47 @@ public class CompilationPipelineTests
         Assert.Contains(ex.Diagnostics, d => d.Code == "TEST");
     }
 
+    [Fact]
+    public void LoadStory_WithInvalidMetadataTypeVerb_ThrowsCompilationException()
+    {
+        var runtime = new ZohRuntime();
+        var source = "Test\nmeta: /verb;;\n===\n";
+
+        var ex = Assert.Throws<CompilationException>(() => runtime.LoadStory(source));
+        Assert.Contains(ex.Diagnostics, d => d.Code == "invalid_metadata_type");
+    }
+
+    [Fact]
+    public void LoadStory_WithInvalidMetadataTypeReference_ThrowsCompilationException()
+    {
+        var runtime = new ZohRuntime();
+        var source = "Test\nmeta: *ref\n===\n";
+
+        var ex = Assert.Throws<CompilationException>(() => runtime.LoadStory(source));
+        Assert.Contains(ex.Diagnostics, d => d.Code == "invalid_metadata_type");
+    }
+
+    [Fact]
+    public void LoadStory_WithInvalidMetadataTypeNothing_ThrowsCompilationException()
+    {
+        var runtime = new ZohRuntime();
+        var source = "Test\nmeta: ?\n===\n";
+
+        var ex = Assert.Throws<CompilationException>(() => runtime.LoadStory(source));
+        Assert.Contains(ex.Diagnostics, d => d.Code == "invalid_metadata_type");
+    }
+
+    [Fact]
+    public void LoadStory_WithValidMetadataTypes_Succeeds()
+    {
+        var runtime = new ZohRuntime();
+        var source = "Test\nstr: \"string\"\nnum: 1\nflt: 1.5\nbool: true\nobj: {\"k\": \"v\"}\narr: [1, 2]\n===\n";
+
+        var story = runtime.LoadStory(source);
+        Assert.NotNull(story);
+        Assert.Equal(6, story.Metadata.Count);
+    }
+
     // Helpers
 
     private class ActionPreprocessor(Func<PreprocessorContext, PreprocessorResult> action) : IPreprocessor

@@ -1,6 +1,8 @@
 using System.Collections.Immutable;
 using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Types;
+using Zoh.Runtime.Diagnostics;
+using System.Linq;
 
 namespace Zoh.Runtime.Execution;
 
@@ -24,7 +26,7 @@ public class CompiledStory
         Contracts = contracts;
     }
 
-    public static CompiledStory FromAst(StoryAst ast)
+    public static CompiledStory FromAst(StoryAst ast, DiagnosticBag diagnostics)
     {
         // Simple conversion for now. Real compilation would flatten blocks etc if needed.
         // We need to map labels to indices.
@@ -49,11 +51,36 @@ public class CompiledStory
         var b = ImmutableDictionary.CreateBuilder<string, ZohValue>();
         foreach (var kvp in ast.Metadata)
         {
-            b.Add(kvp.Key, ValueResolver.ResolveContextless(kvp.Value));
+            if (IsValidMetadataAst(kvp.Value))
+            {
+                try
+                {
+                    b.Add(kvp.Key, ValueResolver.ResolveContextless(kvp.Value));
+                }
+                catch (Exception ex)
+                {
+                    diagnostics.ReportError("invalid_metadata_type", $"Failed to resolve metadata '{kvp.Key}': {ex.Message}", default);
+                }
+            }
+            else
+            {
+                diagnostics.ReportError("invalid_metadata_type", $"Metadata value for '{kvp.Key}' has unsupported type. Allowed types are boolean, integer, double, string, list, and map.", default);
+            }
         }
         var name = ast.Name;
         var meta = b.ToImmutableDictionary();
         if (meta.ContainsKey("id") && meta["id"].Type == ZohValueType.String) name = meta["id"].AsString().Value;
-        return new CompiledStory(name, meta , ast.Statements, labels.ToImmutableDictionary(), contracts.ToImmutableDictionary());
+        return new CompiledStory(name, meta, ast.Statements, labels.ToImmutableDictionary(), contracts.ToImmutableDictionary());
+    }
+
+    private static bool IsValidMetadataAst(ValueAst ast)
+    {
+        return ast switch
+        {
+            ValueAst.Boolean or ValueAst.Integer or ValueAst.Double or ValueAst.String => true,
+            ValueAst.List l => l.Elements.All(IsValidMetadataAst),
+            ValueAst.Map m => m.Entries.All(e => IsValidMetadataAst(e.Key) && IsValidMetadataAst(e.Value)),
+            _ => false
+        };
     }
 }

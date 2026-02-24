@@ -4,8 +4,10 @@ description: Plan for fixing metadata type validation gaps
 
 # Metadata Type Validation Fix
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Created:** 2026-02-24
+> **Completed:** 2026-02-24
+> **Walkthrough:** [20260224-metadata-type-validation-walkthrough.md](20260224-metadata-type-validation-walkthrough.md)
 > **Author:** Antigravity
 > **Source:** Direct request from `plan-projex for fix` on `20260223-csharp-spec-audit-nav.md`
 > **Related Projex:** `20260223-csharp-spec-audit-nav.md`

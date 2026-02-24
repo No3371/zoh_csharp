@@ -71,7 +71,9 @@ public class ZohRuntime
             throw new CompilationException("Parsing failed: " + string.Join(", ", parseResult.Errors), diagnostics);
 
         // 4. Compile (currently: wrap AST)
-        var compiled = CompiledStory.FromAst(parseResult.Story!);
+        var compiled = CompiledStory.FromAst(parseResult.Story!, diagnostics);
+        if (diagnostics.HasErrors)
+            throw new CompilationException("Compilation failed", diagnostics);
 
         // 5. Validate
         // 5a. Story validators
