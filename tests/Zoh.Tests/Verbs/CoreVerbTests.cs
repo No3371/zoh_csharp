@@ -533,6 +533,30 @@ public class CoreVerbTests
         Assert.Equal(new ZohStr("second"), result.Value);
     }
 
+    [Fact]
+    public void First_EvaluatesVerbsAndExpressionsDynamically()
+    {
+        // /first `1 + 2`
+        var exprAst = new ValueAst.Expression("1 + 2", new TextPosition(1, 1, 0));
+
+        // /get *x  where *x = 42
+        _context.Variables.Set("x", new ZohInt(42));
+        var getCall = MakeVerbCall("get", new ValueAst.Reference("x"));
+        var verbAst = new ValueAst.Verb(getCall);
+
+        var firstCall1 = MakeVerbCall("first", new ValueAst.Nothing(), exprAst);
+        var res1 = new FirstDriver().Execute(_context, firstCall1);
+
+        var firstCall2 = MakeVerbCall("first", new ValueAst.Nothing(), verbAst);
+        var res2 = new FirstDriver().Execute(_context, firstCall2);
+
+        Assert.True(res1.IsSuccess);
+        Assert.Equal(new ZohInt(3), res1.Value);
+
+        Assert.True(res2.IsSuccess);
+        Assert.Equal(new ZohInt(42), res2.Value);
+    }
+
     #endregion
 
     #region Append Tests

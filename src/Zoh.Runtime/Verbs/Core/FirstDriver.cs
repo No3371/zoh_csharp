@@ -23,22 +23,14 @@ public class FirstDriver : IVerbDriver
 
             var value = ValueResolver.Resolve(param, context);
 
-            // Spec L751:
-            // if value is VerbValue (objectified verb) -> Execute it.
-            // BUT ValueResolver might have already executed if it was a direct VerbCallAst?
-            // Usually VerbCallAst in Params is wrapped or evaluated?
-            // If user writes `/first /try_a;, /try_b;`.
-            // The AST for params will be VerbCallAst (if parsed as such) or ValueAst.VerbCall.
-            // ValueResolver.Resolve(ValueAst.VerbCall) -> Executes the verb? 
-            // Let's check ValueResolver:
-            // It usually calls Context.Execute(verbCall).
-
-            // If Value is ExpressionValue (quoted expression `...`), we eval it.
-            // If Value is ReferenceValue, resolved already by ValueResolver if passed directly?
-            // ValueResolver usually resolves Reference.
-
-            // So 'value' is likely the RESULT of the param.
-            // If result is NOT Nothing, return it.
+            if (value is ZohVerb vSubject)
+            {
+                value = context.ExecuteVerb(vSubject.VerbValue, context).Value;
+            }
+            else if (value is ZohExpr expr)
+            {
+                value = ValueResolver.Resolve(expr.ast, context);
+            }
 
             if (!value.IsNothing())
             {
