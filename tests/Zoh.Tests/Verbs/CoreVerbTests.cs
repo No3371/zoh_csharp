@@ -174,6 +174,36 @@ public class CoreVerbTests
         Assert.False(result.IsSuccess);
     }
 
+    [Fact]
+    public void Set_Resolve_Expression_StoresEvaluatedValue()
+    {
+        // /set [resolve] *x `1 + 2`
+        var attrs = new[] {
+            new AttributeAst("resolve", null, new TextPosition(1,1,0))
+        };
+        var exprAst = new ValueAst.Expression("1 + 2", new TextPosition(1, 1, 0));
+        var call = MakeVerbCallWithAttrs("set", attrs, new ValueAst.Reference("x"), exprAst);
+
+        var result = _setDriver.Execute(_context, call);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(new ZohInt(3), _context.Variables.Get("x")); // Evaluated instead of ZohExpr
+    }
+
+    [Fact]
+    public void Set_NoResolve_Expression_StoresZohExpr()
+    {
+        // /set *x `1 + 2`
+        var exprAst = new ValueAst.Expression("1 + 2", new TextPosition(1, 1, 0));
+        var call = MakeVerbCall("set", new ValueAst.Reference("x"), exprAst);
+
+        var result = _setDriver.Execute(_context, call);
+
+        Assert.True(result.IsSuccess);
+        var val = _context.Variables.Get("x");
+        Assert.IsType<ZohExpr>(val);
+    }
+
     #endregion
 
     #region Get Tests
