@@ -80,7 +80,7 @@ The comprehensive audit of Phases 1 through 9 against the ZOH specification has 
 - [x] **3.2 Collection Verbs:** `/append`, `/remove`, `/insert`, `/clear`, `/has`, `/any`, `/first`.
   - Execution: Verified `AppendDriver`, `InsertDriver`, `RemoveDriver`, `ClearDriver`, `HasDriver`, `AnyDriver`, `FirstDriver`. Most operations handle map/list access and index logic correctly.
   - **GAP:** `FirstDriver.cs` does not dynamically evaluate expression arguments or recursively execute verb literal arguments per the `Core.First` spec ("In case of `/verb`, it takes the return value of the verb"). It currently yields the unevaluated `ZohVerb` or `ZohExpr` object.
-- [x] **3.3 Mathematics Verbs:** `/increase`, `/decrease`.
+- [x] Phase 3.3: Mathematics Verbs (Increase/Decrease) (Completed: 2026-02-26)
   - Execution: Verified `IncreaseDriver`, `DecreaseDriver`.
   - **GAP 1:** The driver silently ignores the `amount` parameter if it resolves to a non-numeric type (e.g. string) instead of throwing an `invalid_type` diagnostic, defaulting to `1`.
   - **GAP 2:** Like `FirstDriver`, it does not recursively execute `ZohVerb` parameter inputs when a `/verb` literal is provided for the amount, leading to the same silent fallback to `1`.
