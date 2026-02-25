@@ -43,6 +43,24 @@ public class IncreaseDriver : IVerbDriver
             if (verb.UnnamedParams.Length > 1)
             {
                 amount = ValueResolver.Resolve(verb.UnnamedParams[1], context);
+
+                // Address GAP 2: Execute verb literal if provided
+                if (amount is ZohVerb v)
+                {
+                    var execResult = context.ExecuteVerb(v.VerbValue, context);
+                    if (execResult.IsFatal) return execResult;
+                    amount = execResult.Value ?? ZohNothing.Instance;
+                }
+
+                // Address GAP 1: Strict numeric type validation
+                if (!(amount is ZohInt || amount is ZohFloat))
+                {
+                    return VerbResult.Fatal(new Diagnostic(
+                        DiagnosticSeverity.Fatal,
+                        "invalid_type",
+                        $"Amount parameter must evaluate to an integer or float, got {amount.Type}",
+                        verb.Start));
+                }
             }
         }
 

@@ -350,6 +350,35 @@ public class CoreVerbTests
     #region Increase/Decrease Tests
 
     [Fact]
+    public void Increase_WithInvalidTypeAmount_Fails()
+    {
+        _context.Variables.Set("cnt", new ZohInt(5));
+
+        // /increase *cnt "string"
+        var call = MakeVerbCall("increase", new ValueAst.Reference("cnt"), new ValueAst.String("string"));
+        var result = _increaseDriver.Execute(_context, call);
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains(result.Diagnostics, d => d.Code == "invalid_type");
+    }
+
+    [Fact]
+    public void Increase_WithVerbAmount_ExecutesVerb()
+    {
+        _context.Variables.Set("cnt", new ZohInt(5));
+
+        // /increase *cnt, /rand 1, 10;; -> /rand returns 7 for instance, but we use an easier test verb like /get
+        _context.Variables.Set("amt", new ZohInt(3));
+        var getCall = MakeVerbCall("get", new ValueAst.Reference("amt"));
+
+        var call = MakeVerbCall("increase", new ValueAst.Reference("cnt"), new ValueAst.Verb(getCall));
+        var result = _increaseDriver.Execute(_context, call);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(new ZohInt(8), _context.Variables.Get("cnt"));
+    }
+
+    [Fact]
     public void Increase_Int_Increments()
     {
         _context.Variables.Set("cnt", new ZohInt(5));
