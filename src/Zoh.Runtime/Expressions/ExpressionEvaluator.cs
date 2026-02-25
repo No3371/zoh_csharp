@@ -303,6 +303,8 @@ public class ExpressionEvaluator
             case TokenType.Plus:
                 if (left is ZohStr || right is ZohStr)
                     return new ZohStr(left.ToString() + right.ToString());
+                if (left is ZohList ll && right is ZohList rl)
+                    return new ZohList(ll.Items.AddRange(rl.Items));
                 if (left is ZohInt li && right is ZohInt ri)
                     return new ZohInt(li.Value + ri.Value);
                 if (left is ZohFloat || right is ZohFloat)

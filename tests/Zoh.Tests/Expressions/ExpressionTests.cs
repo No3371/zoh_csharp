@@ -88,6 +88,31 @@ public class ExpressionTests
         Assert.Equal(new ZohStr("Hello World"), Eval("\"Hello \" + \"World\""));
         Assert.Equal(new ZohStr("Value: 10"), Eval("\"Value: \" + 10"));
     }
+
+    [Fact]
+    public void Eval_ListConcat()
+    {
+        _variables.Set("list1", new ZohList([new ZohInt(1), new ZohInt(2)]));
+        _variables.Set("list2", new ZohList([new ZohInt(3), new ZohInt(4)]));
+
+        var result = Eval("*list1 + *list2");
+        Assert.IsType<ZohList>(result);
+
+        var listResult = (ZohList)result;
+        Assert.Equal(4, listResult.Items.Length);
+        Assert.Equal(new ZohInt(1), listResult.Items[0]);
+        Assert.Equal(new ZohInt(2), listResult.Items[1]);
+        Assert.Equal(new ZohInt(3), listResult.Items[2]);
+        Assert.Equal(new ZohInt(4), listResult.Items[3]);
+
+        // List + Non-List throws error
+        Assert.Throws<InvalidOperationException>(() => Eval("*list1 + 5"));
+
+        // However, String + List results in a string
+        var strConcat = Eval("\"Items: \" + *list1");
+        Assert.IsType<ZohStr>(strConcat);
+        Assert.Equal("Items: [1, 2]", ((ZohStr)strConcat).Value);
+    }
     [Fact]
     public void Eval_Count()
     {
