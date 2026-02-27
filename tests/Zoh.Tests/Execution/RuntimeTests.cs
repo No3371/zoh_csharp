@@ -91,4 +91,32 @@ public class RuntimeTests
         Assert.Equal(ContextState.Terminated, ctx.State);
         Assert.Equal(ZohNothing.Instance, result);
     }
+
+    [Fact]
+    public void RunToCompletion_String_ExecutesAndReturnsContext()
+    {
+        var runtime = new ZohRuntime();
+        var source = @"shorthand test
+===
+/set *x, 99;
+";
+
+        var ctx = runtime.RunToCompletion(source);
+
+        Assert.Equal(ContextState.Terminated, ctx.State);
+        Assert.Equal(new ZohInt(99), ctx.Variables.Get("x"));
+    }
+
+    [Fact]
+    public void RunToCompletion_String_EmptyStory_TerminatesCleanly()
+    {
+        var runtime = new ZohRuntime();
+        var source = @"empty
+===
+";
+
+        var ctx = runtime.RunToCompletion(source);
+
+        Assert.Equal(ContextState.Terminated, ctx.State);
+    }
 }

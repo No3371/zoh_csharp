@@ -191,4 +191,12 @@ public class ZohRuntime
         Run(ctx);
         return ctx.LastResult ?? ZohNothing.Instance;
     }
+
+    public Context RunToCompletion(string source)
+    {
+        var story = LoadStory(source);
+        var ctx = CreateContext(story);
+        Run(ctx);
+        return ctx;
+    }
 }
