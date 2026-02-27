@@ -56,4 +56,39 @@ public class RuntimeTests
         // x should be 1.
         Assert.Equal(new ZohInt(1), ctx.Variables.Get("x"));
     }
+
+    [Fact]
+    public void RunToCompletion_ReturnsLastResult()
+    {
+        var runtime = new ZohRuntime();
+        var source = @"test
+===
+/set *x, 42;
+/get *x;
+";
+        var story = runtime.LoadStory(source);
+        var ctx = runtime.CreateContext(story);
+
+        var result = runtime.RunToCompletion(ctx);
+
+        Assert.Equal(ContextState.Terminated, ctx.State);
+        // /get returns the variable's value
+        Assert.Equal(new ZohInt(42), result);
+    }
+
+    [Fact]
+    public void RunToCompletion_EmptyStory_ReturnsNothing()
+    {
+        var runtime = new ZohRuntime();
+        var source = @"empty
+===
+";
+        var story = runtime.LoadStory(source);
+        var ctx = runtime.CreateContext(story);
+
+        var result = runtime.RunToCompletion(ctx);
+
+        Assert.Equal(ContextState.Terminated, ctx.State);
+        Assert.Equal(ZohNothing.Instance, result);
+    }
 }

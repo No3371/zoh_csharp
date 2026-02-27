@@ -185,4 +185,10 @@ public class ZohRuntime
     {
         ctx.Run();
     }
+
+    public ZohValue RunToCompletion(Context ctx)
+    {
+        Run(ctx);
+        return ctx.LastResult ?? ZohNothing.Instance;
+    }
 }
