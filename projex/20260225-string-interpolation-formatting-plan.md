@@ -59,7 +59,7 @@ The ZOH specification for the `/interpolate` verb states that interpolation shou
 ## Implementation
 
 ### Overview
-We will leverage `ExpressionParser`'s robust parsing to safely isolate the true expression from any suffix. By exposing how many tokens the parser consumes, the evaluator can reliably find the start of the format string in `match.Content` (using the first trailing token's string offset), parse the format suffix using Regex, and apply the formatting via standard C# `string.Format`.
+We will leverage `ExpressionParser`'s robust parsing to safely isolate the true expression from any suffix. By exposing how many tokens the parser consumes, the evaluator can reliably find the start of the format string in `match.Content` (using the first trailing token's string offset), extract the width and format components with simple string operations, and apply the formatting via standard C# `string.Format`.
 
 ### Step 1: Expose Parser State
 
@@ -129,29 +129,42 @@ In `EvaluateInterpolationMatch(MatchResult match)`:
                 var suffixOffset = firstTrailingToken.Start.Offset;
                 var formatSuffix = exprSource.Substring(suffixOffset);
 
-                var fmtMatch = System.Text.RegularExpressions.Regex.Match(formatSuffix, @"^(?:\s*,\s*(-?\d+))?(?:\s*:(.*))?$");
-                if (fmtMatch.Success)
+                // Parse the format suffix: [,width][:formatString]
+                // The format string is opaque — we extract it verbatim and delegate to string.Format.
+                string? widthStr = null;
+                string? formatStr = null;
+                var s = formatSuffix.AsSpan().Trim();
+
+                if (s.Length > 0 && s[0] == ',')
                 {
-                    string widthStr = fmtMatch.Groups[1].Value;
-                    string formatStr = fmtMatch.Groups[2].Value;
-
-                    string csFormat = "{0";
-                    if (!string.IsNullOrEmpty(widthStr)) csFormat += "," + widthStr;
-                    if (!string.IsNullOrEmpty(formatStr)) csFormat += ":" + formatStr;
-                    csFormat += "}";
-
-                    object? clrValue = val switch
-                    {
-                        ZohInt i => i.Value,
-                        ZohFloat f => f.Value,
-                        ZohStr s => s.Value,
-                        ZohBool b => b.Value,
-                        ZohNothing => "?",
-                        _ => val.ToString()
-                    };
-
-                    return new ZohStr(string.Format(System.Globalization.CultureInfo.InvariantCulture, csFormat, clrValue));
+                    s = s.Slice(1).TrimStart();
+                    var colonIdx = s.IndexOf(':');
+                    var widthSpan = colonIdx >= 0 ? s.Slice(0, colonIdx) : s;
+                    widthStr = widthSpan.Trim().ToString();
+                    if (colonIdx >= 0)
+                        formatStr = s.Slice(colonIdx + 1).ToString();
                 }
+                else if (s.Length > 0 && s[0] == ':')
+                {
+                    formatStr = s.Slice(1).ToString();
+                }
+
+                string csFormat = "{0";
+                if (!string.IsNullOrEmpty(widthStr)) csFormat += "," + widthStr;
+                if (!string.IsNullOrEmpty(formatStr)) csFormat += ":" + formatStr;
+                csFormat += "}";
+
+                object? clrValue = val switch
+                {
+                    ZohInt i => i.Value,
+                    ZohFloat f => f.Value,
+                    ZohStr s => s.Value,
+                    ZohBool b => b.Value,
+                    ZohNothing => "?",
+                    _ => val.ToString()
+                };
+
+                return new ZohStr(string.Format(System.Globalization.CultureInfo.InvariantCulture, csFormat, clrValue));
             }
             throw new Exception("invalid_syntax: Unexpected tokens after interpolation expression");
         }
@@ -160,8 +173,6 @@ In `EvaluateInterpolationMatch(MatchResult match)`:
 ```
 
 Remove the `EvaluateExprString(exprSource);` call in this method since we evaluate it inline now.
-
-*(Note: Ensure `System.Globalization` usage is correct)*
 
 **Rationale:** Utilizing the parser strictly separates the expression from its formatting suffix, completely avoiding bugs with nested delimiters.
 
