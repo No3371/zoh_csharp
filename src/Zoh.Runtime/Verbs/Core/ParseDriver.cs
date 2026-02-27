@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Zoh.Runtime.Execution;
 using Zoh.Runtime.Parsing.Ast;
@@ -39,8 +41,8 @@ public class ParseDriver : IVerbDriver
                 "double" => VerbResult.Ok(new ZohFloat(double.Parse(str, System.Globalization.CultureInfo.InvariantCulture))),
                 "boolean" => VerbResult.Ok(new ZohBool(bool.Parse(str))),
                 "string" => VerbResult.Ok(new ZohStr(str)),
-                "list" => VerbResult.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "not_implemented", "List parsing not yet supported", verb.Start)),
-                "map" => VerbResult.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "not_implemented", "Map parsing not yet supported", verb.Start)),
+                "list" => ParseList(str, verb),
+                "map" => ParseMap(str, verb),
                 _ => VerbResult.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "invalid_type", $"Unknown type: {targetType}", verb.Start))
             };
         }
@@ -59,4 +61,87 @@ public class ParseDriver : IVerbDriver
         if (str.StartsWith("{")) return "map";
         return "string";
     }
+
+    private VerbResult ParseList(string str, VerbCallAst verb)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(str);
+            if (doc.RootElement.ValueKind != JsonValueKind.Array)
+            {
+                return VerbResult.Fatal(new Diagnostics.Diagnostic(
+                    Diagnostics.DiagnosticSeverity.Error,
+                    "invalid_format",
+                    $"Cannot parse '{str}' as list: not a JSON array",
+                    verb.Start));
+            }
+
+            var items = doc.RootElement
+                .EnumerateArray()
+                .Select(JsonElementToZohValue)
+                .ToImmutableArray();
+
+            return VerbResult.Ok(new ZohList(items));
+        }
+        catch (JsonException)
+        {
+            return VerbResult.Fatal(new Diagnostics.Diagnostic(
+                Diagnostics.DiagnosticSeverity.Error,
+                "invalid_format",
+                $"Cannot parse '{str}' as list: malformed JSON",
+                verb.Start));
+        }
+    }
+
+    private VerbResult ParseMap(string str, VerbCallAst verb)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(str);
+            if (doc.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                return VerbResult.Fatal(new Diagnostics.Diagnostic(
+                    Diagnostics.DiagnosticSeverity.Error,
+                    "invalid_format",
+                    $"Cannot parse '{str}' as map: not a JSON object",
+                    verb.Start));
+            }
+
+            var builder = ImmutableDictionary.CreateBuilder<string, ZohValue>();
+            foreach (var prop in doc.RootElement.EnumerateObject())
+            {
+                builder[prop.Name] = JsonElementToZohValue(prop.Value);
+            }
+
+            return VerbResult.Ok(new ZohMap(builder.ToImmutable()));
+        }
+        catch (JsonException)
+        {
+            return VerbResult.Fatal(new Diagnostics.Diagnostic(
+                Diagnostics.DiagnosticSeverity.Error,
+                "invalid_format",
+                $"Cannot parse '{str}' as map: malformed JSON",
+                verb.Start));
+        }
+    }
+
+    private static ZohValue JsonElementToZohValue(JsonElement element) => element.ValueKind switch
+    {
+        JsonValueKind.Null => ZohValue.Nothing,
+        JsonValueKind.True => new ZohBool(true),
+        JsonValueKind.False => new ZohBool(false),
+        JsonValueKind.Number when element.TryGetInt64(out var intValue) => new ZohInt(intValue),
+        JsonValueKind.Number => new ZohFloat(element.GetDouble()),
+        JsonValueKind.String => new ZohStr(element.GetString() ?? string.Empty),
+        JsonValueKind.Array => new ZohList(
+            element.EnumerateArray()
+                .Select(JsonElementToZohValue)
+                .ToImmutableArray()),
+        JsonValueKind.Object => new ZohMap(
+            element.EnumerateObject()
+                .ToImmutableDictionary(
+                    property => property.Name,
+                    property => JsonElementToZohValue(property.Value))),
+        _ => ZohValue.Nothing
+    };
 }

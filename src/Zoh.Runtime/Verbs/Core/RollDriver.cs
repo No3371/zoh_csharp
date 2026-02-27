@@ -57,8 +57,26 @@ public class RollDriver : IVerbDriver
         {
             var val = ValueResolver.Resolve(args[i], context);
             var wVal = ValueResolver.Resolve(args[i + 1], context);
-            int w = (int)wVal.AsInt().Value; // Throw if not int? AsInt handles it.
-            if (w < 0) w = 0;
+
+            if (wVal is not ZohInt weightInt)
+            {
+                return VerbResult.Fatal(new Diagnostics.Diagnostic(
+                    Diagnostics.DiagnosticSeverity.Error,
+                    "invalid_type",
+                    $"wroll weight at position {i + 1} must be an integer, got {wVal.Type}",
+                    verb.Start));
+            }
+
+            if (weightInt.Value < 0)
+            {
+                return VerbResult.Fatal(new Diagnostics.Diagnostic(
+                    Diagnostics.DiagnosticSeverity.Error,
+                    "invalid_value",
+                    $"wroll weight at position {i + 1} must be non-negative, got {weightInt.Value}",
+                    verb.Start));
+            }
+
+            int w = (int)weightInt.Value;
 
             pairs.Add((val, w));
             totalWeight += w;

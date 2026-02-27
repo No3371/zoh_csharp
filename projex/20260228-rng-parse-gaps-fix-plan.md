@@ -1,6 +1,6 @@
 # Fix Audit Gaps 3.4 — WRoll Negative-Weight Fatal & Parse List/Map
 
-> **Status:** Ready
+> **Status:** Complete
 > **Created:** 2026-02-28
 > **Author:** Antigravity
 > **Source:** Direct request — gaps discovered in [20260223-csharp-spec-audit-nav.md](20260223-csharp-spec-audit-nav.md) milestone 3.4
@@ -48,14 +48,14 @@ Spec (`Core.Parse`) requires `list` and `map` to be valid targets.  The expected
 `System.Text.Json` is already available in the runtime project (used by persistence layer).  The deserialization needs to recursively convert `JsonElement` → `ZohValue`.
 
 ### Success Criteria
-- [ ] `/wroll` with a negative weight raises a fatal `invalid_value` diagnostic (not `not_implemented`).
-- [ ] `/parse "[1, \"a\", true]", "list"` returns a `ZohList` with the correct three elements.
-- [ ] `/parse "{\"x\": 1}", "map"` returns a `ZohMap` with the correct entry.
-- [ ] `/parse "[1,2]"` (inferred) returns a `ZohList` (inference heuristic already identifies `[` → `list`).
-- [ ] `/parse "{\"k\":1}"` (inferred) returns a `ZohMap`.
-- [ ] Malformed JSON (e.g. `"[1,2"`) produces a fatal `invalid_format` diagnostic.
-- [ ] All pre-existing `ParseTests` and `CoreVerbTests` pass unchanged.
-- [ ] `dotnet build` and `dotnet test` pass with no warnings introduced.
+- [x] `/wroll` with a negative weight raises a fatal `invalid_value` diagnostic (not `not_implemented`).
+- [x] `/parse "[1, \"a\", true]", "list"` returns a `ZohList` with the correct three elements.
+- [x] `/parse "{\"x\": 1}", "map"` returns a `ZohMap` with the correct entry.
+- [x] `/parse "[1,2]"` (inferred) returns a `ZohList` (inference heuristic already identifies `[` → `list`).
+- [x] `/parse "{\"k\":1}"` (inferred) returns a `ZohMap`.
+- [x] Malformed JSON (e.g. `"[1,2"`) produces a fatal `invalid_format` diagnostic.
+- [x] All pre-existing `ParseTests` and `CoreVerbTests` pass unchanged.
+- [x] `dotnet build` and `dotnet test` pass with no warnings introduced.
 
 ### Out of Scope
 - Any other audit gaps (3.1, 3.2, 3.3, 4.x, 5.x, …).

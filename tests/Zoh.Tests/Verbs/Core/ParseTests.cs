@@ -68,31 +68,89 @@ public class ParseTests
     [InlineData("  3.14  ", "double")]
     [InlineData("  true  ", "boolean")]
     [InlineData("  [1, 2]  ", "list")]
-    [InlineData("  {a:1}  ", "map")]
+    [InlineData("  {\"a\":1}  ", "map")]
     [InlineData("  hello  ", "string")]
     public void Parse_Inference_WithWhitespace(string input, string expectedType)
     {
         var call = MakeParseCall(input);
 
         var result = _driver.Execute(_context, call);
+        Assert.True(result.IsSuccess, result.Diagnostics.FirstOrDefault()?.Message);
+        string actualType = result.Value switch
+        {
+            ZohInt _ => "integer",
+            ZohFloat _ => "double",
+            ZohBool _ => "boolean",
+            ZohStr _ => "string",
+            ZohList _ => "list",
+            ZohMap _ => "map",
+            _ => "unknown"
+        };
+        Assert.Equal(expectedType, actualType);
+    }
 
-        if (expectedType == "list" || expectedType == "map")
-        {
-            Assert.False(result.IsSuccess);
-            Assert.Equal("not_implemented", result.Diagnostics[0].Code);
-        }
-        else
-        {
-            Assert.True(result.IsSuccess);
-            string actualType = result.Value switch
-            {
-                ZohInt _ => "integer",
-                ZohFloat _ => "double",
-                ZohBool _ => "boolean",
-                ZohStr _ => "string",
-                _ => "unknown"
-            };
-            Assert.Equal(expectedType, actualType);
-        }
+    [Fact]
+    public void Parse_List_FromJson()
+    {
+        var call = MakeParseCall("[1, \"hello\", true]", "list");
+        var result = _driver.Execute(_context, call);
+        Assert.True(result.IsSuccess, result.Diagnostics.FirstOrDefault()?.Message);
+
+        var list = Assert.IsType<ZohList>(result.Value);
+        Assert.Equal(3, list.Items.Length);
+        Assert.Equal(new ZohInt(1), list.Items[0]);
+        Assert.Equal(new ZohStr("hello"), list.Items[1]);
+        Assert.Equal(new ZohBool(true), list.Items[2]);
+    }
+
+    [Fact]
+    public void Parse_Map_FromJson()
+    {
+        var call = MakeParseCall("{\"score\": 42, \"name\": \"hero\"}", "map");
+        var result = _driver.Execute(_context, call);
+        Assert.True(result.IsSuccess, result.Diagnostics.FirstOrDefault()?.Message);
+
+        var map = Assert.IsType<ZohMap>(result.Value);
+        Assert.Equal(new ZohInt(42), map.Items["score"]);
+        Assert.Equal(new ZohStr("hero"), map.Items["name"]);
+    }
+
+    [Fact]
+    public void Parse_List_Inferred()
+    {
+        var call = MakeParseCall("[10, 20]");
+        var result = _driver.Execute(_context, call);
+        Assert.True(result.IsSuccess, result.Diagnostics.FirstOrDefault()?.Message);
+        Assert.IsType<ZohList>(result.Value);
+    }
+
+    [Fact]
+    public void Parse_Map_Inferred()
+    {
+        var call = MakeParseCall("{\"k\": 1}");
+        var result = _driver.Execute(_context, call);
+        Assert.True(result.IsSuccess, result.Diagnostics.FirstOrDefault()?.Message);
+        Assert.IsType<ZohMap>(result.Value);
+    }
+
+    [Fact]
+    public void Parse_MalformedList_ReturnsFatal()
+    {
+        var call = MakeParseCall("[1, 2", "list");
+        var result = _driver.Execute(_context, call);
+        Assert.False(result.IsSuccess);
+        Assert.Equal("invalid_format", result.Diagnostics[0].Code);
+    }
+
+    [Fact]
+    public void Parse_NestedStructure()
+    {
+        var call = MakeParseCall("{\"items\": [1, 2, 3]}", "map");
+        var result = _driver.Execute(_context, call);
+        Assert.True(result.IsSuccess, result.Diagnostics.FirstOrDefault()?.Message);
+
+        var map = Assert.IsType<ZohMap>(result.Value);
+        var inner = Assert.IsType<ZohList>(map.Items["items"]);
+        Assert.Equal(3, inner.Items.Length);
     }
 }
