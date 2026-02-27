@@ -32,7 +32,7 @@ public class RuntimeTests
         var story = runtime.LoadStory(source);
         var ctx = runtime.CreateContext(story);
 
-        runtime.Run(ctx, story);
+        runtime.Run(ctx);
 
         Assert.Equal(new ZohInt(15), ctx.Variables.Get("x"));
         Assert.Equal(ContextState.Terminated, ctx.State);
@@ -50,7 +50,7 @@ public class RuntimeTests
         var story = runtime.LoadStory(source);
         var ctx = runtime.CreateContext(story);
 
-        runtime.Run(ctx, story);
+        runtime.Run(ctx);
 
         // Defer runs at termination.
         // x should be 1.

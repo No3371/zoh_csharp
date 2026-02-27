@@ -37,7 +37,7 @@ public class StopDriverTests
         ");
 
         var context = runtime.CreateContext(story);
-        runtime.Run(context, story);
+        runtime.Run(context);
 
         Assert.Equal(ContextState.Terminated, context.State);
         var req = Assert.Single(handler.Requests);
@@ -58,7 +58,7 @@ public class StopDriverTests
         ");
 
         var context = runtime.CreateContext(story);
-        runtime.Run(context, story);
+        runtime.Run(context);
 
         var req = Assert.Single(handler.Requests);
         Assert.Null(req.Id);
@@ -77,7 +77,7 @@ public class StopDriverTests
         ");
 
         var context = runtime.CreateContext(story);
-        runtime.Run(context, story);
+        runtime.Run(context);
 
         var req = Assert.Single(handler.Requests);
         Assert.Equal("ambient", req.Id);

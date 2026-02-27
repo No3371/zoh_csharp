@@ -37,7 +37,7 @@ public class PauseDriverTests
         ");
 
         var context = runtime.CreateContext(story);
-        runtime.Run(context, story);
+        runtime.Run(context);
 
         Assert.Equal(ContextState.Terminated, context.State);
         var req = Assert.Single(handler.Requests);

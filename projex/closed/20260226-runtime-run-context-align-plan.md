@@ -1,6 +1,8 @@
 # Align Run(Context) with Spec — Drop Story Param, Move Loop to Context
 
-> **Status:** In Progress
+> **Status:** Complete
+> **Completed:** 2026-02-27
+> **Walkthrough:** `20260226-runtime-run-context-align-walkthrough.md`
 > **Created:** 2026-02-26
 > **Author:** Agent
 > **Source:** `20260226-zohruntime-run-context-design-eval.md` (Opportunity 1)

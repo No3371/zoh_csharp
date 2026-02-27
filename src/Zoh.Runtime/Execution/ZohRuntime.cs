@@ -103,6 +103,7 @@ public class ZohRuntime
         var ctx = new Context(store, Storage, Channels, SignalManager);
 
         ctx.VerbExecutor = ExecuteVerb;
+        ctx.StatementExecutor = ExecuteStatement;
         ctx.StoryLoader = GetCompiledStory;
         ctx.ContextScheduler = AddContext;
         ctx.CurrentStory = story;
@@ -114,6 +115,27 @@ public class ZohRuntime
     public void AddContext(Context ctx)
     {
         _contexts.Add(ctx);
+    }
+
+    private VerbResult ExecuteStatement(IExecutionContext ctx, VerbCallAst call)
+    {
+        var driver = VerbRegistry.GetDriver(call.Namespace, call.Name);
+        if (driver != null)
+        {
+            try
+            {
+                return driver.Execute(ctx, call);
+            }
+            catch (ZohDiagnosticException ex)
+            {
+                return VerbResult.Fatal(new Diagnostic(ex.Severity, ex.DiagnosticCode, ex.Message, call.Start));
+            }
+            catch (Exception ex)
+            {
+                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "runtime_error", $"Unhandled exception: {ex.Message}", call.Start));
+            }
+        }
+        return VerbResult.Ok();
     }
 
     public VerbResult ExecuteVerb(ValueAst verb, IExecutionContext ctx)
@@ -159,96 +181,8 @@ public class ZohRuntime
         }
     }
 
-    public void Run(Context ctx, CompiledStory story)
+    public void Run(Context ctx)
     {
-        // Initialize context story if needed
-        if (ctx.CurrentStory == null)
-        {
-            ctx.CurrentStory = story;
-        }
-
-        while (ctx.State == ContextState.Running)
-        {
-            if (ctx.CurrentStory == null || ctx.InstructionPointer >= ctx.CurrentStory.Statements.Length)
-            {
-                ctx.Terminate();
-                break;
-            }
-
-            var stmt = ctx.CurrentStory.Statements[ctx.InstructionPointer];
-
-            // Capture state before execution to detect jumps
-            int entryIp = ctx.InstructionPointer;
-            CompiledStory entryStory = ctx.CurrentStory;
-
-            if (stmt is StatementAst.VerbCall callStmt)
-            {
-                var call = callStmt.Call;
-                var driver = VerbRegistry.GetDriver(call.Namespace, call.Name);
-                if (driver != null)
-                {
-                    VerbResult result;
-                    try
-                    {
-                        result = driver.Execute(ctx, call);
-                    }
-                    catch (Exception ex)
-                    {
-                        result = VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "runtime_error", $"Unhandled exception: {ex.Message}", call.Start));
-                    }
-
-                    if (!result.IsSuccess)
-                    {
-                        // Check for Fatal diagnostics
-                        if (result.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Fatal))
-                        {
-                            ctx.LastDiagnostics = result.Diagnostics;
-                            ctx.SetState(ContextState.Terminated); // Stop execution
-                            break;
-                        }
-                    }
-                    ctx.LastResult = result.Value;
-                    ctx.LastDiagnostics = result.Diagnostics;
-
-                    if (result.Continuation != null)
-                    {
-                        ctx.Block(result.Continuation);
-                        break;
-                    }
-                }
-            }
-            else if (stmt is StatementAst.Label label)
-            {
-                // Validate contract on fallthrough or initial start
-                var validation = ctx.ValidateContract(label.Name);
-                if (!validation.IsSuccess)
-                {
-                    if (validation.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Fatal))
-                    {
-                        ctx.LastDiagnostics = validation.Diagnostics;
-                        ctx.SetState(ContextState.Terminated);
-                        break;
-                    }
-                }
-            }
-
-            // If we are still running and didn't jump (IP and Story unchanged), advance IP
-            if (ctx.State == ContextState.Running &&
-                ctx.InstructionPointer == entryIp &&
-                ctx.CurrentStory == entryStory)
-            {
-                ctx.InstructionPointer++;
-            }
-        }
-
-        // Run returns when context is no longer Running (Terminated, Waiting*, Sleeping)
-        // If Terminated, we ensure cleanup
-        if (ctx.State == ContextState.Terminated)
-        {
-            // Already handled by Context.Terminate inside SetState or explicit call? 
-            // Context.Terminate() sets state to Terminated and runs defers.
-            // If we just break loop, we might need to ensure Terminate is called if we ran off end.
-            // (Handled by the bounds check at top)
-        }
+        ctx.Run();
     }
 }

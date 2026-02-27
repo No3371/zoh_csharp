@@ -54,7 +54,7 @@ public class ConverseDriverTests
         }
         var ctx = runtime.CreateContext(story);
 
-        runtime.Run(ctx, story);
+        runtime.Run(ctx);
 
         Assert.Equal(ContextState.WaitingHost, ctx.State);
         Assert.Single(handler.Requests);
@@ -83,7 +83,7 @@ public class ConverseDriverTests
         }
         var ctx = runtime.CreateContext(story);
 
-        runtime.Run(ctx, story);
+        runtime.Run(ctx);
 
         Assert.Equal(ContextState.Terminated, ctx.State); // Should run to completion
         Assert.Single(handler.Requests);
@@ -111,7 +111,7 @@ public class ConverseDriverTests
         }
         var ctx = runtime.CreateContext(story);
 
-        runtime.Run(ctx, story);
+        runtime.Run(ctx);
 
         Assert.Equal(ContextState.WaitingHost, ctx.State);
         var request = handler.Requests.Single();
@@ -143,7 +143,7 @@ public class ConverseDriverTests
         }
         var ctx = runtime.CreateContext(story);
 
-        runtime.Run(ctx, story);
+        runtime.Run(ctx);
 
         var request = handler.Requests.Single();
         Assert.Equal(3, request.Contents.Count);

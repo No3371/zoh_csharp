@@ -25,12 +25,76 @@ public class Context : IExecutionContext
 
     // To be injected or set by Runtime
     public Func<ValueAst, IExecutionContext, VerbResult>? VerbExecutor { get; set; }
+    public Func<IExecutionContext, VerbCallAst, VerbResult>? StatementExecutor { get; set; }
     public Func<string, CompiledStory?>? StoryLoader { get; set; }
     public Action<Context>? ContextScheduler { get; set; }
 
     public VerbResult ExecuteVerb(ValueAst verb, IExecutionContext context)
     {
         return VerbExecutor?.Invoke(verb, context) ?? VerbResult.Ok();
+    }
+
+    public void Run()
+    {
+        while (State == ContextState.Running)
+        {
+            if (CurrentStory == null || InstructionPointer >= CurrentStory.Statements.Length)
+            {
+                Terminate();
+                break;
+            }
+
+            var stmt = CurrentStory.Statements[InstructionPointer];
+
+            // Capture state before execution to detect jumps
+            int entryIp = InstructionPointer;
+            CompiledStory entryStory = CurrentStory;
+
+            if (stmt is StatementAst.VerbCall callStmt)
+            {
+                var call = callStmt.Call;
+                var result = StatementExecutor!(this, call);
+
+                if (!result.IsSuccess)
+                {
+                    if (result.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Fatal))
+                    {
+                        LastDiagnostics = result.Diagnostics;
+                        SetState(ContextState.Terminated);
+                        break;
+                    }
+                }
+                LastResult = result.Value;
+                LastDiagnostics = result.Diagnostics;
+
+                if (result.Continuation != null)
+                {
+                    Block(result.Continuation);
+                    break;
+                }
+            }
+            else if (stmt is StatementAst.Label label)
+            {
+                var validation = ValidateContract(label.Name);
+                if (!validation.IsSuccess)
+                {
+                    if (validation.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Fatal))
+                    {
+                        LastDiagnostics = validation.Diagnostics;
+                        SetState(ContextState.Terminated);
+                        break;
+                    }
+                }
+            }
+
+            // If still running and didn't jump, advance IP
+            if (State == ContextState.Running &&
+                InstructionPointer == entryIp &&
+                CurrentStory == entryStory)
+            {
+                InstructionPointer++;
+            }
+        }
     }
 
     public ChannelManager ChannelManager { get; }
@@ -144,6 +208,7 @@ public class Context : IExecutionContext
             InstructionPointer = InstructionPointer,
             CurrentStory = CurrentStory,
             VerbExecutor = VerbExecutor,
+            StatementExecutor = StatementExecutor,
             StoryLoader = StoryLoader,
             ContextScheduler = ContextScheduler,
             LastResult = LastResult // Should we copy last result? Probably harmless.

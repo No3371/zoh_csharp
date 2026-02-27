@@ -55,7 +55,7 @@ public class ChooseFromDriverTests
         }
 
         var ctx = runtime.CreateContext(story);
-        runtime.Run(ctx, story);
+        runtime.Run(ctx);
 
         Assert.Equal(ContextState.WaitingHost, ctx.State);
         var request = handler.Requests.Single();
@@ -92,7 +92,7 @@ public class ChooseFromDriverTests
         }
 
         var ctx = runtime.CreateContext(story);
-        runtime.Run(ctx, story);
+        runtime.Run(ctx);
 
         var request = handler.Requests.Single();
         Assert.Single(request.Choices);
@@ -122,7 +122,7 @@ public class ChooseFromDriverTests
         }
 
         var ctx = runtime.CreateContext(story);
-        runtime.Run(ctx, story);
+        runtime.Run(ctx);
 
         var request = handler.Requests.Single();
         Assert.Equal("System", request.Speaker);

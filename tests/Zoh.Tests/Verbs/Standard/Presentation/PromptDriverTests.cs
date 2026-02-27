@@ -51,7 +51,7 @@ public class PromptDriverTests
         }
 
         var ctx = runtime.CreateContext(story);
-        runtime.Run(ctx, story);
+        runtime.Run(ctx);
 
         Assert.Equal(ContextState.WaitingHost, ctx.State);
         var request = handler.Requests.Single();
@@ -81,7 +81,7 @@ public class PromptDriverTests
         }
 
         var ctx = runtime.CreateContext(story);
-        runtime.Run(ctx, story);
+        runtime.Run(ctx);
 
         var request = handler.Requests.Single();
         Assert.Equal("Password", request.Style);
@@ -110,7 +110,7 @@ public class PromptDriverTests
         }
 
         var ctx = runtime.CreateContext(story);
-        runtime.Run(ctx, story);
+        runtime.Run(ctx);
 
         // When timeout is <= 0, the driver should complete immediately with empty string.
         Assert.Equal(ContextState.Terminated, ctx.State);
