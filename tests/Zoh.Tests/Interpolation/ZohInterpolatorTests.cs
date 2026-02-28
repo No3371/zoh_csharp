@@ -104,7 +104,7 @@ public class ZohInterpolatorTests
     {
         _variables.Set("score", new ZohInt(10));
         // $?{*score >= 10 ? 'Win' : 'Lose'}
-        AssertInterpolation("Result: $?{*score >= 10 ? \"Win\" | \"Lose\"}", "Result: Win");
+        AssertInterpolation("Result: $?{*score >= 10 ? \"Win\" : \"Lose\"}", "Result: Win");
     }
 
     [Fact]
