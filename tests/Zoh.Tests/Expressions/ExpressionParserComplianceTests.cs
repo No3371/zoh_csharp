@@ -38,24 +38,11 @@ public class ExpressionParserComplianceTests
     }
 
     [Fact]
-    public void Parse_Selection_SingleItem()
+    public void Parse_Selection_WithoutSuffix_Throws()
     {
-        // $(expr) with single item is now AnyExpressionAst (List of 1)
-        var ast = Parse("$(1 + 2)");
-        Assert.IsType<AnyExpressionAst>(ast);
-        var any = (AnyExpressionAst)ast;
-        Assert.Single(any.Options);
-        Assert.IsType<BinaryExpressionAst>(any.Options[0]);
-    }
-
-    [Fact]
-    public void Parse_Selection_MultipleItems()
-    {
-        // $(a|b|c) with multiple items returns AnyExpressionAst
-        var ast = Parse("$(1 | 2 | 3)");
-        Assert.IsType<AnyExpressionAst>(ast);
-        var any = (AnyExpressionAst)ast;
-        Assert.Equal(3, any.Options.Length);
+        var ex = Assert.Throws<Exception>(() => Parse("$(1 | 2 | 3)"));
+        Assert.Contains("requires '[index]' or '[%]' suffix", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("$?(", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -70,17 +57,24 @@ public class ExpressionParserComplianceTests
     }
 
     [Fact]
-    public void Parse_Conditional_Ternary()
+    public void Parse_Conditional_Ternary_UsesColon()
     {
         // Spec: $?(*cond ? *then : *else)
-        // Example: $?(*score > 10 ? "Win" | "Lose")
-        var ast = Parse("$?(*score > 10 ? \"Win\" | \"Lose\")");
+        // Example: $?(*score > 10 ? "Win" : "Lose")
+        var ast = Parse("$?(*score > 10 ? \"Win\" : \"Lose\")");
         Assert.IsType<ConditionalExpressionAst>(ast);
         var cond = (ConditionalExpressionAst)ast;
 
         Assert.IsType<BinaryExpressionAst>(cond.Condition);
         Assert.IsType<LiteralExpressionAst>(cond.Then);
         Assert.IsType<LiteralExpressionAst>(cond.Else);
+    }
+
+    [Fact]
+    public void Parse_Conditional_Ternary_WithPipe_Throws()
+    {
+        var ex = Assert.Throws<Exception>(() => Parse("$?(*score > 10 ? \"Win\" | \"Lose\")"));
+        Assert.Contains("Expected ':' in ternary", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -133,8 +127,8 @@ public class ExpressionParserComplianceTests
     public void Parse_Nested_Special_Forms()
     {
         // Same as before
-        // $($?(true?1|0))[0]
-        var ast = Parse("$($?(true?1|0))[0]");
+        // $($?(true?1:0))[0]
+        var ast = Parse("$($?(true?1:0))[0]");
         Assert.IsType<IndexedExpressionAst>(ast);
         var idx = (IndexedExpressionAst)ast;
         Assert.Single(idx.Options);

@@ -128,10 +128,10 @@ public class ExpressionTests
     public void Eval_Conditional()
     {
         _variables.Set("score", new ZohInt(10));
-        Assert.Equal(new ZohStr("Win"), Eval("$?(*score >= 10 ? \"Win\" | \"Lose\")"));
+        Assert.Equal(new ZohStr("Win"), Eval("$?(*score >= 10 ? \"Win\" : \"Lose\")"));
 
         _variables.Set("score", new ZohInt(5));
-        Assert.Equal(new ZohStr("Lose"), Eval("$?(*score >= 10 ? \"Win\" | \"Lose\")"));
+        Assert.Equal(new ZohStr("Lose"), Eval("$?(*score >= 10 ? \"Win\" : \"Lose\")"));
     }
 
     [Fact]
@@ -234,14 +234,11 @@ public class ExpressionTests
     }
 
     [Fact]
-    public void Eval_OptionList_NoInterpolation()
+    public void Eval_OptionList_WithoutSuffix_Throws()
     {
-        // $(...) is Option List (Any), NOT Interpolate.
-        _variables.Set("name", new ZohStr("World"));
-
-        // Should return the raw string, NOT interpolated
-        var result = Eval("$(\"Hello ${*name}\")");
-        Assert.Equal(new ZohStr("Hello ${*name}"), result);
+        var ex = Assert.Throws<Exception>(() => Eval("$(\"Hello ${*name}\")"));
+        Assert.Contains("requires '[index]' or '[%]' suffix", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("$?(", ex.Message, StringComparison.Ordinal);
     }
     [Fact]
     public void Eval_Interpolation_Advanced()
@@ -252,7 +249,7 @@ public class ExpressionTests
 
         // $?{...} Conditional
         _variables.Set("score", new ZohInt(10));
-        Assert.Equal(new ZohStr("Result: Win"), Eval("$\"Result: $?{*score >= 10 ? 'Win' | 'Lose'}\""));
+        Assert.Equal(new ZohStr("Result: Win"), Eval("$\"Result: $?{*score >= 10 ? 'Win' : 'Lose'}\""));
 
         // {...} Unroll
         _variables.Set("items", new ZohList([new ZohStr("A"), new ZohStr("B")]));

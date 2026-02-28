@@ -280,9 +280,7 @@ public class ExpressionParser(ImmutableArray<Token> tokens)
             return new IndexedExpressionAst(options.ToImmutableArray(), index, wrap);
         }
 
-        // $(expr) without suffix is now just a single-option Any/List, no longer Interpolate.
-        // It simply groups or selects first non-nothing (Any behavior).
-        return new AnyExpressionAst(options.ToImmutableArray());
+        throw new Exception("'$(' option list requires '[index]' or '[%]' suffix; did you mean '$?(' for first-non-nothing selection?");
     }
 
     private ExpressionAst ParseCount()
@@ -301,7 +299,7 @@ public class ExpressionParser(ImmutableArray<Token> tokens)
         if (Match(TokenType.Nothing)) // ? token for Ternary
         {
             var thenExpr = ParseLogicalOr();
-            Consume(TokenType.Pipe, "Expected '|' in ternary");
+            Consume(TokenType.Colon, "Expected ':' in ternary");
             var elseExpr = ParseLogicalOr();
             Consume(TokenType.RightParen, "Expected ')'");
             return new ConditionalExpressionAst(first, thenExpr, elseExpr);
