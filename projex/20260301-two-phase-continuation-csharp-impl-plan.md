@@ -1,6 +1,6 @@
 # Two-Phase Continuation Model — C# Implementation
 
-> **Status:** Ready
+> **Status:** In Progress
 > **Created:** 2026-03-01
 > **Author:** agent
 > **Source:** `20260301-two-phase-continuation-model-proposal.md`
