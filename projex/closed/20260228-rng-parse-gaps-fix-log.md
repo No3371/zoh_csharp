@@ -13,21 +13,21 @@ Base Branch: main
 ### [20260228 02:33] - Step 1: Fix `/wroll` diagnostics
 **Action:** Updated `ExecuteWRoll` in `RollDriver.cs` to validate weight types explicitly and return fatal diagnostics instead of clamping negatives.
 **Output/Result:** Negative weights now return `invalid_value`; non-integer weights return `invalid_type`.
-**Files Affected:** `c#/src/Zoh.Runtime/Verbs/Core/RollDriver.cs`
+**Files Affected:** `csharp/src/Zoh.Runtime/Verbs/Core/RollDriver.cs`
 **Verification:** Added `RollTests` and validated by targeted and full test runs.
 **Status:** Success
 
 ### [20260228 02:34] - Step 2: Implement `/parse` list/map
 **Action:** Replaced `not_implemented` branches with `ParseList`/`ParseMap` using `System.Text.Json` and recursive `JsonElement` to `ZohValue` conversion.
 **Output/Result:** `list` and `map` parsing now support nested JSON structures; malformed JSON yields `invalid_format`.
-**Files Affected:** `c#/src/Zoh.Runtime/Verbs/Core/ParseDriver.cs`
+**Files Affected:** `csharp/src/Zoh.Runtime/Verbs/Core/ParseDriver.cs`
 **Verification:** New parse tests for explicit/inferred list/map, malformed JSON, and nested structures all passed.
 **Status:** Success
 
 ### [20260228 02:36] - Step 3: Add and update tests
 **Action:** Updated `ParseTests` to assert successful list/map behavior and added new `RollTests` for wroll diagnostics and valid weighted roll behavior.
 **Output/Result:** New coverage added for both audited gaps.
-**Files Affected:** `c#/tests/Zoh.Tests/Verbs/Core/ParseTests.cs`, `c#/tests/Zoh.Tests/Verbs/Core/RollTests.cs`
+**Files Affected:** `csharp/tests/Zoh.Tests/Verbs/Core/ParseTests.cs`, `csharp/tests/Zoh.Tests/Verbs/Core/RollTests.cs`
 **Verification:** `dotnet test --filter "FullyQualifiedName~ParseTests|FullyQualifiedName~RollTests"` passed (23/23).
 **Status:** Success
 
@@ -39,10 +39,10 @@ Base Branch: main
 **Status:** Success
 
 ## Actual Changes (vs Plan)
-- `c#/src/Zoh.Runtime/Verbs/Core/RollDriver.cs`: Added explicit `invalid_type`/`invalid_value` fatals for `/wroll` weights — matches plan.
-- `c#/src/Zoh.Runtime/Verbs/Core/ParseDriver.cs`: Implemented JSON `list`/`map` parsing and recursive conversion — matches plan.
-- `c#/tests/Zoh.Tests/Verbs/Core/ParseTests.cs`: Updated inference expectations and added list/map/malformed/nested tests — matches plan.
-- `c#/tests/Zoh.Tests/Verbs/Core/RollTests.cs`: Added dedicated `/wroll` tests — matches plan.
+- `csharp/src/Zoh.Runtime/Verbs/Core/RollDriver.cs`: Added explicit `invalid_type`/`invalid_value` fatals for `/wroll` weights — matches plan.
+- `csharp/src/Zoh.Runtime/Verbs/Core/ParseDriver.cs`: Implemented JSON `list`/`map` parsing and recursive conversion — matches plan.
+- `csharp/tests/Zoh.Tests/Verbs/Core/ParseTests.cs`: Updated inference expectations and added list/map/malformed/nested tests — matches plan.
+- `csharp/tests/Zoh.Tests/Verbs/Core/RollTests.cs`: Added dedicated `/wroll` tests — matches plan.
 
 ## Deviations
 - Execution proceeded despite non-clean base branch and uncommitted plan state, per explicit user instruction.

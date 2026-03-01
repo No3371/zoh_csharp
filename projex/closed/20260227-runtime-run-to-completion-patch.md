@@ -64,6 +64,6 @@ Covers the happy path (verb returns a value) and the edge case (no verb produces
 
 ## Notes
 
-- The `c#/` directory is a separate git repo from the spec repo root — commits go to `S:/Repos/zoh/c#` (commit `f68e2b8`)
+- The `csharp/` directory is a separate git repo from the spec repo root — commits go to `S:/Repos/zoh/c#` (commit `f68e2b8`)
 - `/set` returns nothing in Zoh; test was corrected to use `/get *x;` as the final verb
 - `ctx.LastResult` is initialized to `ZohValue.Nothing` (non-nullable), so the `?? ZohNothing.Instance` guard is defensive only

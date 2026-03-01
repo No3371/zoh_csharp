@@ -15,7 +15,7 @@ Two compliance gaps remain open from the audit of Core RNG & Parsing verbs:
 1. **GAP 1 — `/wroll` negative weight**: The driver silently clamps negative weights to `0` instead of raising a fatal `invalid_value` diagnostic per the spec (`Core.WRoll` → Diagnostics).
 2. **GAP 2 — `/parse` list/map**: The driver returns a stub `not_implemented` fatal for `list` and `map` targets; the spec requires full JSON-like collection parsing.
 
-**Scope:** `c#/src/Zoh.Runtime/Verbs/Core/RollDriver.cs`, `c#/src/Zoh.Runtime/Verbs/Core/ParseDriver.cs`, and their test companions.
+**Scope:** `csharp/src/Zoh.Runtime/Verbs/Core/RollDriver.cs`, `csharp/src/Zoh.Runtime/Verbs/Core/ParseDriver.cs`, and their test companions.
 **Estimated Changes:** 2 source files, 1 existing test file updated, 1 new test file added.
 
 ---
@@ -88,17 +88,17 @@ for (int i = 0; i < args.Length; i += 2)
 ```
 
 **Existing test coverage:**
-- `c#/tests/Zoh.Tests/Verbs/Core/ParseTests.cs` — covers integer/double/boolean parsing and type inference (currently asserts `not_implemented` for list/map inference, which will change).
+- `csharp/tests/Zoh.Tests/Verbs/Core/ParseTests.cs` — covers integer/double/boolean parsing and type inference (currently asserts `not_implemented` for list/map inference, which will change).
 - No dedicated roll/wroll test file; wroll behaviour is not tested at all.
 
 ### Key Files
 
 | File | Purpose | Changes Needed |
 |------|---------|----------------|
-| `c#/src/Zoh.Runtime/Verbs/Core/RollDriver.cs` | Implements `/roll`, `/wroll`, `/rand` | Replace silent clamp with fatal diagnostic |
-| `c#/src/Zoh.Runtime/Verbs/Core/ParseDriver.cs` | Implements `/parse` | Implement `list`/`map` branches via `System.Text.Json` |
-| `c#/tests/Zoh.Tests/Verbs/Core/ParseTests.cs` | Unit tests for `/parse` | Update inference tests; add list/map success tests |
-| `c#/tests/Zoh.Tests/Verbs/Core/RollTests.cs` | Unit tests for `/roll`, `/wroll`, `/rand` | **[NEW]** Add wroll negative-weight fatal test |
+| `csharp/src/Zoh.Runtime/Verbs/Core/RollDriver.cs` | Implements `/roll`, `/wroll`, `/rand` | Replace silent clamp with fatal diagnostic |
+| `csharp/src/Zoh.Runtime/Verbs/Core/ParseDriver.cs` | Implements `/parse` | Implement `list`/`map` branches via `System.Text.Json` |
+| `csharp/tests/Zoh.Tests/Verbs/Core/ParseTests.cs` | Unit tests for `/parse` | Update inference tests; add list/map success tests |
+| `csharp/tests/Zoh.Tests/Verbs/Core/RollTests.cs` | Unit tests for `/roll`, `/wroll`, `/rand` | **[NEW]** Add wroll negative-weight fatal test |
 
 ### Dependencies
 - **Requires:** Nothing — both gaps are self-contained.
@@ -124,7 +124,7 @@ Two independent fixes applied in parallel: a one-line guard in `RollDriver` and 
 **Objective:** Replace the silent clamp with proper `invalid_type` (non-numeric weight) and `invalid_value` (negative weight) fatals.
 
 **Files:**
-- `c#/src/Zoh.Runtime/Verbs/Core/RollDriver.cs`
+- `csharp/src/Zoh.Runtime/Verbs/Core/RollDriver.cs`
 
 **Changes:**
 
@@ -174,7 +174,7 @@ for (int i = 0; i < args.Length; i += 2)
 **Objective:** Replace the `not_implemented` stubs with real JSON-based deserialization.
 
 **Files:**
-- `c#/src/Zoh.Runtime/Verbs/Core/ParseDriver.cs`
+- `csharp/src/Zoh.Runtime/Verbs/Core/ParseDriver.cs`
 
 **Changes — add `using` and helper method, replace stubs:**
 
@@ -267,7 +267,7 @@ Also add the missing `using System.Collections.Immutable;` if not already presen
 
 #### 3a. Update `ParseTests.cs`
 
-**File:** `c#/tests/Zoh.Tests/Verbs/Core/ParseTests.cs`
+**File:** `csharp/tests/Zoh.Tests/Verbs/Core/ParseTests.cs`
 
 The existing `Parse_Inference_WithWhitespace` theory includes two cases that currently assert `not_implemented`:
 ```csharp
@@ -345,7 +345,7 @@ public void Parse_NestedStructure()
 
 #### 3b. Add `RollTests.cs`
 
-**File:** `c#/tests/Zoh.Tests/Verbs/Core/RollTests.cs` **[NEW]**
+**File:** `csharp/tests/Zoh.Tests/Verbs/Core/RollTests.cs` **[NEW]**
 
 ```csharp
 using System.Collections.Immutable;
@@ -449,10 +449,10 @@ cd s:\repos\zoh\c# ; dotnet test --filter "FullyQualifiedName~ParseTests|FullyQu
 
 ## Rollback Plan
 
-1. Delete `c#/tests/Zoh.Tests/Verbs/Core/RollTests.cs` (new file).
-2. Revert `c#/src/Zoh.Runtime/Verbs/Core/RollDriver.cs` to prior commit.
-3. Revert `c#/src/Zoh.Runtime/Verbs/Core/ParseDriver.cs` to prior commit.
-4. Revert `c#/tests/Zoh.Tests/Verbs/Core/ParseTests.cs` to prior commit.
+1. Delete `csharp/tests/Zoh.Tests/Verbs/Core/RollTests.cs` (new file).
+2. Revert `csharp/src/Zoh.Runtime/Verbs/Core/RollDriver.cs` to prior commit.
+3. Revert `csharp/src/Zoh.Runtime/Verbs/Core/ParseDriver.cs` to prior commit.
+4. Revert `csharp/tests/Zoh.Tests/Verbs/Core/ParseTests.cs` to prior commit.
 
 ---
 

@@ -63,8 +63,8 @@ The convenience shorthand chains these together and returns the `Context` for fu
 
 | File | Purpose | Changes Needed |
 |------|---------|----------------|
-| `c#/src/Zoh.Runtime/Execution/ZohRuntime.cs` | Runtime class | Add `RunToCompletion(string)` overload |
-| `c#/tests/Zoh.Tests/Execution/RuntimeTests.cs` | Runtime tests | Add tests for the convenience overload |
+| `csharp/src/Zoh.Runtime/Execution/ZohRuntime.cs` | Runtime class | Add `RunToCompletion(string)` overload |
+| `csharp/tests/Zoh.Tests/Execution/RuntimeTests.cs` | Runtime tests | Add tests for the convenience overload |
 
 ### Dependencies
 
@@ -88,7 +88,7 @@ Add a single convenience overload to `ZohRuntime` that chains load → create �
 **Objective:** Provide a single-call entry point for running ZOH source.
 
 **Files:**
-- `c#/src/Zoh.Runtime/Execution/ZohRuntime.cs`
+- `csharp/src/Zoh.Runtime/Execution/ZohRuntime.cs`
 
 **Changes:**
 
@@ -114,7 +114,7 @@ public Context RunToCompletion(string source)
 **Objective:** Verify the convenience shorthand works for basic and edge scenarios.
 
 **Files:**
-- `c#/tests/Zoh.Tests/Execution/RuntimeTests.cs`
+- `csharp/tests/Zoh.Tests/Execution/RuntimeTests.cs`
 
 **Changes:**
 
@@ -158,8 +158,8 @@ public void RunToCompletion_String_EmptyStory_TerminatesCleanly()
 
 ### Automated Checks
 
-- [x] `dotnet build` in `c#/` — zero errors
-- [x] `dotnet test` in `c#/` — all tests pass including new ones
+- [x] `dotnet build` in `csharp/` — zero errors
+- [x] `dotnet test` in `csharp/` — all tests pass including new ones
 - [x] `dotnet test --filter "FullyQualifiedName~RuntimeTests"` — specifically validates new tests
 
 ### Acceptance Criteria Validation

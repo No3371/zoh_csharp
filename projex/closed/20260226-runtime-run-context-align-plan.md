@@ -67,11 +67,11 @@ if (ctx.CurrentStory == null)
 
 | File | Purpose | Changes Needed |
 |------|---------|----------------|
-| `c#/src/Zoh.Runtime/Execution/ZohRuntime.cs` | Runtime class with `Run()` loop | Remove `story` param; extract loop to delegate to `ctx.Run()` |
-| `c#/src/Zoh.Runtime/Execution/Context.cs` | Execution context | Add `Run()` method containing the loop body |
-| `c#/tests/Zoh.Tests/Execution/RuntimeTests.cs` | Runtime tests | Update `Run(ctx, story)` → `Run(ctx)` |
-| `c#/tests/Zoh.Tests/Verbs/Standard/Media/*.cs` | Media verb tests (8 files) | Update `Run(ctx, story)` → `Run(ctx)` |
-| `c#/tests/Zoh.Tests/Verbs/Standard/Presentation/*.cs` | Presentation verb tests (4 files) | Update `Run(ctx, story)` → `Run(ctx)` |
+| `csharp/src/Zoh.Runtime/Execution/ZohRuntime.cs` | Runtime class with `Run()` loop | Remove `story` param; extract loop to delegate to `ctx.Run()` |
+| `csharp/src/Zoh.Runtime/Execution/Context.cs` | Execution context | Add `Run()` method containing the loop body |
+| `csharp/tests/Zoh.Tests/Execution/RuntimeTests.cs` | Runtime tests | Update `Run(ctx, story)` → `Run(ctx)` |
+| `csharp/tests/Zoh.Tests/Verbs/Standard/Media/*.cs` | Media verb tests (8 files) | Update `Run(ctx, story)` → `Run(ctx)` |
+| `csharp/tests/Zoh.Tests/Verbs/Standard/Presentation/*.cs` | Presentation verb tests (4 files) | Update `Run(ctx, story)` → `Run(ctx)` |
 
 ### Dependencies
 
@@ -102,8 +102,8 @@ if (ctx.CurrentStory == null)
 > **IMPORTANT:** The existing `Context.ExecuteVerb(ValueAst, IExecutionContext)` and `VerbExecutor` delegate are for `/do` verb execution (verb-as-value references). They take `ValueAst`, NOT `VerbCallAst`. The execution loop in `ZohRuntime.Run()` uses a **different dispatch path**: it calls `VerbRegistry.GetDriver(call.Namespace, call.Name)` then `driver.Execute(ctx, call)` with a `VerbCallAst`. These are two separate paths and must remain so.
 
 **Files:**
-- `c#/src/Zoh.Runtime/Execution/Context.cs`
-- `c#/src/Zoh.Runtime/Execution/ZohRuntime.cs`
+- `csharp/src/Zoh.Runtime/Execution/Context.cs`
+- `csharp/src/Zoh.Runtime/Execution/ZohRuntime.cs`
 
 **Changes in Context.cs:**
 
@@ -157,7 +157,7 @@ ctx.StatementExecutor = ExecuteStatement;
 **Objective:** Move the execution loop body from `ZohRuntime.Run()` into `Context.Run()`.
 
 **Files:**
-- `c#/src/Zoh.Runtime/Execution/Context.cs`
+- `csharp/src/Zoh.Runtime/Execution/Context.cs`
 
 **Changes:**
 
@@ -237,7 +237,7 @@ public void Run()
 **Objective:** Replace the loop body in `ZohRuntime.Run()` with a delegation to `ctx.Run()` and remove the `story` parameter.
 
 **Files:**
-- `c#/src/Zoh.Runtime/Execution/ZohRuntime.cs`
+- `csharp/src/Zoh.Runtime/Execution/ZohRuntime.cs`
 
 **Changes:**
 
@@ -287,8 +287,8 @@ This is a bulk find-and-replace. The compiler will catch any missed sites.
 
 ### Automated Checks
 
-- [ ] `dotnet build` in `c#/` — zero errors
-- [ ] `dotnet test` in `c#/` — all existing tests pass
+- [ ] `dotnet build` in `csharp/` — zero errors
+- [ ] `dotnet test` in `csharp/` — all existing tests pass
 - [ ] No remaining references to `Run(ctx, story)` in codebase (grep check)
 
 ### Manual Verification
@@ -321,7 +321,7 @@ This is a bulk find-and-replace. The compiler will catch any missed sites.
 
 - `StatementExecutor` delegate → `ZohRuntime.ExecuteStatement()` handles all verb dispatch (exception wrapping, driver resolution, null driver) identically to the current inlined logic in `ZohRuntime.Run()`
 - The existing `VerbExecutor` / `ExecuteVerb(ValueAst, IExecutionContext)` path is NOT affected — it remains for `/do` verb execution
-- No external code (outside the `c#/` project) calls `ZohRuntime.Run()` directly
+- No external code (outside the `csharp/` project) calls `ZohRuntime.Run()` directly
 - The `using` directives in `Context.cs` already include the necessary types (`StatementAst`, `DiagnosticSeverity`, etc.) or will need additions
 
 ### Risks

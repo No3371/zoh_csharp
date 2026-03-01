@@ -56,8 +56,8 @@ The spec defines `runToCompletion(context: Context): Value` which wraps this int
 
 | File | Purpose | Changes Needed |
 |------|---------|----------------|
-| `c#/src/Zoh.Runtime/Execution/ZohRuntime.cs` | Runtime class | Add `RunToCompletion(Context)` method |
-| `c#/tests/Zoh.Tests/Execution/RuntimeTests.cs` | Runtime tests | Add tests for `RunToCompletion` |
+| `csharp/src/Zoh.Runtime/Execution/ZohRuntime.cs` | Runtime class | Add `RunToCompletion(Context)` method |
+| `csharp/tests/Zoh.Tests/Execution/RuntimeTests.cs` | Runtime tests | Add tests for `RunToCompletion` |
 
 ### Dependencies
 
@@ -81,7 +81,7 @@ Add a single method to `ZohRuntime` that runs a context via `Run(ctx)` and retur
 **Objective:** Implement the spec-defined `runToCompletion(context: Context): Value`.
 
 **Files:**
-- `c#/src/Zoh.Runtime/Execution/ZohRuntime.cs`
+- `csharp/src/Zoh.Runtime/Execution/ZohRuntime.cs`
 
 **Changes:**
 
@@ -105,7 +105,7 @@ public ZohValue RunToCompletion(Context ctx)
 **Objective:** Verify `RunToCompletion` works for basic scenarios and edge cases.
 
 **Files:**
-- `c#/tests/Zoh.Tests/Execution/RuntimeTests.cs`
+- `csharp/tests/Zoh.Tests/Execution/RuntimeTests.cs`
 
 **Changes:**
 
@@ -157,8 +157,8 @@ public void RunToCompletion_EmptyStory_ReturnsNothing()
 
 ### Automated Checks
 
-- [x] `dotnet build` in `c#/` — zero errors
-- [x] `dotnet test` in `c#/` — all tests pass including new ones
+- [x] `dotnet build` in `csharp/` — zero errors
+- [x] `dotnet test` in `csharp/` — all tests pass including new ones
 - [x] `dotnet test --filter "FullyQualifiedName~RuntimeTests"` — specifically validates new tests
 
 

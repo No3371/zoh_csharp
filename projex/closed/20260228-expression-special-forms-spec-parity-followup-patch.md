@@ -18,7 +18,7 @@ Implemented the parser/spec parity fixes identified in the C# follow-up plan: ba
 
 ### Parser Special-Form Semantics
 
-**File:** `c#/src/Zoh.Runtime/Expressions/ExpressionParser.cs`  
+**File:** `csharp/src/Zoh.Runtime/Expressions/ExpressionParser.cs`  
 **Change Type:** Modified  
 **What Changed:**
 - `ParseSpecialDollarParen()` now throws on bare `$(...)` with guidance to use `$?(` (`line 283`).
@@ -31,7 +31,7 @@ To align runtime parser behavior with `spec/expr.md` and the implementation walk
 
 ### Parser Compliance Tests
 
-**File:** `c#/tests/Zoh.Tests/Expressions/ExpressionParserComplianceTests.cs`  
+**File:** `csharp/tests/Zoh.Tests/Expressions/ExpressionParserComplianceTests.cs`  
 **Change Type:** Modified  
 **What Changed:**
 - Replaced legacy bare-`$()` acceptance tests with `Parse_Selection_WithoutSuffix_Throws` (`lines 41-46`).
@@ -46,7 +46,7 @@ Previous tests encoded outdated syntax/behavior and blocked the spec-aligned par
 
 ### Expression Evaluation Tests
 
-**File:** `c#/tests/Zoh.Tests/Expressions/ExpressionTests.cs`  
+**File:** `csharp/tests/Zoh.Tests/Expressions/ExpressionTests.cs`  
 **Change Type:** Modified  
 **What Changed:**
 - Updated `Eval_Conditional` ternary inputs from `|` to `:` (`lines 131, 134`).

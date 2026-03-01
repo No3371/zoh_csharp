@@ -53,7 +53,7 @@ Base Branch: main
 **Status:** Success
 
 ### 20260227 22:31 - Build and Test Verification
-**Action:** `dotnet build` then `dotnet test` in `c#/`.
+**Action:** `dotnet build` then `dotnet test` in `csharp/`.
 **Output/Result:** Build succeeded — 0 errors, 0 warnings. Tests: 592 passed, 0 failed, 0 skipped.
 **Files Affected:** None
 **Verification:** Both commands completed successfully.

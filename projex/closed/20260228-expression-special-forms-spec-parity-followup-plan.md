@@ -14,7 +14,7 @@
 
 The C# expression parser still diverges from the current expression spec in two places: it accepts bare `$(...)` as `AnyExpressionAst` instead of requiring `[index]` or `[%]`, and it parses ternary `$?(cond ? then | else)` with `|` instead of the spec-defined `:` separator. This plan closes those parser-level gaps and updates tests so behavior is locked to `spec/expr.md`.
 
-**Scope:** Expression parser and expression parser/evaluator tests in `c#/`.
+**Scope:** Expression parser and expression parser/evaluator tests in `csharp/`.
 **Estimated Changes:** 3 files (`ExpressionParser.cs`, `ExpressionParserComplianceTests.cs`, `ExpressionTests.cs`).
 
 ---
@@ -49,21 +49,21 @@ Current C# behavior in `ExpressionParser` does not match:
 
 ### Current State
 
-- `c#/src/Zoh.Runtime/Expressions/ExpressionParser.cs`
+- `csharp/src/Zoh.Runtime/Expressions/ExpressionParser.cs`
   - `ParseSpecialDollarParen()` currently returns `AnyExpressionAst` if `$(...)` is not followed by `[...]`.
   - `ParseConditionalOrAny()` currently uses `Consume(TokenType.Pipe, "Expected '|' in ternary")`.
-- `c#/tests/Zoh.Tests/Expressions/ExpressionParserComplianceTests.cs`
+- `csharp/tests/Zoh.Tests/Expressions/ExpressionParserComplianceTests.cs`
   - Contains tests that assert `$(...)` produces `AnyExpressionAst`.
   - Conditional example/comments claim colon but test input still uses pipe.
-- `c#/tests/Zoh.Tests/Expressions/ExpressionTests.cs`
+- `csharp/tests/Zoh.Tests/Expressions/ExpressionTests.cs`
   - Conditional eval tests currently use pipe separator.
 
 ### Key Files
 | File | Purpose | Changes Needed |
 |------|---------|----------------|
-| `c#/src/Zoh.Runtime/Expressions/ExpressionParser.cs` | Parses special forms | Reject bare `$(...)`; require `:` for ternary in `$?()` conditional path |
-| `c#/tests/Zoh.Tests/Expressions/ExpressionParserComplianceTests.cs` | AST-level parser compliance tests | Replace/adjust legacy assertions and add failure-path coverage |
-| `c#/tests/Zoh.Tests/Expressions/ExpressionTests.cs` | Runtime expression evaluation tests | Update ternary inputs to colon and add bare-`$()` parse-failure regression |
+| `csharp/src/Zoh.Runtime/Expressions/ExpressionParser.cs` | Parses special forms | Reject bare `$(...)`; require `:` for ternary in `$?()` conditional path |
+| `csharp/tests/Zoh.Tests/Expressions/ExpressionParserComplianceTests.cs` | AST-level parser compliance tests | Replace/adjust legacy assertions and add failure-path coverage |
+| `csharp/tests/Zoh.Tests/Expressions/ExpressionTests.cs` | Runtime expression evaluation tests | Update ternary inputs to colon and add bare-`$()` parse-failure regression |
 
 ### Dependencies
 - **Requires:** None.
@@ -72,7 +72,7 @@ Current C# behavior in `ExpressionParser` does not match:
 ### Constraints
 - Preserve `$?(a|b|c)` any-form behavior.
 - Keep diagnostic style consistent with current parser exceptions.
-- Stay fully within `c#/` projex scope.
+- Stay fully within `csharp/` projex scope.
 
 ---
 
@@ -89,7 +89,7 @@ Apply a targeted parser correction and test realignment: make `$(...)` strict (i
 **Objective:** Remove fallback acceptance of bare `$(...)`.
 
 **Files:**
-- `c#/src/Zoh.Runtime/Expressions/ExpressionParser.cs`
+- `csharp/src/Zoh.Runtime/Expressions/ExpressionParser.cs`
 
 **Changes:**
 
@@ -115,7 +115,7 @@ throw new Exception(
 **Objective:** Parse conditional form using colon, not pipe.
 
 **Files:**
-- `c#/src/Zoh.Runtime/Expressions/ExpressionParser.cs`
+- `csharp/src/Zoh.Runtime/Expressions/ExpressionParser.cs`
 
 **Changes:**
 
@@ -138,7 +138,7 @@ Consume(TokenType.Colon, "Expected ':' in ternary");
 **Objective:** Replace obsolete expectations and add explicit negative cases.
 
 **Files:**
-- `c#/tests/Zoh.Tests/Expressions/ExpressionParserComplianceTests.cs`
+- `csharp/tests/Zoh.Tests/Expressions/ExpressionParserComplianceTests.cs`
 
 **Changes:**
 - Replace `Parse_Selection_SingleItem` and `Parse_Selection_MultipleItems` assumptions that bare `$(...)` returns `AnyExpressionAst`.
@@ -159,7 +159,7 @@ Consume(TokenType.Colon, "Expected ':' in ternary");
 **Objective:** Ensure evaluation-level coverage reflects parser rules.
 
 **Files:**
-- `c#/tests/Zoh.Tests/Expressions/ExpressionTests.cs`
+- `csharp/tests/Zoh.Tests/Expressions/ExpressionTests.cs`
 
 **Changes:**
 - Update conditional expression inputs from `|` to `:` in existing tests.

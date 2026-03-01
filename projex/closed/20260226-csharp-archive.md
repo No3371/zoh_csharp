@@ -1,7 +1,7 @@
-# Archive: c#/projex/closed — 2026-02-06 to 2026-02-25
+# Archive: csharp/projex/closed — 2026-02-06 to 2026-02-25
 
 > **Created:** 2026-02-26
-> **Scope:** c#/projex/closed
+> **Scope:** csharp/projex/closed
 > **Files Archived:** 53
 > **Date Range:** 20260206 – 20260225
 
