@@ -21,10 +21,10 @@ public class ConverseDriver : IVerbDriver
         _handler = handler;
     }
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst call)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst call)
     {
         var ctx = context as Context;
-        if (ctx == null) return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_context", "Converse requires a valid Context.", call.Start));
+        if (ctx == null) return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_context", "Converse requires a valid Context.", call.Start));
 
         // Parse attributes
         string? speaker = ResolveAttributeToString(call, "By", ctx);
@@ -59,12 +59,12 @@ public class ConverseDriver : IVerbDriver
             var tVal = ValueResolver.Resolve(timeoutAst, ctx);
             if (tVal is ZohFloat f)
             {
-                if (f.Value <= 0) return VerbResult.Ok(); // Immediate timeout, per spec
+                if (f.Value <= 0) return DriverResult.Complete.Ok(); // Immediate timeout, per spec
                 timeoutMs = f.Value * 1000.0; // Assume supplied as seconds, convert to ms
             }
             else if (tVal is ZohInt i)
             {
-                if (i.Value <= 0) return VerbResult.Ok(); // Immediate timeout
+                if (i.Value <= 0) return DriverResult.Complete.Ok(); // Immediate timeout
                 timeoutMs = i.Value * 1000.0;
             }
         }
@@ -102,7 +102,7 @@ public class ConverseDriver : IVerbDriver
 
         if (contents.Count == 0)
         {
-            return VerbResult.Ok(); // Nothing to say
+            return DriverResult.Complete.Ok(); // Nothing to say
         }
 
         var request = new ConverseRequest(speaker, portrait, isAppend, style, timeoutMs, contents);
@@ -113,11 +113,18 @@ public class ConverseDriver : IVerbDriver
 
             if (shouldWait)
             {
-                return VerbResult.Yield(new HostContinuation("converse"));
+                return new DriverResult.Suspend(new Continuation(
+                    new HostRequest(),
+                    outcome => outcome switch
+                    {
+                        WaitCompleted c => DriverResult.Complete.Ok(c.Value),
+                        _ => DriverResult.Complete.Ok()
+                    }
+                ));
             }
         }
 
-        return VerbResult.Ok();
+        return DriverResult.Complete.Ok();
     }
 
     private string? ResolveAttributeToString(VerbCallAst call, string name, Context ctx)

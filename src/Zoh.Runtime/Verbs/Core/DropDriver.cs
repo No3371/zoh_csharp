@@ -11,7 +11,7 @@ public class DropDriver : IVerbDriver
     public string Namespace => "core";
     public string Name => "drop";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         string? targetName = null;
         System.Collections.Immutable.ImmutableArray<ValueAst> targetPath = System.Collections.Immutable.ImmutableArray<ValueAst>.Empty;
@@ -42,17 +42,17 @@ public class DropDriver : IVerbDriver
             {
                 var res = ValueResolver.Resolve(p0, context);
                 if (res is ZohStr rs) targetName = rs.Value;
-                else return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Drop requires a variable reference", verb.Start));
+                else return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Drop requires a variable reference", verb.Start));
             }
         }
 
         if (targetName == null)
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Usage: /drop *var", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Usage: /drop *var", verb.Start));
 
         if (targetPath.IsEmpty)
         {
             context.Variables.Drop(targetName, targetScope);
-            return VerbResult.Ok(ZohValue.Nothing);
+            return DriverResult.Complete.Ok(ZohValue.Nothing);
         }
         else
         {

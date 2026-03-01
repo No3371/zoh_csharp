@@ -11,13 +11,13 @@ public class InterpolateDriver : IVerbDriver
     public string Namespace => "core";
     public string Name => "interpolate";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         // /interpolate "template"
 
         if (verb.UnnamedParams.Length == 0)
         {
-            return VerbResult.Error(ZohValue.Nothing, new Diagnostic(DiagnosticSeverity.Error, "MissingArguments", "Usage: /interpolate \"template\"", verb.Start));
+            return DriverResult.Complete.Error(ZohValue.Nothing, new Diagnostic(DiagnosticSeverity.Error, "MissingArguments", "Usage: /interpolate \"template\"", verb.Start));
         }
 
         var templateVal = ValueResolver.Resolve(verb.UnnamedParams[0], context);
@@ -30,11 +30,11 @@ public class InterpolateDriver : IVerbDriver
         try
         {
             var result = interpolator.Interpolate(template);
-            return VerbResult.Ok(new ZohStr(result));
+            return DriverResult.Complete.Ok(new ZohStr(result));
         }
         catch (Exception ex)
         {
-            return VerbResult.Error(ZohValue.Nothing, new Diagnostic(DiagnosticSeverity.Error, "InterpolationError", ex.Message, verb.Start));
+            return DriverResult.Complete.Error(ZohValue.Nothing, new Diagnostic(DiagnosticSeverity.Error, "InterpolationError", ex.Message, verb.Start));
         }
     }
 }

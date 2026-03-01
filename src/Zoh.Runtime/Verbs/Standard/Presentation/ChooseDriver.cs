@@ -20,10 +20,10 @@ public class ChooseDriver : IVerbDriver
         _handler = handler;
     }
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst call)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst call)
     {
         var ctx = context as Context;
-        if (ctx == null) return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_context", "Choose requires a valid Context.", call.Start));
+        if (ctx == null) return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_context", "Choose requires a valid Context.", call.Start));
 
         string? speaker = ResolveAttributeToString(call, "By", ctx);
         string? portrait = ResolveAttributeToString(call, "Portrait", ctx);
@@ -45,12 +45,12 @@ public class ChooseDriver : IVerbDriver
             var tVal = ValueResolver.Resolve(timeoutAst, ctx);
             if (tVal is ZohFloat f)
             {
-                if (f.Value <= 0) return VerbResult.Ok(ZohValue.Nothing);
+                if (f.Value <= 0) return DriverResult.Complete.Ok(ZohValue.Nothing);
                 timeoutMs = f.Value * 1000.0;
             }
             else if (tVal is ZohInt i)
             {
-                if (i.Value <= 0) return VerbResult.Ok(ZohValue.Nothing);
+                if (i.Value <= 0) return DriverResult.Complete.Ok(ZohValue.Nothing);
                 timeoutMs = i.Value * 1000.0;
             }
         }
@@ -93,7 +93,7 @@ public class ChooseDriver : IVerbDriver
         {
             // According to spec, if no choices are visible and no timeout, it's a soft error or just returns nothing?
             // "If all evaluated choices are false, returns Nothing."
-            return VerbResult.Ok(ZohValue.Nothing);
+            return DriverResult.Complete.Ok(ZohValue.Nothing);
         }
 
         var request = new ChooseRequest(speaker, portrait, style, prompt, timeoutMs, choices);
@@ -101,10 +101,17 @@ public class ChooseDriver : IVerbDriver
         if (_handler != null)
         {
             _handler.OnChoose(ctx, request);
-            return VerbResult.Yield(new HostContinuation("choose"));
+            return new DriverResult.Suspend(new Continuation(
+                new HostRequest(),
+                outcome => outcome switch
+                {
+                    WaitCompleted c => DriverResult.Complete.Ok(c.Value),
+                    _ => DriverResult.Complete.Ok()
+                }
+            ));
         }
 
-        return VerbResult.Ok(ZohValue.Nothing);
+        return DriverResult.Complete.Ok(ZohValue.Nothing);
     }
 
     private string? ResolveAttributeToString(VerbCallAst call, string name, Context ctx)

@@ -18,10 +18,10 @@ public class ChooseFromDriver : IVerbDriver
         _handler = handler;
     }
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst call)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst call)
     {
         var ctx = context as Context;
-        if (ctx == null) return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_context", "ChooseFrom requires a valid Context.", call.Start));
+        if (ctx == null) return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_context", "ChooseFrom requires a valid Context.", call.Start));
 
         string? speaker = ResolveAttributeToString(call, "By", ctx);
         string? portrait = ResolveAttributeToString(call, "Portrait", ctx);
@@ -43,12 +43,12 @@ public class ChooseFromDriver : IVerbDriver
             var tVal = ValueResolver.Resolve(timeoutAst, ctx);
             if (tVal is ZohFloat f)
             {
-                if (f.Value <= 0) return VerbResult.Ok(ZohValue.Nothing);
+                if (f.Value <= 0) return DriverResult.Complete.Ok(ZohValue.Nothing);
                 timeoutMs = f.Value * 1000.0;
             }
             else if (tVal is ZohInt i)
             {
-                if (i.Value <= 0) return VerbResult.Ok(ZohValue.Nothing);
+                if (i.Value <= 0) return DriverResult.Complete.Ok(ZohValue.Nothing);
                 timeoutMs = i.Value * 1000.0;
             }
         }
@@ -87,13 +87,13 @@ public class ChooseFromDriver : IVerbDriver
             else
             {
                 // Expected list, but didn't get one. Handled by generic error or ignored based on spec
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Error, "type_error", "chooseFrom requires a list as its first argument.", call.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Error, "type_error", "chooseFrom requires a list as its first argument.", call.Start));
             }
         }
 
         if (choices.Count == 0 && timeoutMs == null)
         {
-            return VerbResult.Ok(ZohValue.Nothing);
+            return DriverResult.Complete.Ok(ZohValue.Nothing);
         }
 
         var request = new ChooseRequest(speaker, portrait, style, prompt, timeoutMs, choices);
@@ -101,10 +101,17 @@ public class ChooseFromDriver : IVerbDriver
         if (_handler != null)
         {
             _handler.OnChooseFrom(ctx, request);
-            return VerbResult.Yield(new HostContinuation("chooseFrom"));
+            return new DriverResult.Suspend(new Continuation(
+                new HostRequest(),
+                outcome => outcome switch
+                {
+                    WaitCompleted c => DriverResult.Complete.Ok(c.Value),
+                    _ => DriverResult.Complete.Ok()
+                }
+            ));
         }
 
-        return VerbResult.Ok(ZohValue.Nothing);
+        return DriverResult.Complete.Ok(ZohValue.Nothing);
     }
 
     private string? ResolveAttributeToString(VerbCallAst call, string name, Context ctx)

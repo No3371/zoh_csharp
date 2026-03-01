@@ -11,11 +11,11 @@ namespace Zoh.Runtime.Verbs.Flow
         public string Namespace => "core";
         public string Name => "if";
 
-        public VerbResult Execute(IExecutionContext context, VerbCallAst call)
+        public DriverResult Execute(IExecutionContext context, VerbCallAst call)
         {
             if (call.UnnamedParams.Length < 2)
             {
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Use: /if condition, then_verb, [else_verb]", call.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Use: /if condition, then_verb, [else_verb]", call.Start));
             }
 
             // 1. Evaluate Condition
@@ -31,7 +31,7 @@ namespace Zoh.Runtime.Verbs.Flow
                 {
                     return context.ExecuteVerb(thenVerb.VerbValue, context);
                 }
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Current 'then' argument must be a verb.", call.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Current 'then' argument must be a verb.", call.Start));
             }
             else
             {
@@ -43,11 +43,11 @@ namespace Zoh.Runtime.Verbs.Flow
                     {
                         return context.ExecuteVerb(elseVerb.VerbValue, context);
                     }
-                    return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Current 'else' argument must be a verb.", call.Start));
+                    return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Current 'else' argument must be a verb.", call.Start));
                 }
             }
 
-            return VerbResult.Ok();
+            return DriverResult.Complete.Ok();
         }
     }
 }

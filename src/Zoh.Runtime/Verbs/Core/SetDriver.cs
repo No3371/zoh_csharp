@@ -13,7 +13,7 @@ public class SetDriver : IVerbDriver
     public string Namespace => "core";
     public string Name => "set";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         // /set *var value;
         // /set *var[0] value;
@@ -73,7 +73,7 @@ public class SetDriver : IVerbDriver
             }
             else
             {
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Set target must be a variable reference (*var)", verb.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Set target must be a variable reference (*var)", verb.Start));
             }
 
             // Second param: Value (Optional, default Nothing)
@@ -113,7 +113,7 @@ public class SetDriver : IVerbDriver
         }
         else
         {
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Usage: /set *var [value]", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Usage: /set *var [value]", verb.Start));
         }
 
         // 3. Handle [required] attribute logic:
@@ -125,7 +125,7 @@ public class SetDriver : IVerbDriver
             var existing = Zoh.Runtime.Helpers.CollectionHelpers.GetAtPath(context, targetName, targetPath);
             if (existing.IsNothing())
             {
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "required", "Variable is required but not set and no value provided", verb.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "required", "Variable is required but not set and no value provided", verb.Start));
             }
         }
 
@@ -135,7 +135,7 @@ public class SetDriver : IVerbDriver
             var actualType = targetValue!.Type.ToString().ToLowerInvariant();
             if (actualType != typedAs)
             {
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", $"Expected {typedAs}, got {actualType}", verb.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", $"Expected {typedAs}, got {actualType}", verb.Start));
             }
         }
 
@@ -149,7 +149,7 @@ public class SetDriver : IVerbDriver
             }
             if (!found)
             {
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_value", "Value not in allowed list", verb.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_value", "Value not in allowed list", verb.Start));
             }
         }
 

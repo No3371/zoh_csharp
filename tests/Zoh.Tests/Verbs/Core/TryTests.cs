@@ -35,7 +35,7 @@ namespace Zoh.Tests.Verbs.Core
             var result = _context.ExecuteVerb(call);
 
             Assert.True(result.IsSuccess);
-            Assert.Equal("ok", result.Value.ToString());
+            Assert.Equal("ok", result.ValueOrNothing.ToString());
         }
 
         [Fact]
@@ -50,9 +50,9 @@ namespace Zoh.Tests.Verbs.Core
             Assert.False(result.IsFatal);
             // Result is NOT Success because it has Errors, but it is NOT Fatal.
 
-            Assert.Contains(result.Diagnostics, d => d.Severity == DiagnosticSeverity.Error && d.Code == "fatal_error");
-            Assert.DoesNotContain(result.Diagnostics, d => d.Severity == DiagnosticSeverity.Fatal);
-            Assert.Equal(ZohValue.Nothing, result.Value);
+            Assert.Contains(result.DiagnosticsOrEmpty, d => d.Severity == DiagnosticSeverity.Error && d.Code == "fatal_error");
+            Assert.DoesNotContain(result.DiagnosticsOrEmpty, d => d.Severity == DiagnosticSeverity.Fatal);
+            Assert.Equal(ZohValue.Nothing, result.ValueOrNothing);
         }
 
         [Fact]
@@ -65,8 +65,8 @@ namespace Zoh.Tests.Verbs.Core
             var result = _context.ExecuteVerb(call);
 
             Assert.False(result.IsFatal);
-            Assert.Equal("caught", result.Value.ToString());
-            Assert.Contains(result.Diagnostics, d => d.Severity == DiagnosticSeverity.Error && d.Code == "fatal_error");
+            Assert.Equal("caught", result.ValueOrNothing.ToString());
+            Assert.Contains(result.DiagnosticsOrEmpty, d => d.Severity == DiagnosticSeverity.Error && d.Code == "fatal_error");
         }
 
         [Fact]
@@ -79,7 +79,7 @@ namespace Zoh.Tests.Verbs.Core
             var result = _context.ExecuteVerb(call);
 
             Assert.False(result.IsFatal);
-            Assert.Empty(result.Diagnostics);
+            Assert.Empty(result.DiagnosticsOrEmpty);
         }
 
         // Helpers
@@ -110,22 +110,22 @@ namespace Zoh.Tests.Verbs.Core
         {
             public string Namespace => "test";
             public string Name => "ok";
-            public VerbResult Execute(IExecutionContext context, VerbCallAst call) => VerbResult.Ok(new ZohStr("ok"));
+            public DriverResult Execute(IExecutionContext context, VerbCallAst call) => DriverResult.Complete.Ok(new ZohStr("ok"));
         }
 
         class FailDriver : IVerbDriver
         {
             public string Namespace => "test";
             public string Name => "fail";
-            public VerbResult Execute(IExecutionContext context, VerbCallAst call) =>
-                VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "fatal_error", "oops", call.Start));
+            public DriverResult Execute(IExecutionContext context, VerbCallAst call) =>
+                DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "fatal_error", "oops", call.Start));
         }
 
         class CatchDriver : IVerbDriver
         {
             public string Namespace => "test";
             public string Name => "catch";
-            public VerbResult Execute(IExecutionContext context, VerbCallAst call) => VerbResult.Ok(new ZohStr("caught"));
+            public DriverResult Execute(IExecutionContext context, VerbCallAst call) => DriverResult.Complete.Ok(new ZohStr("caught"));
         }
     }
 }

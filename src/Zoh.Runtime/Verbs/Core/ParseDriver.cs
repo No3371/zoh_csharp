@@ -12,12 +12,12 @@ public class ParseDriver : IVerbDriver
     public string Namespace => "core";
     public string Name => "parse";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         var paramsList = verb.UnnamedParams;
         if (paramsList.Length == 0)
         {
-            return VerbResult.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "missing_param", "Usage: /parse value, [type];", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "missing_param", "Usage: /parse value, [type];", verb.Start));
         }
 
         var value = ValueResolver.Resolve(paramsList[0], context);
@@ -37,18 +37,18 @@ public class ParseDriver : IVerbDriver
         {
             return targetType switch
             {
-                "integer" => VerbResult.Ok(new ZohInt(long.Parse(str))),
-                "double" => VerbResult.Ok(new ZohFloat(double.Parse(str, System.Globalization.CultureInfo.InvariantCulture))),
-                "boolean" => VerbResult.Ok(new ZohBool(bool.Parse(str))),
-                "string" => VerbResult.Ok(new ZohStr(str)),
+                "integer" => DriverResult.Complete.Ok(new ZohInt(long.Parse(str))),
+                "double" => DriverResult.Complete.Ok(new ZohFloat(double.Parse(str, System.Globalization.CultureInfo.InvariantCulture))),
+                "boolean" => DriverResult.Complete.Ok(new ZohBool(bool.Parse(str))),
+                "string" => DriverResult.Complete.Ok(new ZohStr(str)),
                 "list" => ParseList(str, verb),
                 "map" => ParseMap(str, verb),
-                _ => VerbResult.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "invalid_type", $"Unknown type: {targetType}", verb.Start))
+                _ => DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "invalid_type", $"Unknown type: {targetType}", verb.Start))
             };
         }
         catch (System.Exception ex) when (ex is FormatException || ex is OverflowException)
         {
-            return VerbResult.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "invalid_format", $"Cannot parse '{str}' as {targetType}", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "invalid_format", $"Cannot parse '{str}' as {targetType}", verb.Start));
         }
     }
 
@@ -62,14 +62,14 @@ public class ParseDriver : IVerbDriver
         return "string";
     }
 
-    private VerbResult ParseList(string str, VerbCallAst verb)
+    private DriverResult ParseList(string str, VerbCallAst verb)
     {
         try
         {
             using var doc = JsonDocument.Parse(str);
             if (doc.RootElement.ValueKind != JsonValueKind.Array)
             {
-                return VerbResult.Fatal(new Diagnostics.Diagnostic(
+                return DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(
                     Diagnostics.DiagnosticSeverity.Error,
                     "invalid_format",
                     $"Cannot parse '{str}' as list: not a JSON array",
@@ -81,11 +81,11 @@ public class ParseDriver : IVerbDriver
                 .Select(JsonElementToZohValue)
                 .ToImmutableArray();
 
-            return VerbResult.Ok(new ZohList(items));
+            return DriverResult.Complete.Ok(new ZohList(items));
         }
         catch (JsonException)
         {
-            return VerbResult.Fatal(new Diagnostics.Diagnostic(
+            return DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(
                 Diagnostics.DiagnosticSeverity.Error,
                 "invalid_format",
                 $"Cannot parse '{str}' as list: malformed JSON",
@@ -93,14 +93,14 @@ public class ParseDriver : IVerbDriver
         }
     }
 
-    private VerbResult ParseMap(string str, VerbCallAst verb)
+    private DriverResult ParseMap(string str, VerbCallAst verb)
     {
         try
         {
             using var doc = JsonDocument.Parse(str);
             if (doc.RootElement.ValueKind != JsonValueKind.Object)
             {
-                return VerbResult.Fatal(new Diagnostics.Diagnostic(
+                return DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(
                     Diagnostics.DiagnosticSeverity.Error,
                     "invalid_format",
                     $"Cannot parse '{str}' as map: not a JSON object",
@@ -113,11 +113,11 @@ public class ParseDriver : IVerbDriver
                 builder[prop.Name] = JsonElementToZohValue(prop.Value);
             }
 
-            return VerbResult.Ok(new ZohMap(builder.ToImmutable()));
+            return DriverResult.Complete.Ok(new ZohMap(builder.ToImmutable()));
         }
         catch (JsonException)
         {
-            return VerbResult.Fatal(new Diagnostics.Diagnostic(
+            return DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(
                 Diagnostics.DiagnosticSeverity.Error,
                 "invalid_format",
                 $"Cannot parse '{str}' as map: malformed JSON",

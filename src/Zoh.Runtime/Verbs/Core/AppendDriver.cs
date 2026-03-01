@@ -13,19 +13,19 @@ public class AppendDriver : IVerbDriver
     public string Namespace => "core";
     public string Name => "append";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         var paramsList = verb.UnnamedParams;
         if (paramsList.Length < 2)
         {
-            return VerbResult.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "missing_param", "Usage: /append collection, value;", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "missing_param", "Usage: /append collection, value;", verb.Start));
         }
 
         var collectionParam = paramsList[0];
 
         if (collectionParam is not ValueAst.Reference refAst)
         {
-            return VerbResult.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "invalid_type", "First argument must be a variable reference (e.g. *list)", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "invalid_type", "First argument must be a variable reference (e.g. *list)", verb.Start));
         }
 
         try
@@ -52,7 +52,7 @@ public class AppendDriver : IVerbDriver
                 // valueToAppend must be map {"key": val} (IZohMap with count 1)
                 if (valueToAppend is not IZohMap appendMap || appendMap.Count != 1)
                 {
-                    return VerbResult.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "invalid_type", "Appending to a map requires a single-entry map value (e.g. {\"key\": value})", verb.Start));
+                    return DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "invalid_type", "Appending to a map requires a single-entry map value (e.g. {\"key\": value})", verb.Start));
                 }
 
                 var kvp = appendMap.Entries.First();
@@ -75,14 +75,14 @@ public class AppendDriver : IVerbDriver
                 var setResult = CollectionHelpers.SetAtPath(context, refAst.Name, refAst.Path, newZohMap);
                 if (!setResult.IsSuccess) return setResult;
 
-                return VerbResult.Ok(new ZohInt(newMapItems.Count));
+                return DriverResult.Complete.Ok(new ZohInt(newMapItems.Count));
             }
 
-            return VerbResult.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "invalid_type", $"Cannot append to type {current.Type}", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "invalid_type", $"Cannot append to type {current.Type}", verb.Start));
         }
         catch (ZohDiagnosticException ex)
         {
-            return VerbResult.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, ex.DiagnosticCode, ex.Message, verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, ex.DiagnosticCode, ex.Message, verb.Start));
         }
     }
 }

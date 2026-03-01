@@ -117,7 +117,7 @@ public class ZohRuntime
         _contexts.Add(ctx);
     }
 
-    private VerbResult ExecuteStatement(IExecutionContext ctx, VerbCallAst call)
+    private DriverResult ExecuteStatement(IExecutionContext ctx, VerbCallAst call)
     {
         var driver = VerbRegistry.GetDriver(call.Namespace, call.Name);
         if (driver != null)
@@ -128,17 +128,17 @@ public class ZohRuntime
             }
             catch (ZohDiagnosticException ex)
             {
-                return VerbResult.Fatal(new Diagnostic(ex.Severity, ex.DiagnosticCode, ex.Message, call.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(ex.Severity, ex.DiagnosticCode, ex.Message, call.Start));
             }
             catch (Exception ex)
             {
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "runtime_error", $"Unhandled exception: {ex.Message}", call.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "runtime_error", $"Unhandled exception: {ex.Message}", call.Start));
             }
         }
-        return VerbResult.Ok();
+        return DriverResult.Complete.Ok();
     }
 
-    public VerbResult ExecuteVerb(ValueAst verb, IExecutionContext ctx)
+    public DriverResult ExecuteVerb(ValueAst verb, IExecutionContext ctx)
     {
         VerbCallAst? call = null;
 
@@ -155,7 +155,7 @@ public class ZohRuntime
             }
         }
 
-        if (call == null) return VerbResult.Ok(); // Or Error? "Nothing executed"
+        if (call == null) return DriverResult.Complete.Ok(); // Or Error? "Nothing executed"
 
         var driver = VerbRegistry.GetDriver(call.Namespace, call.Name);
         if (driver != null)
@@ -166,18 +166,18 @@ public class ZohRuntime
             }
             catch (ZohDiagnosticException ex)
             {
-                return VerbResult.Fatal(new Diagnostic(ex.Severity, ex.DiagnosticCode, ex.Message, call.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(ex.Severity, ex.DiagnosticCode, ex.Message, call.Start));
             }
             catch (Exception ex)
             {
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "runtime_error", $"Unhandled exception: {ex.Message}", call.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "runtime_error", $"Unhandled exception: {ex.Message}", call.Start));
             }
         }
         else
         {
             // Log warning
             // Return Failure? Or just Log?
-            return VerbResult.Ok();
+            return DriverResult.Complete.Ok();
         }
     }
 

@@ -11,7 +11,7 @@ public class GetDriver : IVerbDriver
     public string Namespace => "core";
     public string Name => "get";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         string? targetName = null;
         System.Collections.Immutable.ImmutableArray<ValueAst> targetPath = System.Collections.Immutable.ImmutableArray<ValueAst>.Empty;
@@ -37,20 +37,20 @@ public class GetDriver : IVerbDriver
             {
                 var resolvedKey = ValueResolver.Resolve(p0, context);
                 if (resolvedKey is ZohStr s) targetName = s.Value;
-                else return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Get requires a variable reference or name string", verb.Start));
+                else return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Get requires a variable reference or name string", verb.Start));
             }
         }
 
         if (targetName == null)
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Usage: /get *var", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Usage: /get *var", verb.Start));
 
         var val = Zoh.Runtime.Helpers.CollectionHelpers.GetAtPath(context, targetName, targetPath);
 
         if (required && val.IsNothing())
         {
-            return VerbResult.Error(ZohValue.Nothing, new Diagnostic(DiagnosticSeverity.Error, "not_found", $"Required variable '{targetName}' not found", verb.Start));
+            return DriverResult.Complete.Error(ZohValue.Nothing, new Diagnostic(DiagnosticSeverity.Error, "not_found", $"Required variable '{targetName}' not found", verb.Start));
         }
 
-        return VerbResult.Ok(val);
+        return DriverResult.Complete.Ok(val);
     }
 }

@@ -11,12 +11,12 @@ public class HasDriver : IVerbDriver
     public string Namespace => "core";
     public string Name => "has";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         var paramsList = verb.UnnamedParams;
         if (paramsList.Length < 2)
         {
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Error, "missing_param", "Usage: /has collection, item;", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Error, "missing_param", "Usage: /has collection, item;", verb.Start));
         }
 
         var collection = ValueResolver.Resolve(paramsList[0], context);
@@ -29,9 +29,9 @@ public class HasDriver : IVerbDriver
             {
                 // Equality check? ZohValue.Equals?
                 // Record equality for simple types.
-                if (item.Equals(subject)) return VerbResult.Ok(ZohBool.True);
+                if (item.Equals(subject)) return DriverResult.Complete.Ok(ZohBool.True);
             }
-            return VerbResult.Ok(ZohBool.False);
+            return DriverResult.Complete.Ok(ZohBool.False);
         }
 
         if (collection is ZohMap map)
@@ -40,12 +40,12 @@ public class HasDriver : IVerbDriver
             // Strict: subject must be string
             if (subject is not ZohStr s)
             {
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_index_type", $"Map key must be string, got: {subject.Type}", verb.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_index_type", $"Map key must be string, got: {subject.Type}", verb.Start));
             }
             string key = s.Value;
-            return VerbResult.Ok(new ZohBool(map.Items.ContainsKey(key)));
+            return DriverResult.Complete.Ok(new ZohBool(map.Items.ContainsKey(key)));
         }
 
-        return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Error, "invalid_type", $"Expected list or map, got: {collection.Type}", verb.Start));
+        return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Error, "invalid_type", $"Expected list or map, got: {collection.Type}", verb.Start));
     }
 }

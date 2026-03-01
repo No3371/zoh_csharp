@@ -11,7 +11,7 @@ public class DiagnoseDriver : IVerbDriver
     public string Namespace => "core";
     public string Name => "diagnose";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         // /diagnose;
 
@@ -35,9 +35,9 @@ public class DiagnoseDriver : IVerbDriver
 
         if (context.LastDiagnostics.Count == 0)
         {
-            return VerbResult.Ok(ZohValue.Nothing);
+            return DriverResult.Complete.Ok(ZohValue.Nothing);
         }
 
-        return VerbResult.Ok(map);
+        return DriverResult.Complete.Ok(map);
     }
 }

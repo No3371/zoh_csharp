@@ -76,7 +76,7 @@ public class StoreVerbTests
         var result = _write.Execute(_ctx, verb);
 
         Assert.True(result.IsFatal);
-        Assert.Contains(result.Diagnostics, d => d.Code == "parameter_not_found");
+        Assert.Contains(result.DiagnosticsOrEmpty, d => d.Code == "parameter_not_found");
     }
 
     [Fact]
@@ -148,7 +148,7 @@ public class StoreVerbTests
         // Assert
         Assert.False(result.IsSuccess);
         Assert.False(result.IsFatal);
-        Assert.Contains(result.Diagnostics, d => d.Code == "not_found");
+        Assert.Contains(result.DiagnosticsOrEmpty, d => d.Code == "not_found");
     }
     [Fact]
     public void Write_Then_Drop_Then_Read_RoundTrip()
@@ -215,7 +215,7 @@ public class StoreVerbTests
         var result = _erase.Execute(_ctx, verb);
 
         Assert.True(result.IsSuccess); // Should be success per spec
-        Assert.Contains(result.Diagnostics, d => d.Severity == DiagnosticSeverity.Info && d.Code == "not_found");
+        Assert.Contains(result.DiagnosticsOrEmpty, d => d.Severity == DiagnosticSeverity.Info && d.Code == "not_found");
     }
 
     [Fact]
@@ -277,7 +277,7 @@ public class StoreVerbTests
         var result = _write.Execute(_ctx, verb);
 
         Assert.True(result.IsFatal);
-        Assert.Equal("invalid_type", result.Diagnostics[0].Code);
+        Assert.Equal("invalid_type", result.DiagnosticsOrEmpty[0].Code);
     }
 
     [Fact]
@@ -307,7 +307,7 @@ public class StoreVerbTests
         var verb = new VerbCallAst(null, "write", false, ImmutableArray<AttributeAst>.Empty, ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray.Create<ValueAst>(Ref("v")), new TextPosition(0, 0, 0));
         var result = _write.Execute(_ctx, verb);
         Assert.True(result.IsFatal);
-        Assert.Equal("invalid_type", result.Diagnostics[0].Code);
+        Assert.Equal("invalid_type", result.DiagnosticsOrEmpty[0].Code);
     }
 
     [Fact]
@@ -317,7 +317,7 @@ public class StoreVerbTests
         var verb = new VerbCallAst(null, "write", false, ImmutableArray<AttributeAst>.Empty, ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray.Create<ValueAst>(Ref("c")), new TextPosition(0, 0, 0));
         var result = _write.Execute(_ctx, verb);
         Assert.True(result.IsFatal);
-        Assert.Equal("invalid_type", result.Diagnostics[0].Code);
+        Assert.Equal("invalid_type", result.DiagnosticsOrEmpty[0].Code);
     }
 
     [Fact]
@@ -326,7 +326,7 @@ public class StoreVerbTests
         var verb = new VerbCallAst(null, "erase", false, ImmutableArray<AttributeAst>.Empty, ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray<ValueAst>.Empty, new TextPosition(0, 0, 0));
         var result = _erase.Execute(_ctx, verb);
         Assert.True(result.IsFatal);
-        Assert.Equal("parameter_not_found", result.Diagnostics[0].Code);
+        Assert.Equal("parameter_not_found", result.DiagnosticsOrEmpty[0].Code);
     }
 
     [Fact]
@@ -340,6 +340,6 @@ public class StoreVerbTests
         var result = _read.Execute(_ctx, verb);
 
         Assert.False(result.IsSuccess);
-        Assert.Contains(result.Diagnostics, d => d.Code == "not_found");
+        Assert.Contains(result.DiagnosticsOrEmpty, d => d.Code == "not_found");
     }
 }

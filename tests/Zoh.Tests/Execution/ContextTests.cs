@@ -41,7 +41,7 @@ public class ContextTests
         _context.VerbExecutor = (verb, ctx) =>
         {
             if (verb is ValueAst.String s) executed.Add(s.Value);
-            return Zoh.Runtime.Verbs.VerbResult.Ok();
+            return Zoh.Runtime.Verbs.DriverResult.Complete.Ok();
         };
 
         // Add defers (LIFO)

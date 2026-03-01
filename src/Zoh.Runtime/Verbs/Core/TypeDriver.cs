@@ -11,13 +11,13 @@ public class TypeDriver : IVerbDriver
     public string Namespace => "core";
     public string Name => "type";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         // /type value;
         // returns string representation of type.
 
         if (verb.UnnamedParams.Length == 0)
-            return VerbResult.Error(ZohValue.Nothing, new Diagnostic(DiagnosticSeverity.Error, "MissingArguments", "Usage: /type value", verb.Start));
+            return DriverResult.Complete.Error(ZohValue.Nothing, new Diagnostic(DiagnosticSeverity.Error, "MissingArguments", "Usage: /type value", verb.Start));
 
         var val = ValueResolver.Resolve(verb.UnnamedParams[0], context);
 
@@ -37,6 +37,6 @@ public class TypeDriver : IVerbDriver
             _ => "unknown"
         };
 
-        return VerbResult.Ok(new ZohStr(typeStr));
+        return DriverResult.Complete.Ok(new ZohStr(typeStr));
     }
 }

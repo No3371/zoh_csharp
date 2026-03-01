@@ -11,24 +11,24 @@ namespace Zoh.Runtime.Verbs.Flow
         public string Namespace => "core";
         public string Name => "loop";
 
-        public VerbResult Execute(IExecutionContext context, VerbCallAst call)
+        public DriverResult Execute(IExecutionContext context, VerbCallAst call)
         {
             if (call.UnnamedParams.Length < 2)
             {
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Use: /loop times, verb", call.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Use: /loop times, verb", call.Start));
             }
 
             var iterationsVal = ValueResolver.Resolve(call.UnnamedParams[0], context);
             if (iterationsVal.Type != ZohValueType.Integer)
             {
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Iterations must be an integer.", call.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Iterations must be an integer.", call.Start));
             }
             long iterations = ((ZohInt)iterationsVal).Value;
 
             var verbVal = ValueResolver.Resolve(call.UnnamedParams[1], context);
             if (!(verbVal is ZohVerb verbToRun))
             {
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Second argument must be a verb.", call.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Second argument must be a verb.", call.Start));
             }
 
             long count = 0;
@@ -47,7 +47,7 @@ namespace Zoh.Runtime.Verbs.Flow
                 count++;
             }
 
-            return VerbResult.Ok();
+            return DriverResult.Complete.Ok();
         }
     }
 }

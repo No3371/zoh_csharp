@@ -16,10 +16,10 @@ public class SetVolumeDriver : IVerbDriver
         _handler = handler;
     }
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst call)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst call)
     {
         var ctx = context as Context;
-        if (ctx == null) return VerbResult.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Fatal, "invalid_context", "SetVolume requires a valid Context.", call.Start));
+        if (ctx == null) return DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Fatal, "invalid_context", "SetVolume requires a valid Context.", call.Start));
 
         string id = "";
         double volume = 1.0;
@@ -44,7 +44,7 @@ public class SetVolumeDriver : IVerbDriver
 
         _handler?.OnSetVolume(ctx, request);
 
-        return VerbResult.Ok();
+        return DriverResult.Complete.Ok();
     }
 
     private string? ResolveAttributeToString(VerbCallAst call, string name, Context ctx)

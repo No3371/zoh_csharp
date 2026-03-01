@@ -30,7 +30,7 @@ public interface IExecutionContext
     /// <summary>
     /// Execute a verb dynamically (e.g. for /do, /eval calls that return verbs, defers)
     /// </summary>
-    VerbResult ExecuteVerb(ValueAst verb, IExecutionContext context);
+    DriverResult ExecuteVerb(ValueAst verb, IExecutionContext context);
 
     ChannelManager ChannelManager { get; }
 

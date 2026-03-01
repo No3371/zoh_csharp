@@ -10,7 +10,7 @@ public class FirstDriver : IVerbDriver
     public string Namespace => "core";
     public string Name => "first";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         foreach (var param in verb.UnnamedParams)
         {
@@ -25,7 +25,7 @@ public class FirstDriver : IVerbDriver
 
             if (value is ZohVerb vSubject)
             {
-                value = context.ExecuteVerb(vSubject.VerbValue, context).Value;
+                value = context.ExecuteVerb(vSubject.VerbValue, context).ValueOrNothing;
             }
             else if (value is ZohExpr expr)
             {
@@ -34,10 +34,10 @@ public class FirstDriver : IVerbDriver
 
             if (!value.IsNothing())
             {
-                return VerbResult.Ok(value);
+                return DriverResult.Complete.Ok(value);
             }
         }
 
-        return VerbResult.Ok(ZohValue.Nothing);
+        return DriverResult.Complete.Ok(ZohValue.Nothing);
     }
 }

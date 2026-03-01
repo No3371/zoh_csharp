@@ -21,7 +21,7 @@ public class RollDriver : IVerbDriver
     public string Namespace => "core";
     public string Name => "roll"; // Default
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         if (verb.Name.Equals("roll", StringComparison.OrdinalIgnoreCase))
             return ExecuteRoll(context, verb);
@@ -30,25 +30,25 @@ public class RollDriver : IVerbDriver
         if (verb.Name.Equals("rand", StringComparison.OrdinalIgnoreCase))
             return ExecuteRand(context, verb);
 
-        return VerbResult.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "invalid_verb", $"RollDriver cannot handle {verb.Name}", verb.Start));
+        return DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "invalid_verb", $"RollDriver cannot handle {verb.Name}", verb.Start));
     }
 
-    private VerbResult ExecuteRoll(IExecutionContext context, VerbCallAst verb)
+    private DriverResult ExecuteRoll(IExecutionContext context, VerbCallAst verb)
     {
         var options = verb.UnnamedParams;
-        if (options.Length == 0) return VerbResult.Ok(ZohValue.Nothing);
+        if (options.Length == 0) return DriverResult.Complete.Ok(ZohValue.Nothing);
 
         var index = System.Random.Shared.Next(options.Length);
         var chosen = ValueResolver.Resolve(options[index], context);
-        return VerbResult.Ok(chosen);
+        return DriverResult.Complete.Ok(chosen);
     }
 
-    private VerbResult ExecuteWRoll(IExecutionContext context, VerbCallAst verb)
+    private DriverResult ExecuteWRoll(IExecutionContext context, VerbCallAst verb)
     {
         // wroll val1, weight1, val2, weight2
         var args = verb.UnnamedParams;
         if (args.Length % 2 != 0)
-            return VerbResult.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "invalid_args", "Weighted roll requires pairs of (value, weight)", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "invalid_args", "Weighted roll requires pairs of (value, weight)", verb.Start));
 
         var pairs = new List<(ZohValue Val, int Weight)>();
         int totalWeight = 0;
@@ -60,7 +60,7 @@ public class RollDriver : IVerbDriver
 
             if (wVal is not ZohInt weightInt)
             {
-                return VerbResult.Fatal(new Diagnostics.Diagnostic(
+                return DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(
                     Diagnostics.DiagnosticSeverity.Error,
                     "invalid_type",
                     $"wroll weight at position {i + 1} must be an integer, got {wVal.Type}",
@@ -69,7 +69,7 @@ public class RollDriver : IVerbDriver
 
             if (weightInt.Value < 0)
             {
-                return VerbResult.Fatal(new Diagnostics.Diagnostic(
+                return DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(
                     Diagnostics.DiagnosticSeverity.Error,
                     "invalid_value",
                     $"wroll weight at position {i + 1} must be non-negative, got {weightInt.Value}",
@@ -82,24 +82,24 @@ public class RollDriver : IVerbDriver
             totalWeight += w;
         }
 
-        if (totalWeight == 0) return VerbResult.Ok(pairs.FirstOrDefault().Val ?? ZohValue.Nothing);
+        if (totalWeight == 0) return DriverResult.Complete.Ok(pairs.FirstOrDefault().Val ?? ZohValue.Nothing);
 
         var roll = System.Random.Shared.Next(totalWeight);
         int current = 0;
         foreach (var p in pairs)
         {
             current += p.Weight;
-            if (roll < current) return VerbResult.Ok(p.Val);
+            if (roll < current) return DriverResult.Complete.Ok(p.Val);
         }
 
-        return VerbResult.Ok(pairs.Last().Val);
+        return DriverResult.Complete.Ok(pairs.Last().Val);
     }
 
-    private VerbResult ExecuteRand(IExecutionContext context, VerbCallAst verb)
+    private DriverResult ExecuteRand(IExecutionContext context, VerbCallAst verb)
     {
         var args = verb.UnnamedParams;
         if (args.Length < 2)
-            return VerbResult.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "missing_param", "Usage: /rand min, max;", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "missing_param", "Usage: /rand min, max;", verb.Start));
 
         var minVal = ValueResolver.Resolve(args[0], context);
         var maxVal = ValueResolver.Resolve(args[1], context);
@@ -120,7 +120,7 @@ public class RollDriver : IVerbDriver
             double max = maxVal.AsFloat().Value;
             // Random.NextDouble() is 0..1
             double r = System.Random.Shared.NextDouble() * (max - min) + min;
-            return VerbResult.Ok(new ZohFloat(r));
+            return DriverResult.Complete.Ok(new ZohFloat(r));
         }
         else
         {
@@ -128,11 +128,11 @@ public class RollDriver : IVerbDriver
             long max = maxVal.AsInt().Value;
 
             if (includeMax) max++;
-            if (max <= min) return VerbResult.Ok(new ZohInt(min));
+            if (max <= min) return DriverResult.Complete.Ok(new ZohInt(min));
 
             // Random.Shared.NextInt64(min, max)
             long r = System.Random.Shared.NextInt64(min, max);
-            return VerbResult.Ok(new ZohInt(r));
+            return DriverResult.Complete.Ok(new ZohInt(r));
         }
     }
 }

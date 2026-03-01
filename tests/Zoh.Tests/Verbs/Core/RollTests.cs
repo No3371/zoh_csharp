@@ -36,7 +36,7 @@ public class RollTests
         var result = _driver.Execute(_context, call);
 
         Assert.False(result.IsSuccess);
-        Assert.Equal("invalid_value", result.Diagnostics[0].Code);
+        Assert.Equal("invalid_value", result.DiagnosticsOrEmpty[0].Code);
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public class RollTests
         var result = _driver.Execute(_context, call);
 
         Assert.False(result.IsSuccess);
-        Assert.Equal("invalid_type", result.Diagnostics[0].Code);
+        Assert.Equal("invalid_type", result.DiagnosticsOrEmpty[0].Code);
     }
 
     [Fact]
@@ -63,8 +63,8 @@ public class RollTests
 
         var result = _driver.Execute(_context, call);
 
-        Assert.True(result.IsSuccess, result.Diagnostics.FirstOrDefault()?.Message);
-        var value = Assert.IsType<ZohStr>(result.Value);
+        Assert.True(result.IsSuccess, result.DiagnosticsOrEmpty.FirstOrDefault()?.Message);
+        var value = Assert.IsType<ZohStr>(result.ValueOrNothing);
         Assert.Contains(value.Value, new[] { "x", "y" });
     }
 }

@@ -11,20 +11,20 @@ public class SignalDriver : IVerbDriver
     public string? Namespace => null;
     public string Name => "signal";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst call)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst call)
     {
         var ctx = context as Context;
-        if (ctx == null) return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_context", "Signal requires a valid Context.", call.Start));
+        if (ctx == null) return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_context", "Signal requires a valid Context.", call.Start));
 
         if (call.UnnamedParams.Length < 1)
         {
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "arg_count", "Signal requires at least 1 argument (signal name).", call.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "arg_count", "Signal requires at least 1 argument (signal name).", call.Start));
         }
 
         var signalNameVal = ValueResolver.Resolve(call.UnnamedParams[0], ctx);
         if (signalNameVal is not ZohStr s)
         {
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_arg", "Signal name must be a string.", call.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_arg", "Signal name must be a string.", call.Start));
         }
 
         string signalName = s.Value;
@@ -42,6 +42,6 @@ public class SignalDriver : IVerbDriver
         // Optional: Return the count of woken contexts?
         // The spec implies usage like `/signal "foo";`.
         // If capture is used: `-> *count;`.
-        return VerbResult.Ok(new ZohInt(woken));
+        return DriverResult.Complete.Ok(new ZohInt(woken));
     }
 }

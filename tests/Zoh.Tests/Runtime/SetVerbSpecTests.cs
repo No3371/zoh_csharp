@@ -82,7 +82,7 @@ public class SetVerbSpecTests
         var result = _driver.Execute(_context, call);
 
         Assert.False(result.IsSuccess, "Should fail for String target");
-        Assert.Contains(result.Diagnostics, d => d.Code == "invalid_type");
+        Assert.Contains(result.DiagnosticsOrEmpty, d => d.Code == "invalid_type");
     }
 
     [Fact]

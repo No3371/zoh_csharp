@@ -11,7 +11,7 @@ public class IncreaseDriver : IVerbDriver
     public string Namespace => "core";
     public string Name => "increase";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         // /increase *var [amount];
         // Default amount 1.
@@ -19,7 +19,7 @@ public class IncreaseDriver : IVerbDriver
         return ModifyVariable(context, verb, 1);
     }
 
-    internal static VerbResult ModifyVariable(IExecutionContext context, VerbCallAst verb, int sign)
+    internal static DriverResult ModifyVariable(IExecutionContext context, VerbCallAst verb, int sign)
     {
         string? targetName = null;
         System.Collections.Immutable.ImmutableArray<ValueAst> targetPath = System.Collections.Immutable.ImmutableArray<ValueAst>.Empty;
@@ -49,13 +49,13 @@ public class IncreaseDriver : IVerbDriver
                 {
                     var execResult = context.ExecuteVerb(v.VerbValue, context);
                     if (execResult.IsFatal) return execResult;
-                    amount = execResult.Value ?? ZohNothing.Instance;
+                    amount = execResult.ValueOrNothing;
                 }
 
                 // Address GAP 1: Strict numeric type validation
                 if (!(amount is ZohInt || amount is ZohFloat))
                 {
-                    return VerbResult.Fatal(new Diagnostic(
+                    return DriverResult.Complete.Fatal(new Diagnostic(
                         DiagnosticSeverity.Fatal,
                         "invalid_type",
                         $"Amount parameter must evaluate to an integer or float, got {amount.Type}",
@@ -65,7 +65,7 @@ public class IncreaseDriver : IVerbDriver
         }
 
         if (targetName == null)
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", $"Usage: /{verb.Name} *var [amount]", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", $"Usage: /{verb.Name} *var [amount]", verb.Start));
 
         var currentVal = Zoh.Runtime.Helpers.CollectionHelpers.GetAtPath(context, targetName, targetPath);
 
@@ -96,8 +96,8 @@ public class IncreaseDriver : IVerbDriver
         }
 
         if (currentVal.IsNothing())
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "not_found", $"Variable or path not found or is Nothing", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "not_found", $"Variable or path not found or is Nothing", verb.Start));
 
-        return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", $"Cannot {verb.Name} variable of type {currentVal.Type}", verb.Start));
+        return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", $"Cannot {verb.Name} variable of type {currentVal.Type}", verb.Start));
     }
 }

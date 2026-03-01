@@ -37,7 +37,7 @@ public class NestedAccessTests
                 {
                     var vResult = driver.Execute(_context, call.Call);
                     // Set LastResult for chain
-                    _context.LastResult = vResult.Value ?? ZohValue.Nothing;
+                    _context.LastResult = vResult.ValueOrNothing;
                 }
                 else
                 {

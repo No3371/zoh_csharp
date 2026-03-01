@@ -46,7 +46,7 @@ namespace Zoh.Tests.Verbs.Flow
             );
 
             var result = _context.ExecuteVerb(call);
-            Assert.True(result.IsSuccess, string.Join(", ", result.Diagnostics));
+            Assert.True(result.IsSuccess, string.Join(", ", result.DiagnosticsOrEmpty));
 
             Assert.Equal(1L, _context.Variables.Get("x").AsInt().Value);
         }
@@ -67,7 +67,7 @@ namespace Zoh.Tests.Verbs.Flow
             );
 
             var result = _context.ExecuteVerb(call);
-            Assert.True(result.IsSuccess, string.Join(", ", result.Diagnostics));
+            Assert.True(result.IsSuccess, string.Join(", ", result.DiagnosticsOrEmpty));
 
             Assert.Equal(5L, _context.Variables.Get("x").AsInt().Value);
         }
@@ -87,9 +87,9 @@ namespace Zoh.Tests.Verbs.Flow
             );
 
             var result = _context.ExecuteVerb(call);
-            Assert.True(result.IsSuccess, string.Join(", ", result.Diagnostics));
+            Assert.True(result.IsSuccess, string.Join(", ", result.DiagnosticsOrEmpty));
 
-            if (result.Value is ZohVerb v) _context.ExecuteVerb(v.VerbValue.Call);
+            if (result.ValueOrNothing is ZohVerb v) _context.ExecuteVerb(v.VerbValue.Call);
 
             Assert.Equal(2L, _context.Variables.Get("res").AsInt().Value);
         }
@@ -108,9 +108,9 @@ namespace Zoh.Tests.Verbs.Flow
             );
 
             var result = _context.ExecuteVerb(call);
-            Assert.True(result.IsSuccess, string.Join(", ", result.Diagnostics));
+            Assert.True(result.IsSuccess, string.Join(", ", result.DiagnosticsOrEmpty));
 
-            if (result.Value is ZohVerb v) _context.ExecuteVerb(v.VerbValue.Call);
+            if (result.ValueOrNothing is ZohVerb v) _context.ExecuteVerb(v.VerbValue.Call);
 
             Assert.Equal(99L, _context.Variables.Get("res").AsInt().Value);
         }
@@ -144,8 +144,8 @@ namespace Zoh.Tests.Verbs.Flow
             );
 
             var result = _context.ExecuteVerb(call);
-            Assert.True(result.IsSuccess, string.Join(", ", result.Diagnostics));
-            Assert.Equal(100L, result.Value.AsInt().Value);
+            Assert.True(result.IsSuccess, string.Join(", ", result.DiagnosticsOrEmpty));
+            Assert.Equal(100L, result.ValueOrNothing.AsInt().Value);
         }
 
         [Fact]
@@ -291,11 +291,11 @@ namespace Zoh.Tests.Verbs.Flow
         {
             public string Namespace => "test";
             public string Name => "check_count";
-            public VerbResult Execute(IExecutionContext context, VerbCallAst call)
+            public DriverResult Execute(IExecutionContext context, VerbCallAst call)
             {
                 var count = context.Variables.Get("count").AsInt().Value;
                 if (count == 3) context.Variables.Set("stop", new ZohBool(true));
-                return VerbResult.Ok();
+                return DriverResult.Complete.Ok();
             }
         }
 
@@ -303,25 +303,25 @@ namespace Zoh.Tests.Verbs.Flow
         {
             public string Namespace => "test";
             public string Name => "update_cond";
-            public VerbResult Execute(IExecutionContext context, VerbCallAst call)
+            public DriverResult Execute(IExecutionContext context, VerbCallAst call)
             {
                 var x = context.Variables.Get("x").AsInt().Value;
                 if (x >= 3) context.Variables.Set("cond", new ZohBool(false));
-                return VerbResult.Ok();
+                return DriverResult.Complete.Ok();
             }
         }
         class ChangeTypeDriver : IVerbDriver
         {
             public string Namespace => "test";
             public string Name => "change_type";
-            public VerbResult Execute(IExecutionContext context, VerbCallAst call)
+            public DriverResult Execute(IExecutionContext context, VerbCallAst call)
             {
                 var val = context.Variables.Get("val");
                 if (val is ZohInt i && i.Value > 7)
                 {
                     context.Variables.Set("val", new ZohStr("stopped"));
                 }
-                return VerbResult.Ok();
+                return DriverResult.Complete.Ok();
             }
         }
     }

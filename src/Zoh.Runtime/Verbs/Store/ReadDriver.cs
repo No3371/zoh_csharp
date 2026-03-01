@@ -12,7 +12,7 @@ public class ReadDriver : IVerbDriver
     public string Namespace => "store";
     public string Name => "read";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         // /read [required] [scope] store:name? default:value? *var1 ...;
 
@@ -52,7 +52,7 @@ public class ReadDriver : IVerbDriver
 
         if (refs.Count == 0)
         {
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Read requires at least one reference parameter", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Read requires at least one reference parameter", verb.Start));
         }
 
         foreach (var varRef in refs)
@@ -64,7 +64,7 @@ public class ReadDriver : IVerbDriver
             {
                 if (required)
                 {
-                    return VerbResult.Error(ZohValue.Nothing, new Diagnostic(DiagnosticSeverity.Error, "not_found", $"Required variable not in storage: {varRef.Name}", verb.Start));
+                    return DriverResult.Complete.Error(ZohValue.Nothing, new Diagnostic(DiagnosticSeverity.Error, "not_found", $"Required variable not in storage: {varRef.Name}", verb.Start));
                 }
                 value = defaultValue;
             }
@@ -94,10 +94,10 @@ public class ReadDriver : IVerbDriver
             }
             catch (System.InvalidOperationException ex)
             {
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "type_mismatch", ex.Message, verb.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "type_mismatch", ex.Message, verb.Start));
             }
         }
 
-        return VerbResult.Ok();
+        return DriverResult.Complete.Ok();
     }
 }

@@ -11,7 +11,7 @@ public class DebugDriver : IVerbDriver
     public string Namespace => "core";
     public string Name => "log"; // Primary name. Aliases handled by Registry or manual registration.
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         // Aliases: /log, /info, /warn, /error, /debug
         // Determine severity from verb name (case insensitive)
@@ -52,9 +52,9 @@ public class DebugDriver : IVerbDriver
         // Error severity means execution failure?
         if (severity == DiagnosticSeverity.Error)
         {
-            return VerbResult.Fatal(diagnostic);
+            return DriverResult.Complete.Fatal(diagnostic);
         }
 
-        return VerbResult.WithDiagnostics(ZohValue.Nothing, [diagnostic]);
+        return DriverResult.Complete.WithDiagnostics(ZohValue.Nothing, [diagnostic]);
     }
 }

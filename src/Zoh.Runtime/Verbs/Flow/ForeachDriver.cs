@@ -13,11 +13,11 @@ namespace Zoh.Runtime.Verbs.Flow
         public string Namespace => "core";
         public string Name => "foreach";
 
-        public VerbResult Execute(IExecutionContext context, VerbCallAst call)
+        public DriverResult Execute(IExecutionContext context, VerbCallAst call)
         {
             if (call.UnnamedParams.Length < 3)
             {
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Use: /foreach collection, item_var_name, verb", call.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Use: /foreach collection, item_var_name, verb", call.Start));
             }
 
             var collectionVal = ValueResolver.Resolve(call.UnnamedParams[0], context);
@@ -25,7 +25,7 @@ namespace Zoh.Runtime.Verbs.Flow
 
             if (varNameVal.Type != ZohValueType.String)
             {
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Variable name must be a string.", call.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Variable name must be a string.", call.Start));
             }
             var varName = varNameVal.AsString().Value;
             context.Variables.Drop(varName);
@@ -33,7 +33,7 @@ namespace Zoh.Runtime.Verbs.Flow
             var verbVal = ValueResolver.Resolve(call.UnnamedParams[2], context);
             if (!(verbVal is ZohVerb verbToRun))
             {
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Third argument must be a verb.", call.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Third argument must be a verb.", call.Start));
             }
 
             IEnumerable<ZohValue> items = Enumerable.Empty<ZohValue>();
@@ -54,7 +54,7 @@ namespace Zoh.Runtime.Verbs.Flow
 
             else
             {
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", $"Cannot iterate over type {collectionVal.Type}", call.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", $"Cannot iterate over type {collectionVal.Type}", call.Start));
             }
 
             foreach (var item in items)
@@ -75,7 +75,7 @@ namespace Zoh.Runtime.Verbs.Flow
                 if (result.IsFatal) return result;
             }
 
-            return VerbResult.Ok();
+            return DriverResult.Complete.Ok();
         }
     }
 }

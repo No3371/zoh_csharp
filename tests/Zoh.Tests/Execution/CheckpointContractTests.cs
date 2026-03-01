@@ -23,7 +23,7 @@ public class CheckpointContractTests
         {
             CurrentStory = story,
             InstructionPointer = 0,
-            VerbExecutor = (v, c) => VerbResult.Ok() // Mock executor
+            VerbExecutor = (v, c) => DriverResult.Complete.Ok() // Mock executor
         };
         return ctx;
     }
@@ -72,7 +72,7 @@ public class CheckpointContractTests
         var result = ctx.ValidateContract("check");
 
         Assert.False(result.IsSuccess);
-        Assert.Equal("checkpoint_violation", result.Diagnostics[0].Code);
+        Assert.Equal("checkpoint_violation", result.DiagnosticsOrEmpty[0].Code);
     }
 
     [Fact]
@@ -87,9 +87,9 @@ public class CheckpointContractTests
         var result = ctx.ValidateContract("check");
 
         Assert.False(result.IsSuccess);
-        Assert.Equal("checkpoint_violation", result.Diagnostics[0].Code);
-        Assert.Contains("integer", result.Diagnostics[0].Message);
-        Assert.Contains("ZohStr", result.Diagnostics[0].Message);
+        Assert.Equal("checkpoint_violation", result.DiagnosticsOrEmpty[0].Code);
+        Assert.Contains("integer", result.DiagnosticsOrEmpty[0].Message);
+        Assert.Contains("ZohStr", result.DiagnosticsOrEmpty[0].Message);
     }
 
     [Theory]

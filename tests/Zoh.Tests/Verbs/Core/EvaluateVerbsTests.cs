@@ -43,7 +43,7 @@ public class EvaluateVerbsTests
         var result = _driver.Execute(_context, call);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(new ZohInt(3), result.Value);
+        Assert.Equal(new ZohInt(3), result.ValueOrNothing);
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public class EvaluateVerbsTests
         var result = _driver.Execute(_context, call);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(new ZohInt(20), result.Value);
+        Assert.Equal(new ZohInt(20), result.ValueOrNothing);
     }
 
     [Fact]
@@ -75,9 +75,9 @@ public class EvaluateVerbsTests
         var result = _driver.Execute(_context, call);
 
         Assert.False(result.IsSuccess);
-        Assert.Equal(Zoh.Runtime.Diagnostics.DiagnosticSeverity.Error, result.Diagnostics[0].Severity);
+        Assert.Equal(Zoh.Runtime.Diagnostics.DiagnosticSeverity.Error, result.DiagnosticsOrEmpty[0].Severity);
         // VerbResult.Fatal creates a list of 1 diagnostic.
-        Assert.Contains("Undefined variable", result.Diagnostics[0].Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Undefined variable", result.DiagnosticsOrEmpty[0].Message, StringComparison.OrdinalIgnoreCase);
         // Note: Assuming Evaluator throws specific message. If not, this might fail until we fix Evaluator.
     }
 }

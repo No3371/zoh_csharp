@@ -8,7 +8,7 @@ public class DecreaseDriver : IVerbDriver
     public string Namespace => "core";
     public string Name => "decrease";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         // /decrease *var [amount];
         return IncreaseDriver.ModifyVariable(context, verb, -1);

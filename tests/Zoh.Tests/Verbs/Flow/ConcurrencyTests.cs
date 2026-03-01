@@ -23,7 +23,7 @@ public class ConcurrencyTests
         {
             CurrentStory = story,
             InstructionPointer = 0,
-            VerbExecutor = (v, c) => VerbResult.Ok() // Mock executor
+            VerbExecutor = (v, c) => DriverResult.Complete.Ok() // Mock executor
         };
         return ctx;
     }
@@ -102,9 +102,10 @@ public class ConcurrencyTests
         var result = driver.Execute(ctx, call);
 
         Assert.True(result.IsSuccess);
-        var cont = Assert.IsType<ContextContinuation>(result.Continuation);
+        var suspend = Assert.IsType<DriverResult.Suspend>(result);
+        var req = Assert.IsType<JoinContextRequest>(suspend.Continuation.Request);
         Assert.Single(scheduled);
-        Assert.Same(scheduled[0], cont.ChildContext);
+        Assert.Equal(scheduled[0].Id, req.ContextId);
         Assert.Equal(ContextState.Running, ctx.State); // driver no longer mutates state
     }
 

@@ -21,7 +21,7 @@ namespace Zoh.Tests.Verbs
         {
             _variables = new VariableStore(new Dictionary<string, Variable>());
             _context = new Context(_variables, new InMemoryStorage(), new ChannelManager(), new SignalManager());
-            _context.VerbExecutor = (v, c) => VerbResult.Ok(); // Mock
+            _context.VerbExecutor = (v, c) => DriverResult.Complete.Ok(); // Mock
         }
 
         private static TextPosition Ps() => new TextPosition(1, 1, 0);

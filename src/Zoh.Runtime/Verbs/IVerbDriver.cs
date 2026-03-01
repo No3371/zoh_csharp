@@ -17,5 +17,5 @@ public interface IVerbDriver
     /// </summary>
     int Priority => 0; // Default implementation for backward compat
 
-    VerbResult Execute(IExecutionContext context, VerbCallAst verbCall);
+    DriverResult Execute(IExecutionContext context, VerbCallAst verbCall);
 }

@@ -51,7 +51,7 @@ public class MapStringKeyTests
         );
 
         Assert.True(result.IsFatal);
-        Assert.Equal("invalid_index_type", result.Diagnostics[0].Code);
+        Assert.Equal("invalid_index_type", result.DiagnosticsOrEmpty[0].Code);
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public class MapStringKeyTests
 
         var result = new HasDriver().Execute(_context, call);
         Assert.True(result.IsFatal);
-        Assert.Equal("invalid_index_type", result.Diagnostics[0].Code);
+        Assert.Equal("invalid_index_type", result.DiagnosticsOrEmpty[0].Code);
     }
 
     [Fact]
@@ -111,6 +111,6 @@ public class MapStringKeyTests
 
         var result = new RemoveDriver().Execute(_context, call);
         Assert.True(result.IsFatal);
-        Assert.Equal("invalid_index_type", result.Diagnostics[0].Code);
+        Assert.Equal("invalid_index_type", result.DiagnosticsOrEmpty[0].Code);
     }
 }

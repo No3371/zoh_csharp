@@ -30,7 +30,7 @@ public class ControlFlowVerbsTests
         _context.VerbExecutor = (verb, ctx) =>
         {
             executed = true;
-            return Zoh.Runtime.Verbs.VerbResult.Ok(new ZohInt(42));
+            return Zoh.Runtime.Verbs.DriverResult.Complete.Ok(new ZohInt(42));
         };
 
         // Value to invoke must be a ZohVerb wrapping a AST.
@@ -46,6 +46,6 @@ public class ControlFlowVerbsTests
 
         Assert.True(executed);
         Assert.True(result.IsSuccess);
-        Assert.Equal(new ZohInt(42), result.Value);
+        Assert.Equal(new ZohInt(42), result.ValueOrNothing);
     }
 }

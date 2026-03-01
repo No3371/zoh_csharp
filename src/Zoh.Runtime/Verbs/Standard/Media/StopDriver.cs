@@ -16,10 +16,10 @@ public class StopDriver : IVerbDriver
         _handler = handler;
     }
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst call)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst call)
     {
         var ctx = context as Context;
-        if (ctx == null) return VerbResult.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Fatal, "invalid_context", "Stop requires a valid Context.", call.Start));
+        if (ctx == null) return DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Fatal, "invalid_context", "Stop requires a valid Context.", call.Start));
 
         double fade = ResolveAttributeToDouble(call, "Fade", ctx) ?? 0;
         string easing = ResolveAttributeToString(call, "Easing", ctx) ?? "linear";
@@ -34,7 +34,7 @@ public class StopDriver : IVerbDriver
 
         _handler?.OnStop(ctx, request);
 
-        return VerbResult.Ok();
+        return DriverResult.Complete.Ok();
     }
 
     private string? ResolveAttributeToString(VerbCallAst call, string name, Context ctx)

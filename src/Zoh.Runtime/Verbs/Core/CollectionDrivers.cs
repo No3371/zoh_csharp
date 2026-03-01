@@ -13,13 +13,13 @@ public class InsertDriver : IVerbDriver
     public string Namespace => "core";
     public string Name => "insert";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         if (verb.UnnamedParams.Length < 3)
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Usage: /insert collection, index, value", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Usage: /insert collection, index, value", verb.Start));
 
         if (verb.UnnamedParams[0] is not ValueAst.Reference refAst)
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "First argument must be a reference", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "First argument must be a reference", verb.Start));
 
         try
         {
@@ -30,12 +30,12 @@ public class InsertDriver : IVerbDriver
 
             if (collection is ZohList list)
             {
-                if (indexVal is not ZohInt idx) return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_index", "Index must be integer", verb.Start));
+                if (indexVal is not ZohInt idx) return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_index", "Index must be integer", verb.Start));
 
                 int i = (int)idx.Value;
                 if (i < 0) i += list.Items.Length + 1;
 
-                if (i < 0 || i > list.Items.Length) return VerbResult.Error(ZohValue.Nothing, new Diagnostic(DiagnosticSeverity.Error, "invalid_index", $"Index {idx.Value} out of bounds", verb.Start));
+                if (i < 0 || i > list.Items.Length) return DriverResult.Complete.Error(ZohValue.Nothing, new Diagnostic(DiagnosticSeverity.Error, "invalid_index", $"Index {idx.Value} out of bounds", verb.Start));
 
                 var newItems = list.Items.Insert(i, value);
                 var newList = new ZohList(newItems);
@@ -43,11 +43,11 @@ public class InsertDriver : IVerbDriver
                 return CollectionHelpers.SetAtPath(context, refAst.Name, refAst.Path, newList);
             }
 
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Expected list", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Expected list", verb.Start));
         }
         catch (ZohDiagnosticException ex)
         {
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Error, ex.DiagnosticCode, ex.Message, verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Error, ex.DiagnosticCode, ex.Message, verb.Start));
         }
     }
 }
@@ -58,13 +58,13 @@ public class RemoveDriver : IVerbDriver
     public string Namespace => "core";
     public string Name => "remove";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         if (verb.UnnamedParams.Length < 2)
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Usage: /remove collection, index", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Usage: /remove collection, index", verb.Start));
 
         if (verb.UnnamedParams[0] is not ValueAst.Reference refAst)
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "First argument must be a reference", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "First argument must be a reference", verb.Start));
 
         try
         {
@@ -73,7 +73,7 @@ public class RemoveDriver : IVerbDriver
 
             if (collection is ZohList list)
             {
-                if (indexVal is not ZohInt idx) return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_index", "Index must be integer", verb.Start));
+                if (indexVal is not ZohInt idx) return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_index", "Index must be integer", verb.Start));
                 int i = (int)idx.Value;
                 if (i < 0) i += list.Items.Length;
 
@@ -83,15 +83,15 @@ public class RemoveDriver : IVerbDriver
                     var newList = new ZohList(newItems);
                     var setResult = CollectionHelpers.SetAtPath(context, refAst.Name, refAst.Path, newList);
                     if (!setResult.IsSuccess) return setResult;
-                    return VerbResult.Ok(new ZohInt(newList.Items.Length));
+                    return DriverResult.Complete.Ok(new ZohInt(newList.Items.Length));
                 }
-                return VerbResult.Ok(new ZohInt(list.Items.Length));
+                return DriverResult.Complete.Ok(new ZohInt(list.Items.Length));
             }
             else if (collection is IZohMap map)
             {
                 if (indexVal is not ZohStr keyStr)
                 {
-                    return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_index_type", $"Map key must be string, got: {indexVal.Type}", verb.Start));
+                    return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_index_type", $"Map key must be string, got: {indexVal.Type}", verb.Start));
                 }
                 string key = keyStr.Value;
 
@@ -104,7 +104,7 @@ public class RemoveDriver : IVerbDriver
                         var newMap = new ZohMap(newItems);
                         var setResult = CollectionHelpers.SetAtPath(context, refAst.Name, refAst.Path, newMap);
                         if (!setResult.IsSuccess) return setResult;
-                        return VerbResult.Ok(new ZohInt(newMap.Count));
+                        return DriverResult.Complete.Ok(new ZohInt(newMap.Count));
                     }
                     // If it's a KvPair, since we found the key, removing it results in empty map
                     if (map is ZohKvPair)
@@ -112,17 +112,17 @@ public class RemoveDriver : IVerbDriver
                         var newMap = new ZohMap(ImmutableDictionary<string, ZohValue>.Empty);
                         var setResult = CollectionHelpers.SetAtPath(context, refAst.Name, refAst.Path, newMap);
                         if (!setResult.IsSuccess) return setResult;
-                        return VerbResult.Ok(new ZohInt(0));
+                        return DriverResult.Complete.Ok(new ZohInt(0));
                     }
                 }
-                return VerbResult.Ok(new ZohInt(map.Count));
+                return DriverResult.Complete.Ok(new ZohInt(map.Count));
             }
 
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Expected list or map", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Expected list or map", verb.Start));
         }
         catch (ZohDiagnosticException ex)
         {
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Error, ex.DiagnosticCode, ex.Message, verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Error, ex.DiagnosticCode, ex.Message, verb.Start));
         }
     }
 }
@@ -133,13 +133,13 @@ public class ClearDriver : IVerbDriver
     public string Namespace => "core";
     public string Name => "clear";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         if (verb.UnnamedParams.Length < 1)
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Usage: /clear collection", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Usage: /clear collection", verb.Start));
 
         if (verb.UnnamedParams[0] is not ValueAst.Reference refAst)
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "First argument must be a reference", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "First argument must be a reference", verb.Start));
 
         try
         {
@@ -154,11 +154,11 @@ public class ClearDriver : IVerbDriver
                 return CollectionHelpers.SetAtPath(context, refAst.Name, refAst.Path, new ZohMap(ImmutableDictionary<string, ZohValue>.Empty));
             }
 
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Expected list or map", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Expected list or map", verb.Start));
         }
         catch (ZohDiagnosticException ex)
         {
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Error, ex.DiagnosticCode, ex.Message, verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Error, ex.DiagnosticCode, ex.Message, verb.Start));
         }
     }
 }

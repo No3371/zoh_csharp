@@ -36,8 +36,9 @@ public class SleepTests
         var result = driver.Execute(ctx, call);
 
         Assert.True(result.IsSuccess);
-        var cont = Assert.IsType<SleepContinuation>(result.Continuation);
-        Assert.True(cont.DurationMs >= 1000);
+        var suspend = Assert.IsType<DriverResult.Suspend>(result);
+        var req = Assert.IsType<SleepRequest>(suspend.Continuation.Request);
+        Assert.True(req.DurationMs >= 1000);
         Assert.Equal(ContextState.Running, ctx.State); // driver no longer mutates state
     }
 }

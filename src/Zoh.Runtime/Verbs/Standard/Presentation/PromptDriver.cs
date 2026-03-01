@@ -17,10 +17,10 @@ public class PromptDriver : IVerbDriver
         _handler = handler;
     }
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst call)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst call)
     {
         var ctx = context as Context;
-        if (ctx == null) return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_context", "Prompt requires a valid Context.", call.Start));
+        if (ctx == null) return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_context", "Prompt requires a valid Context.", call.Start));
 
         string style = ResolveAttributeToString(call, "Style", ctx) ?? "default";
 
@@ -39,12 +39,12 @@ public class PromptDriver : IVerbDriver
             var tVal = ValueResolver.Resolve(timeoutAst, ctx);
             if (tVal is ZohFloat f)
             {
-                if (f.Value <= 0) return VerbResult.Ok(new ZohStr(""));
+                if (f.Value <= 0) return DriverResult.Complete.Ok(new ZohStr(""));
                 timeoutMs = f.Value * 1000.0;
             }
             else if (tVal is ZohInt i)
             {
-                if (i.Value <= 0) return VerbResult.Ok(new ZohStr(""));
+                if (i.Value <= 0) return DriverResult.Complete.Ok(new ZohStr(""));
                 timeoutMs = i.Value * 1000.0;
             }
         }
@@ -54,10 +54,17 @@ public class PromptDriver : IVerbDriver
         if (_handler != null)
         {
             _handler.OnPrompt(ctx, request);
-            return VerbResult.Yield(new HostContinuation("prompt"));
+            return new DriverResult.Suspend(new Continuation(
+                new HostRequest(),
+                outcome => outcome switch
+                {
+                    WaitCompleted c => DriverResult.Complete.Ok(c.Value),
+                    _ => DriverResult.Complete.Ok()
+                }
+            ));
         }
 
-        return VerbResult.Ok(new ZohStr(""));
+        return DriverResult.Complete.Ok(new ZohStr(""));
     }
 
     private string? ResolveAttributeToString(VerbCallAst call, string name, Context ctx)

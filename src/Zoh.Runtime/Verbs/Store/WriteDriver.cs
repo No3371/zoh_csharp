@@ -12,7 +12,7 @@ public class WriteDriver : IVerbDriver
     public string Namespace => "store";
     public string Name => "write";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         // /write [store: "name"] *var1 *var2 ...;
 
@@ -27,7 +27,7 @@ public class WriteDriver : IVerbDriver
 
         if (refs.Count == 0)
         {
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Write requires at least one reference parameter", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Write requires at least one reference parameter", verb.Start));
         }
 
         foreach (var varRef in refs)
@@ -42,12 +42,12 @@ public class WriteDriver : IVerbDriver
 
             if (value is ZohVerb || value is ZohChannel || value is ZohExpr)
             {
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", $"Cannot persist type: {value.Type}", verb.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", $"Cannot persist type: {value.Type}", verb.Start));
             }
 
             context.Storage.Write(storeName, varRef.Name, value);
         }
 
-        return VerbResult.Ok();
+        return DriverResult.Complete.Ok();
     }
 }

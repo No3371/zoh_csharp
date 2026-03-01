@@ -10,12 +10,12 @@ public class DoDriver : IVerbDriver
     public string Namespace => "core";
     public string Name => "do";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         // /do *verb_ref;
 
         if (verb.UnnamedParams.Length == 0)
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Error, "MissingArguments", "Usage: /do *verb", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Error, "MissingArguments", "Usage: /do *verb", verb.Start));
 
         var param = verb.UnnamedParams[0];
         // We want the VALUE to be a VerbValue (not yet implemented in ValueResolver?? I should check ZohValue types)
@@ -43,6 +43,6 @@ public class DoDriver : IVerbDriver
             return context.ExecuteVerb(v.VerbValue, context);
         }
 
-        return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Error, "invalid_type", $"Expected verb, got {val.Type}", verb.Start));
+        return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Error, "invalid_type", $"Expected verb, got {val.Type}", verb.Start));
     }
 }

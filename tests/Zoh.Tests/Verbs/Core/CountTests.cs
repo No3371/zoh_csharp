@@ -28,7 +28,7 @@ public class CountTests
         _context.Variables.Set("l", new ZohList([new ZohInt(1), new ZohInt(2)]));
         var call = MakeCall(new ValueAst.Reference("l"));
         var result = _driver.Execute(_context, call);
-        Assert.Equal(new ZohInt(2), result.Value);
+        Assert.Equal(new ZohInt(2), result.ValueOrNothing);
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public class CountTests
         _context.Variables.Set("s", new ZohStr("abc"));
         var call = MakeCall(new ValueAst.Reference("s"));
         var result = _driver.Execute(_context, call);
-        Assert.Equal(new ZohInt(3), result.Value);
+        Assert.Equal(new ZohInt(3), result.ValueOrNothing);
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public class CountTests
         _context.Variables.Set("n", ZohValue.Nothing);
         var call = MakeCall(new ValueAst.Reference("n"));
         var result = _driver.Execute(_context, call);
-        Assert.Equal(new ZohInt(0), result.Value);
+        Assert.Equal(new ZohInt(0), result.ValueOrNothing);
     }
 
     [Fact]
@@ -59,6 +59,6 @@ public class CountTests
 
         var call = MakeCall(new ValueAst.Reference("l"), new ValueAst.Integer(1));
         var result = _driver.Execute(_context, call);
-        Assert.Equal(new ZohInt(2), result.Value);
+        Assert.Equal(new ZohInt(2), result.ValueOrNothing);
     }
 }

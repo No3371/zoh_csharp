@@ -10,7 +10,7 @@ public class PurgeDriver : IVerbDriver
     public string Namespace => "store";
     public string Name => "purge";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         // /purge store:"name"?;
         string? storeName = null;
@@ -21,6 +21,6 @@ public class PurgeDriver : IVerbDriver
         }
 
         context.Storage.Purge(storeName);
-        return VerbResult.Ok();
+        return DriverResult.Complete.Ok();
     }
 }

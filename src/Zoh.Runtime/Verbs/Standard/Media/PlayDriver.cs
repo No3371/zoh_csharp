@@ -16,10 +16,10 @@ public class PlayDriver : IVerbDriver
         _handler = handler;
     }
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst call)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst call)
     {
         var ctx = context as Context;
-        if (ctx == null) return VerbResult.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Fatal, "invalid_context", "Play requires a valid Context.", call.Start));
+        if (ctx == null) return DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Fatal, "invalid_context", "Play requires a valid Context.", call.Start));
 
         string resource = "";
         if (call.UnnamedParams.Length > 0)
@@ -36,7 +36,7 @@ public class PlayDriver : IVerbDriver
 
         _handler?.OnPlay(ctx, request);
 
-        return VerbResult.Ok(new ZohStr(id));
+        return DriverResult.Complete.Ok(new ZohStr(id));
     }
 
     private string? ResolveAttributeToString(VerbCallAst call, string name, Context ctx)

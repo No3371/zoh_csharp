@@ -21,9 +21,9 @@ public class NamespaceTests
         public string Name => name;
         public int Priority => 0;
 
-        public VerbResult Execute(IExecutionContext context, VerbCallAst verbCall)
+        public DriverResult Execute(IExecutionContext context, VerbCallAst verbCall)
         {
-            return VerbResult.Ok();
+            return DriverResult.Complete.Ok();
         }
 
         public IReadOnlyList<Diagnostic> Validate(VerbCallAst verbCall, IExecutionContext context) => [];

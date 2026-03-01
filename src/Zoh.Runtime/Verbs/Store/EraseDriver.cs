@@ -11,7 +11,7 @@ public class EraseDriver : IVerbDriver
     public string Namespace => "store";
     public string Name => "erase";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         // /erase store:"name"?, *var;
         string? storeName = null;
@@ -24,7 +24,7 @@ public class EraseDriver : IVerbDriver
         var refs = verb.UnnamedParams.OfType<ValueAst.Reference>().ToList();
         if (refs.Count == 0)
         {
-            return VerbResult.Fatal(new Diagnostic(
+            return DriverResult.Complete.Fatal(new Diagnostic(
                 DiagnosticSeverity.Fatal, "parameter_not_found",
                 "Erase requires at least one reference parameter", verb.Start));
         }
@@ -34,7 +34,7 @@ public class EraseDriver : IVerbDriver
             if (!context.Storage.Exists(storeName, varRef.Name))
             {
                 // Spec: return ok with info diagnostic for not-found
-                return VerbResult.WithDiagnostics(ZohValue.Nothing, new[]
+                return DriverResult.Complete.WithDiagnostics(ZohValue.Nothing, new[]
                 {
                     new Diagnostic(DiagnosticSeverity.Info, "not_found",
                         $"Variable not in storage: {varRef.Name}", verb.Start)
@@ -43,6 +43,6 @@ public class EraseDriver : IVerbDriver
             context.Storage.Erase(storeName, varRef.Name);
         }
 
-        return VerbResult.Ok();
+        return DriverResult.Complete.Ok();
     }
 }

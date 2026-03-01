@@ -11,9 +11,9 @@ namespace Zoh.Runtime.Verbs.Flow
         public string Namespace => "core";
         public string Name => "sequence";
 
-        public VerbResult Execute(IExecutionContext context, VerbCallAst call)
+        public DriverResult Execute(IExecutionContext context, VerbCallAst call)
         {
-            VerbResult lastResult = VerbResult.Ok();
+            DriverResult lastResult = DriverResult.Complete.Ok();
 
             foreach (var param in call.UnnamedParams)
             {
@@ -27,7 +27,7 @@ namespace Zoh.Runtime.Verbs.Flow
                 var verbVal = ValueResolver.Resolve(param, context);
                 if (!(verbVal is ZohVerb verbToRun))
                 {
-                    return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", $"Sequence item must be a verb. Got {verbVal}", call.Start));
+                    return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", $"Sequence item must be a verb. Got {verbVal}", call.Start));
                 }
 
                 lastResult = context.ExecuteVerb(verbToRun.VerbValue, context);

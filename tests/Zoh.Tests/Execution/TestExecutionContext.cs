@@ -20,7 +20,7 @@ public class TestExecutionContext : IExecutionContext
     public ExpressionEvaluator Evaluator { get; }
     public ZohValue LastResult { get; set; } = ZohValue.Nothing;
     public IList<Diagnostic> LastDiagnostics { get; set; } = new List<Diagnostic>();
-    public Func<ValueAst, IExecutionContext, VerbResult>? VerbExecutor { get; set; }
+    public Func<ValueAst, IExecutionContext, DriverResult>? VerbExecutor { get; set; }
 
     // Driver Registry
     private readonly Dictionary<string, IVerbDriver> _drivers = new(StringComparer.OrdinalIgnoreCase);
@@ -32,7 +32,7 @@ public class TestExecutionContext : IExecutionContext
 
     public ChannelManager ChannelManager { get; } = new();
 
-    public VerbResult ExecuteVerb(ValueAst verb, IExecutionContext context)
+    public DriverResult ExecuteVerb(ValueAst verb, IExecutionContext context)
     {
         // Resolve ValueAst to ZohVerb
         // If it's a Verb ValueAst, we can execute it.
@@ -55,16 +55,16 @@ public class TestExecutionContext : IExecutionContext
         // If it's a reference, we might need to resolve it against variables?
         // For tests, usually we explicitly construct VerbValue.
 
-        return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Error, "InvalidVerb", $"Cannot execute {verb}", new TextPosition(0, 0, 0)));
+        return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Error, "InvalidVerb", $"Cannot execute {verb}", new TextPosition(0, 0, 0)));
     }
 
-    public VerbResult ExecuteVerb(VerbCallAst call)
+    public DriverResult ExecuteVerb(VerbCallAst call)
     {
         if (_drivers.TryGetValue(call.Name, out var driver))
         {
             return driver.Execute(this, call);
         }
-        return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Error, "VerbNotFound", $"Verb {call.Name} not found", call.Start));
+        return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Error, "VerbNotFound", $"Verb {call.Name} not found", call.Start));
     }
 
     public TestExecutionContext()

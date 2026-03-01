@@ -16,10 +16,10 @@ public class ShowDriver : IVerbDriver
         _handler = handler;
     }
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst call)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst call)
     {
         var ctx = context as Context;
-        if (ctx == null) return VerbResult.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Fatal, "invalid_context", "Show requires a valid Context.", call.Start));
+        if (ctx == null) return DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Fatal, "invalid_context", "Show requires a valid Context.", call.Start));
 
         // Resolve resource (first unnamed param)
         string resource = "";
@@ -48,7 +48,7 @@ public class ShowDriver : IVerbDriver
 
         _handler?.OnShow(ctx, request);
 
-        return VerbResult.Ok(new ZohStr(id));
+        return DriverResult.Complete.Ok(new ZohStr(id));
     }
 
     private string? ResolveAttributeToString(VerbCallAst call, string name, Context ctx)

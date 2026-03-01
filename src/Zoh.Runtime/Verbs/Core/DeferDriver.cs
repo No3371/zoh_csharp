@@ -11,11 +11,11 @@ public class DeferDriver : IVerbDriver
     public string Namespace => "core";
     public string Name => "defer";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst verb)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst verb)
     {
         if (verb.UnnamedParams.Length == 0)
         {
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "missing_param", "Missing verb argument", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "missing_param", "Missing verb argument", verb.Start));
         }
 
         var verbParam = verb.UnnamedParams[0];
@@ -45,9 +45,9 @@ public class DeferDriver : IVerbDriver
         }
         else
         {
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_scope", $"Invalid scope: {scope}", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_scope", $"Invalid scope: {scope}", verb.Start));
         }
 
-        return VerbResult.Ok(ZohValue.Nothing);
+        return DriverResult.Complete.Ok(ZohValue.Nothing);
     }
 }

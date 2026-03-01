@@ -11,11 +11,11 @@ namespace Zoh.Runtime.Verbs.Flow
         public string Namespace => "core";
         public string Name => "while";
 
-        public VerbResult Execute(IExecutionContext context, VerbCallAst call)
+        public DriverResult Execute(IExecutionContext context, VerbCallAst call)
         {
             if (call.UnnamedParams.Length < 2)
             {
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Use: /while condition_expr, verb", call.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Use: /while condition_expr, verb", call.Start));
             }
 
             var conditionParam = call.UnnamedParams[0];
@@ -23,7 +23,7 @@ namespace Zoh.Runtime.Verbs.Flow
 
             if (!(verbVal is ZohVerb verbToRun))
             {
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Second argument must be a verb.", call.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Second argument must be a verb.", call.Start));
             }
 
             // Spec compliance: /while does NOT support breakif/continueif.
@@ -37,7 +37,7 @@ namespace Zoh.Runtime.Verbs.Flow
                 // If subject is a verb, execute it to get the value
                 if (subjectVal is ZohVerb vSubject)
                 {
-                    subjectVal = context.ExecuteVerb(vSubject.VerbValue, context).Value;
+                    subjectVal = context.ExecuteVerb(vSubject.VerbValue, context).ValueOrNothing;
                 }
 
                 // 2. Resolve comparison value ('is' param), default true
@@ -74,7 +74,7 @@ namespace Zoh.Runtime.Verbs.Flow
                 if (result.IsFatal) return result;
             }
 
-            return VerbResult.Ok();
+            return DriverResult.Complete.Ok();
         }
     }
 }

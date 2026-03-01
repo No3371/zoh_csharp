@@ -12,14 +12,14 @@ public class ForkDriver : IVerbDriver
     public string Namespace => "core";
     public string Name => "fork";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst call)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst call)
     {
         var ctx = context as Context;
-        if (ctx == null) return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_context", "Fork requires a valid Context.", call.Start));
+        if (ctx == null) return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_context", "Fork requires a valid Context.", call.Start));
 
         if (ctx.ContextScheduler == null)
         {
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "missing_scheduler", "Context has no ContextScheduler to fork new context.", call.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "missing_scheduler", "Context has no ContextScheduler to fork new context.", call.Start));
         }
 
         // Arguments: [StoryName?], LabelName
@@ -31,22 +31,22 @@ public class ForkDriver : IVerbDriver
         {
             var val = ValueResolver.Resolve(call.UnnamedParams[0], ctx);
             if (val is ZohStr s) targetLabel = s.Value;
-            else return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_arg", "Fork label must be a string.", call.Start));
+            else return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_arg", "Fork label must be a string.", call.Start));
         }
         else if (call.UnnamedParams.Length == 2)
         {
             var val0 = ValueResolver.Resolve(call.UnnamedParams[0], ctx);
             if (val0 is ZohStr s0) targetStoryName = s0.Value;
             else if (val0 is ZohNothing) targetStoryName = null;
-            else return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_arg", "Fork story must be a string or nothing.", call.Start));
+            else return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_arg", "Fork story must be a string or nothing.", call.Start));
 
             var val1 = ValueResolver.Resolve(call.UnnamedParams[1], ctx);
             if (val1 is ZohStr s1) targetLabel = s1.Value;
-            else return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_arg", "Fork label must be a string.", call.Start));
+            else return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_arg", "Fork label must be a string.", call.Start));
         }
         else
         {
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "arg_count", "Fork requires 1 or 2 arguments.", call.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "arg_count", "Fork requires 1 or 2 arguments.", call.Start));
         }
 
         // Determine cloning
@@ -83,9 +83,9 @@ public class ForkDriver : IVerbDriver
         if (targetStoryName != null && !string.Equals(targetStoryName, story?.Name, StringComparison.Ordinal))
         {
             // Switch story logic
-            if (newCtx.StoryLoader == null) return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "missing_loader", "Missing StoryLoader.", call.Start));
+            if (newCtx.StoryLoader == null) return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "missing_loader", "Missing StoryLoader.", call.Start));
             story = newCtx.StoryLoader(targetStoryName);
-            if (story == null) return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_story", $"Story '{targetStoryName}' not found.", call.Start));
+            if (story == null) return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_story", $"Story '{targetStoryName}' not found.", call.Start));
             newCtx.CurrentStory = story;
             // If we cloned, do we need to clear variables?
             // If we cloned, variables are copied.
@@ -98,11 +98,11 @@ public class ForkDriver : IVerbDriver
             newCtx.CurrentStory = story; // Re-set story after ExitStory cleared it
         }
 
-        if (story == null) return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_story", "No target story.", call.Start));
+        if (story == null) return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_story", "No target story.", call.Start));
 
         if (!story.Labels.TryGetValue(targetLabel, out int ip))
         {
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "label_not_found", $"Label '{targetLabel}' not found.", call.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "label_not_found", $"Label '{targetLabel}' not found.", call.Start));
         }
 
         var validation = newCtx.ValidateContract(targetLabel);
@@ -114,6 +114,6 @@ public class ForkDriver : IVerbDriver
         // Schedule
         ctx.ContextScheduler(newCtx);
 
-        return VerbResult.Ok();
+        return DriverResult.Complete.Ok();
     }
 }

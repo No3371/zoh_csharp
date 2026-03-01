@@ -219,7 +219,7 @@ public class CoreVerbTests
         var result = _getDriver.Execute(_context, call);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(new ZohStr("TestValue"), result.Value);
+        Assert.Equal(new ZohStr("TestValue"), result.ValueOrNothing);
     }
 
     [Fact]
@@ -229,7 +229,7 @@ public class CoreVerbTests
         var result = _getDriver.Execute(_context, call);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(ZohValue.Nothing, result.Value); // VariableStore.Get returns Nothing if missing
+        Assert.Equal(ZohValue.Nothing, result.ValueOrNothing); // VariableStore.Get returns Nothing if missing
     }
 
     #endregion
@@ -248,7 +248,7 @@ public class CoreVerbTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal(new ZohInt(42), _context.Variables.Get("res"));
-        Assert.Equal(new ZohInt(42), result.Value);
+        Assert.Equal(new ZohInt(42), result.ValueOrNothing);
     }
 
     #endregion
@@ -281,7 +281,7 @@ public class CoreVerbTests
         var result = _typeDriver.Execute(_context, call);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(new ZohStr("integer"), result.Value);
+        Assert.Equal(new ZohStr("integer"), result.ValueOrNothing);
     }
 
 
@@ -304,7 +304,7 @@ public class CoreVerbTests
         var result = _typeDriver.Execute(_context, call);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(new ZohStr("expression"), result.Value);
+        Assert.Equal(new ZohStr("expression"), result.ValueOrNothing);
     }
 
     [Theory]
@@ -314,7 +314,7 @@ public class CoreVerbTests
         var call = MakeVerbCall("type", ast);
         var result = _typeDriver.Execute(_context, call);
         Assert.True(result.IsSuccess);
-        Assert.Equal(new ZohStr(expected), result.Value);
+        Assert.Equal(new ZohStr(expected), result.ValueOrNothing);
     }
 
     public static IEnumerable<object[]> GetSimpleTypeTestCases()
@@ -333,7 +333,7 @@ public class CoreVerbTests
         var listAst = new ValueAst.List(System.Collections.Immutable.ImmutableArray<ValueAst>.Empty);
         var call = MakeVerbCall("type", listAst);
         var result = _typeDriver.Execute(_context, call);
-        Assert.Equal(new ZohStr("list"), result.Value);
+        Assert.Equal(new ZohStr("list"), result.ValueOrNothing);
     }
 
     [Fact]
@@ -342,7 +342,7 @@ public class CoreVerbTests
         var mapAst = new ValueAst.Map(System.Collections.Immutable.ImmutableArray<(ValueAst, ValueAst)>.Empty);
         var call = MakeVerbCall("type", mapAst);
         var result = _typeDriver.Execute(_context, call);
-        Assert.Equal(new ZohStr("map"), result.Value);
+        Assert.Equal(new ZohStr("map"), result.ValueOrNothing);
     }
 
     #endregion
@@ -359,7 +359,7 @@ public class CoreVerbTests
         var result = _increaseDriver.Execute(_context, call);
 
         Assert.False(result.IsSuccess);
-        Assert.Contains(result.Diagnostics, d => d.Code == "invalid_type");
+        Assert.Contains(result.DiagnosticsOrEmpty, d => d.Code == "invalid_type");
     }
 
     [Fact]
@@ -458,7 +458,7 @@ public class CoreVerbTests
         var result = new HasDriver().Execute(_context, call);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(ZohValue.True, result.Value);
+        Assert.Equal(ZohValue.True, result.ValueOrNothing);
     }
 
     [Fact]
@@ -471,7 +471,7 @@ public class CoreVerbTests
         var result = new HasDriver().Execute(_context, call);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(ZohValue.False, result.Value);
+        Assert.Equal(ZohValue.False, result.ValueOrNothing);
     }
 
     [Fact]
@@ -485,7 +485,7 @@ public class CoreVerbTests
         var result = new HasDriver().Execute(_context, call);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(ZohValue.True, result.Value);
+        Assert.Equal(ZohValue.True, result.ValueOrNothing);
     }
 
     #endregion
@@ -502,7 +502,7 @@ public class CoreVerbTests
         var result = new AnyDriver().Execute(_context, call);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(ZohValue.True, result.Value);
+        Assert.Equal(ZohValue.True, result.ValueOrNothing);
     }
 
     [Fact]
@@ -513,7 +513,7 @@ public class CoreVerbTests
         var result = new AnyDriver().Execute(_context, call);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(ZohValue.False, result.Value);
+        Assert.Equal(ZohValue.False, result.ValueOrNothing);
     }
 
     #endregion
@@ -530,7 +530,7 @@ public class CoreVerbTests
         var result = new FirstDriver().Execute(_context, call);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(new ZohStr("second"), result.Value);
+        Assert.Equal(new ZohStr("second"), result.ValueOrNothing);
     }
 
     [Fact]
@@ -551,10 +551,10 @@ public class CoreVerbTests
         var res2 = new FirstDriver().Execute(_context, firstCall2);
 
         Assert.True(res1.IsSuccess);
-        Assert.Equal(new ZohInt(3), res1.Value);
+        Assert.Equal(new ZohInt(3), res1.ValueOrNothing);
 
         Assert.True(res2.IsSuccess);
-        Assert.Equal(new ZohInt(42), res2.Value);
+        Assert.Equal(new ZohInt(42), res2.ValueOrNothing);
     }
 
     #endregion
@@ -589,7 +589,7 @@ public class CoreVerbTests
         var result = new RollDriver().Execute(_context, call);
 
         Assert.True(result.IsSuccess);
-        var val = ((ZohInt)result.Value).Value;
+        var val = ((ZohInt)result.ValueOrNothing).Value;
         Assert.Contains(val, new long[] { 10, 20, 30 });
     }
 
@@ -608,7 +608,7 @@ public class CoreVerbTests
         var result = new RollDriver().Execute(_context, randCall);
 
         Assert.True(result.IsSuccess);
-        var val = ((ZohInt)result.Value).Value;
+        var val = ((ZohInt)result.ValueOrNothing).Value;
         Assert.InRange(val, 1, 9); // exclusive max by default
     }
 
@@ -624,7 +624,7 @@ public class CoreVerbTests
         var result = new ParseDriver().Execute(_context, call);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(new ZohInt(42), result.Value);
+        Assert.Equal(new ZohInt(42), result.ValueOrNothing);
     }
 
     [Fact]
@@ -635,7 +635,7 @@ public class CoreVerbTests
         var result = new ParseDriver().Execute(_context, call);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(new ZohFloat(3.14), result.Value);
+        Assert.Equal(new ZohFloat(3.14), result.ValueOrNothing);
     }
 
     [Fact]
@@ -646,7 +646,7 @@ public class CoreVerbTests
         var result = new ParseDriver().Execute(_context, call);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(ZohValue.True, result.Value);
+        Assert.Equal(ZohValue.True, result.ValueOrNothing);
     }
 
     [Fact]
@@ -676,8 +676,8 @@ public class CoreVerbTests
         var result = new DebugDriver().Execute(_context, call);
 
         Assert.True(result.IsSuccess);
-        Assert.NotEmpty(result.Diagnostics);
-        Assert.Equal(Zoh.Runtime.Diagnostics.DiagnosticSeverity.Info, result.Diagnostics[0].Severity);
+        Assert.NotEmpty(result.DiagnosticsOrEmpty);
+        Assert.Equal(Zoh.Runtime.Diagnostics.DiagnosticSeverity.Info, result.DiagnosticsOrEmpty[0].Severity);
     }
 
     [Fact]
@@ -737,7 +737,7 @@ public class CoreVerbTests
 
         var result = new SequenceDriver().Execute(_context, call);
 
-        Assert.Equal(new ZohInt(2), result.Value);
+        Assert.Equal(new ZohInt(2), result.ValueOrNothing);
     }
 
     [Fact]
@@ -769,7 +769,7 @@ public class CoreVerbTests
         var call = MakeVerbCall("sequence");
         var result = new SequenceDriver().Execute(_context, call);
 
-        Assert.Equal(ZohValue.Nothing, result.Value);
+        Assert.Equal(ZohValue.Nothing, result.ValueOrNothing);
     }
 
     #endregion

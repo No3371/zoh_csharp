@@ -31,8 +31,8 @@ public class DiagnoseTests
         var result = _driver.Execute(_context, MakeCall());
 
         Assert.True(result.IsSuccess);
-        Assert.IsType<ZohMap>(result.Value);
-        var map = (ZohMap)result.Value;
+        Assert.IsType<ZohMap>(result.ValueOrNothing);
+        var map = (ZohMap)result.ValueOrNothing;
         Assert.True(map.Items.ContainsKey("warning"));
 
         var warnings = (ZohList)map.Items["warning"];
@@ -46,6 +46,6 @@ public class DiagnoseTests
         var result = _driver.Execute(_context, MakeCall());
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(ZohValue.Nothing, result.Value);
+        Assert.Equal(ZohValue.Nothing, result.ValueOrNothing);
     }
 }

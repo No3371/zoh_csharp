@@ -12,6 +12,8 @@ namespace Zoh.Runtime.Execution;
 
 public class Context : IExecutionContext
 {
+    public string Id { get; } = Guid.NewGuid().ToString();
+
     public VariableStore Variables { get; }
     public ExpressionEvaluator Evaluator { get; }
 
@@ -24,14 +26,17 @@ public class Context : IExecutionContext
     public IList<Diagnostic> LastDiagnostics { get; set; } = ImmutableList<Diagnostic>.Empty;
 
     // To be injected or set by Runtime
-    public Func<ValueAst, IExecutionContext, VerbResult>? VerbExecutor { get; set; }
-    public Func<IExecutionContext, VerbCallAst, VerbResult>? StatementExecutor { get; set; }
+    public Func<ValueAst, IExecutionContext, DriverResult>? VerbExecutor { get; set; }
+    public Func<IExecutionContext, VerbCallAst, DriverResult>? StatementExecutor { get; set; }
     public Func<string, CompiledStory?>? StoryLoader { get; set; }
     public Action<Context>? ContextScheduler { get; set; }
 
-    public VerbResult ExecuteVerb(ValueAst verb, IExecutionContext context)
+    public Continuation? PendingContinuation { get; private set; }
+    public int ResumeToken { get; private set; }
+
+    public DriverResult ExecuteVerb(ValueAst verb, IExecutionContext context)
     {
-        return VerbExecutor?.Invoke(verb, context) ?? VerbResult.Ok();
+        return VerbExecutor?.Invoke(verb, context) ?? DriverResult.Complete.Ok();
     }
 
     public void Run()
@@ -52,49 +57,126 @@ public class Context : IExecutionContext
 
             if (stmt is StatementAst.VerbCall callStmt)
             {
-                var call = callStmt.Call;
-                var result = StatementExecutor!(this, call);
-
-                if (!result.IsSuccess)
-                {
-                    if (result.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Fatal))
-                    {
-                        LastDiagnostics = result.Diagnostics;
-                        SetState(ContextState.Terminated);
-                        break;
-                    }
-                }
-                LastResult = result.Value;
-                LastDiagnostics = result.Diagnostics;
-
-                if (result.Continuation != null)
-                {
-                    Block(result.Continuation);
-                    break;
-                }
+                var result = StatementExecutor!(this, callStmt.Call);
+                ApplyResult(result, entryIp, entryStory);
             }
             else if (stmt is StatementAst.Label label)
             {
                 var validation = ValidateContract(label.Name);
-                if (!validation.IsSuccess)
+                if (validation is DriverResult.Complete c &&
+                    c.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Fatal))
                 {
-                    if (validation.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Fatal))
-                    {
-                        LastDiagnostics = validation.Diagnostics;
-                        SetState(ContextState.Terminated);
-                        break;
-                    }
+                    LastDiagnostics = c.Diagnostics;
+                    SetState(ContextState.Terminated);
+                    break;
+                }
+                // Labels: advance IP if no jump
+                if (State == ContextState.Running &&
+                    InstructionPointer == entryIp &&
+                    CurrentStory == entryStory)
+                {
+                    InstructionPointer++;
                 }
             }
-
-            // If still running and didn't jump, advance IP
-            if (State == ContextState.Running &&
-                InstructionPointer == entryIp &&
-                CurrentStory == entryStory)
-            {
-                InstructionPointer++;
-            }
         }
+    }
+
+    private void ApplyResult(DriverResult result, int entryIp, CompiledStory entryStory)
+    {
+        switch (result)
+        {
+            case DriverResult.Complete c:
+                LastResult = c.Value;
+                LastDiagnostics = c.Diagnostics;
+                if (c.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Fatal))
+                {
+                    SetState(ContextState.Terminated);
+                }
+                else if (State == ContextState.Running &&
+                         InstructionPointer == entryIp &&
+                         CurrentStory == entryStory)
+                {
+                    InstructionPointer++;
+                }
+                break;
+
+            case DriverResult.Suspend s:
+                LastDiagnostics = s.Diagnostics;
+                ResumeToken++;
+                PendingContinuation = s.Continuation;
+                BlockOnRequest(s.Continuation.Request);
+                break;
+        }
+    }
+
+    private void BlockOnRequest(WaitRequest request)
+    {
+        switch (request)
+        {
+            case SleepRequest s:
+                WaitCondition = DateTimeOffset.UtcNow.AddMilliseconds(s.DurationMs);
+                SetState(ContextState.Sleeping);
+                break;
+
+            case SignalRequest m:
+                SignalManager.Subscribe(m.MessageName, this);
+                WaitCondition = m.MessageName;
+                SetState(ContextState.WaitingMessage);
+                break;
+
+            case JoinContextRequest c:
+                WaitCondition = c.ContextId;
+                SetState(ContextState.WaitingContext);
+                break;
+
+            case HostRequest h:
+                WaitCondition = h.TimeoutMs;
+                SetState(ContextState.WaitingHost);
+                break;
+
+            default:
+                throw new InvalidOperationException($"Unhandled request type: {request.GetType().Name}");
+        }
+    }
+
+    /// <summary>
+    /// Resumes the context with the given outcome. Token must match current ResumeToken.
+    /// Invokes the pending continuation's OnFulfilled callback if present.
+    /// Falls back to direct state update if no continuation was registered (backward compat).
+    /// </summary>
+    public void Resume(WaitOutcome outcome, int token)
+    {
+        if (token != ResumeToken) return; // Stale or double-resume guard
+        ResumeToken++; // Invalidate current token to prevent double-resume
+
+        WaitCondition = null;
+
+        if (PendingContinuation != null)
+        {
+            var handler = PendingContinuation.OnFulfilled;
+            PendingContinuation = null;
+
+            var result = handler(outcome);
+            SetState(ContextState.Running);
+
+            int ip = InstructionPointer;
+            var story = CurrentStory!;
+            ApplyResult(result, ip, story);
+        }
+        else
+        {
+            // Fallback: direct state update when no continuation registered (backward compat / tests)
+            LastResult = outcome is WaitCompleted c ? c.Value : ZohNothing.Instance;
+            SetState(ContextState.Running);
+        }
+    }
+
+    /// <summary>
+    /// Backward-compatible overload for existing host code and tests.
+    /// </summary>
+    public void Resume(ZohValue? value = null)
+    {
+        Resume(new WaitCompleted(value ?? ZohNothing.Instance), ResumeToken);
     }
 
     public ChannelManager ChannelManager { get; }
@@ -131,54 +213,6 @@ public class Context : IExecutionContext
         State = ContextState.Terminated;
     }
 
-    /// <summary>
-    /// Applies a blocking continuation returned by a verb driver.
-    /// Sets context state and handles all registrations (signal subscribe, etc.).
-    /// This is the only place context state is set for blocking — drivers must
-    /// return a VerbContinuation instead of calling SetState() directly.
-    /// </summary>
-    public void Block(VerbContinuation continuation)
-    {
-        switch (continuation)
-        {
-            case SleepContinuation s:
-                WaitCondition = DateTimeOffset.UtcNow.AddMilliseconds(s.DurationMs);
-                SetState(ContextState.Sleeping);
-                break;
-
-            case MessageContinuation m:
-                SignalManager.Subscribe(m.MessageName, this);
-                WaitCondition = m.MessageName;
-                SetState(ContextState.WaitingMessage);
-                break;
-
-            case ContextContinuation c:
-                WaitCondition = c.ChildContext;
-                SetState(ContextState.WaitingContext);
-                break;
-
-            case HostContinuation h:
-                WaitCondition = h.InteractionType;
-                SetState(ContextState.WaitingHost);
-                break;
-
-            default:
-                throw new InvalidOperationException($"Unhandled continuation type: {continuation.GetType().Name}");
-        }
-    }
-
-    /// <summary>
-    /// Resumes a context that was blocked by a host continuation (e.g., waiting for UI input).
-    /// </summary>
-    public void Resume(ZohValue? value = null)
-    {
-        if (State == ContextState.Terminated) return;
-
-        LastResult = value ?? ZohNothing.Instance;
-        WaitCondition = null;
-        SetState(ContextState.Running);
-    }
-
     private void ExecuteDefers(Stack<ValueAst> defers)
     {
         while (defers.Count > 0)
@@ -211,12 +245,13 @@ public class Context : IExecutionContext
             StatementExecutor = StatementExecutor,
             StoryLoader = StoryLoader,
             ContextScheduler = ContextScheduler,
-            LastResult = LastResult // Should we copy last result? Probably harmless.
+            LastResult = LastResult
+            // ResumeToken and PendingContinuation start fresh (defaults: 0, null)
         };
         return newContext;
     }
 
-    public VerbResult ValidateContract(string checkpointName)
+    public DriverResult ValidateContract(string checkpointName)
     {
         if (CurrentStory != null &&
             CurrentStory.Contracts.TryGetValue(checkpointName, out var paramsList))
@@ -226,19 +261,19 @@ public class Context : IExecutionContext
                 var val = Variables.Get(param.Name);
                 if (val is ZohNothing)
                 {
-                    return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "checkpoint_violation", $"Contract violation: Variable '{param.Name}' is Nothing at checkpoint '@{checkpointName}'.", param.Position));
+                    return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "checkpoint_violation", $"Contract violation: Variable '{param.Name}' is Nothing at checkpoint '@{checkpointName}'.", param.Position));
                 }
 
                 if (param.Type != null)
                 {
                     if (!CheckType(val, param.Type))
                     {
-                        return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "checkpoint_violation", $"Contract violation: Variable '{param.Name}' is not of type '{param.Type}' (got '{val.GetType().Name}') at checkpoint '@{checkpointName}'.", param.Position));
+                        return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "checkpoint_violation", $"Contract violation: Variable '{param.Name}' is not of type '{param.Type}' (got '{val.GetType().Name}') at checkpoint '@{checkpointName}'.", param.Position));
                     }
                 }
             }
         }
-        return VerbResult.Ok();
+        return DriverResult.Complete.Ok();
     }
 
     private bool CheckType(ZohValue val, string type)

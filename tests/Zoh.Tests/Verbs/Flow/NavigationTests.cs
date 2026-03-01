@@ -56,7 +56,7 @@ public class NavigationTests
 
         var result = driver.Execute(ctx, call);
 
-        Assert.True(result.IsSuccess, "Jump failed: " + (result.Diagnostics.Length > 0 ? result.Diagnostics[0].Message : ""));
+        Assert.True(result.IsSuccess, "Jump failed: " + (result.DiagnosticsOrEmpty.Length > 0 ? result.DiagnosticsOrEmpty[0].Message : ""));
         Assert.Equal(1, ctx.InstructionPointer);
         Assert.Same(story, ctx.CurrentStory);
     }
@@ -77,7 +77,7 @@ public class NavigationTests
 
         var result = driver.Execute(ctx, call);
 
-        Assert.True(result.IsSuccess, "Jump failed: " + (result.Diagnostics.Length > 0 ? result.Diagnostics[0].Message : ""));
+        Assert.True(result.IsSuccess, "Jump failed: " + (result.DiagnosticsOrEmpty.Length > 0 ? result.DiagnosticsOrEmpty[0].Message : ""));
         Assert.Same(story2, ctx.CurrentStory);
         Assert.Equal(0, ctx.InstructionPointer); // "entry" is first label (index 0)
     }
@@ -94,6 +94,6 @@ public class NavigationTests
         var result = driver.Execute(ctx, call);
 
         Assert.False(result.IsSuccess);
-        Assert.Equal("invalid_checkpoint", result.Diagnostics[0].Code); // JumpDriver uses "invalid_checkpoint"
+        Assert.Equal("invalid_checkpoint", result.DiagnosticsOrEmpty[0].Code); // JumpDriver uses "invalid_checkpoint"
     }
 }

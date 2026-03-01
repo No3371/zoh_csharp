@@ -92,12 +92,10 @@ public class SignalManager
 
                 foreach (var ctx in waiters)
                 {
-                    // Wake up the context
+                    // Wake up the context via Resume (invokes onFulfilled callback if present)
                     if (ctx.State == ContextState.WaitingMessage)
                     {
-                        ctx.SetState(ContextState.Running);
-                        ctx.LastResult = payload;
-                        ctx.WaitCondition = null; // Clear debug info
+                        ctx.Resume(new Verbs.WaitCompleted(payload), ctx.ResumeToken);
                         count++;
                     }
 
@@ -105,11 +103,6 @@ public class SignalManager
                     if (_contextSubscriptions.TryGetValue(ctx, out var signals))
                     {
                         signals.Remove(signalName);
-                        // Don't remove ctx from _contextSubscriptions yet, might have other signals? 
-                        // Wait, /wait blocks on specific signal. One context can only wait on ONE signal at a time logically?
-                        // Or can it wait on multiple? "Wait for A or B"?
-                        // The plan implies precise signal name.
-                        // Assuming one-wait-at-a-time for now implicitly by `ContextState.WaitingMessage`.
                     }
                 }
 

@@ -47,7 +47,7 @@ public class AssertDriverTests
         var result = _driver.Execute(_context, call);
         Assert.False(result.IsSuccess);
         Assert.True(result.IsFatal);
-        Assert.Equal("assertion_failed", result.Diagnostics[0].Code);
+        Assert.Equal("assertion_failed", result.DiagnosticsOrEmpty[0].Code);
     }
 
     [Fact]
@@ -66,8 +66,8 @@ public class AssertDriverTests
         var result = _driver.Execute(_context, call);
         Assert.False(result.IsSuccess);
         Assert.True(result.IsFatal);
-        Assert.Equal("assertion_failed", result.Diagnostics[0].Code);
-        Assert.Equal("assertion failed", result.Diagnostics[0].Message);
+        Assert.Equal("assertion_failed", result.DiagnosticsOrEmpty[0].Code);
+        Assert.Equal("assertion failed", result.DiagnosticsOrEmpty[0].Message);
     }
 
     [Fact]
@@ -77,7 +77,7 @@ public class AssertDriverTests
         var result = _driver.Execute(_context, call);
         Assert.False(result.IsSuccess);
         Assert.True(result.IsFatal);
-        Assert.Equal("custom failure message", result.Diagnostics[0].Message);
+        Assert.Equal("custom failure message", result.DiagnosticsOrEmpty[0].Message);
     }
 
     [Fact]
@@ -87,7 +87,7 @@ public class AssertDriverTests
         var call = MakeAssertCall(new ValueAst.Boolean(false), message: new ValueAst.String("hello ${*name}"));
         var result = _driver.Execute(_context, call);
         Assert.False(result.IsSuccess);
-        Assert.Equal("hello Bob", result.Diagnostics[0].Message);
+        Assert.Equal("hello Bob", result.DiagnosticsOrEmpty[0].Message);
     }
 
     [Fact]
@@ -97,6 +97,6 @@ public class AssertDriverTests
         var result = _driver.Execute(_context, call);
         Assert.False(result.IsSuccess);
         Assert.True(result.IsFatal);
-        Assert.Equal("invalid_type", result.Diagnostics[0].Code);
+        Assert.Equal("invalid_type", result.DiagnosticsOrEmpty[0].Code);
     }
 }

@@ -12,11 +12,11 @@ public class AssertDriver : IVerbDriver
     public string Namespace => "core";
     public string Name => "assert";
 
-    public VerbResult Execute(IExecutionContext context, VerbCallAst call)
+    public DriverResult Execute(IExecutionContext context, VerbCallAst call)
     {
         if (call.UnnamedParams.Length < 1)
         {
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Use: /assert condition, [message]", call.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Use: /assert condition, [message]", call.Start));
         }
 
         var subjectParam = call.UnnamedParams[0];
@@ -24,7 +24,7 @@ public class AssertDriver : IVerbDriver
 
         if (subjectValue is ZohVerb subjectVerb)
         {
-            subjectValue = context.ExecuteVerb(subjectVerb.VerbValue, context).Value;
+            subjectValue = context.ExecuteVerb(subjectVerb.VerbValue, context).ValueOrNothing;
         }
 
         var isParam = call.NamedParams.GetValueOrDefault("is");
@@ -32,7 +32,7 @@ public class AssertDriver : IVerbDriver
 
         if (isParam == null && subjectValue is not ZohBool && subjectValue is not ZohNothing)
         {
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", $"Condition must be boolean or nothing, got: {subjectValue.Type}", call.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", $"Condition must be boolean or nothing, got: {subjectValue.Type}", call.Start));
         }
 
         if (!subjectValue.Equals(compareValue))
@@ -60,9 +60,9 @@ public class AssertDriver : IVerbDriver
                 }
             }
 
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "assertion_failed", message, call.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "assertion_failed", message, call.Start));
         }
 
-        return VerbResult.Ok();
+        return DriverResult.Complete.Ok();
     }
 }

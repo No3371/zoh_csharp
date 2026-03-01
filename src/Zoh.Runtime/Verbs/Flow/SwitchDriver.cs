@@ -11,17 +11,17 @@ namespace Zoh.Runtime.Verbs.Flow
         public string Namespace => "core";
         public string Name => "switch";
 
-        public VerbResult Execute(IExecutionContext context, VerbCallAst call)
+        public DriverResult Execute(IExecutionContext context, VerbCallAst call)
         {
             if (call.UnnamedParams.Length < 1)
             {
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Use: /switch user_value, case1, action1, ...", call.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Use: /switch user_value, case1, action1, ...", call.Start));
             }
 
             var testValue = ValueResolver.Resolve(call.UnnamedParams[0], context);
             if (testValue is ZohVerb vSubject)
             {
-                testValue = context.ExecuteVerb(vSubject.VerbValue, context).Value;
+                testValue = context.ExecuteVerb(vSubject.VerbValue, context).ValueOrNothing;
             }
 
             var remainingArgs = call.UnnamedParams.Length - 1;
@@ -37,7 +37,7 @@ namespace Zoh.Runtime.Verbs.Flow
                 if (caseValue.Equals(testValue))
                 {
                     var actionVal = ValueResolver.Resolve(call.UnnamedParams[actionIndex], context);
-                    return VerbResult.Ok(actionVal);
+                    return DriverResult.Complete.Ok(actionVal);
                 }
             }
 
@@ -46,10 +46,10 @@ namespace Zoh.Runtime.Verbs.Flow
             {
                 var defaultActionIndex = call.UnnamedParams.Length - 1;
                 var defaultVal = ValueResolver.Resolve(call.UnnamedParams[defaultActionIndex], context);
-                return VerbResult.Ok(defaultVal);
+                return DriverResult.Complete.Ok(defaultVal);
             }
 
-            return VerbResult.Ok();
+            return DriverResult.Complete.Ok();
         }
     }
 }

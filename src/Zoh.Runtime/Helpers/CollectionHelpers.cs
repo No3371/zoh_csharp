@@ -65,25 +65,25 @@ public static class CollectionHelpers
         return value;
     }
 
-    public static VerbResult SetAtPath(IExecutionContext context, string varName, ImmutableArray<ValueAst> pathAst, ZohValue value, Scope? scope = null)
+    public static DriverResult SetAtPath(IExecutionContext context, string varName, ImmutableArray<ValueAst> pathAst, ZohValue value, Scope? scope = null)
     {
         if (pathAst.IsEmpty)
         {
             try
             {
                 context.Variables.Set(varName, value, scope);
-                return VerbResult.Ok();
+                return DriverResult.Complete.Ok();
             }
             catch (System.InvalidOperationException ex)
             {
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "type_mismatch", ex.Message, new Lexing.TextPosition(0, 0, 0)));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "type_mismatch", ex.Message, new Lexing.TextPosition(0, 0, 0)));
             }
         }
 
         var root = context.Variables.Get(varName);
         if (root is ZohNothing)
         {
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_index", $"Variable '{varName}' does not exist", new Lexing.TextPosition(0, 0, 0)));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_index", $"Variable '{varName}' does not exist", new Lexing.TextPosition(0, 0, 0)));
         }
 
         var indices = new List<ZohValue>();
@@ -103,24 +103,25 @@ public static class CollectionHelpers
         var result = Reconstruct(root, indices, 0, value);
 
         if (result.IsFatal) return result;
-        if (result.Value is null) return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "internal_error", "Reconstruction returned null", new Lexing.TextPosition(0, 0, 0)));
+        var resultValue = ((DriverResult.Complete)result).Value;
+        if (resultValue is null) return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "internal_error", "Reconstruction returned null", new Lexing.TextPosition(0, 0, 0)));
 
         try
         {
-            context.Variables.Set(varName, result.Value, scope);
-            return VerbResult.Ok();
+            context.Variables.Set(varName, resultValue, scope);
+            return DriverResult.Complete.Ok();
         }
         catch (System.Exception ex)
         {
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "error", ex.Message, new Lexing.TextPosition(0, 0, 0)));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "error", ex.Message, new Lexing.TextPosition(0, 0, 0)));
         }
     }
 
-    private static VerbResult Reconstruct(ZohValue current, List<ZohValue> indices, int depth, ZohValue newValue)
+    private static DriverResult Reconstruct(ZohValue current, List<ZohValue> indices, int depth, ZohValue newValue)
     {
         if (depth == indices.Count)
         {
-            return new VerbResult(newValue, ImmutableArray<Diagnostic>.Empty);
+            return new DriverResult.Complete(newValue, ImmutableArray<Diagnostic>.Empty);
         }
 
         var index = indices[depth];
@@ -132,17 +133,17 @@ public static class CollectionHelpers
                 int idx = (int)i.Value;
                 if (idx < 0 || idx >= list.Items.Length)
                 {
-                    return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_index", $"Index out of bounds: {idx}", new Lexing.TextPosition(0, 0, 0)));
+                    return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_index", $"Index out of bounds: {idx}", new Lexing.TextPosition(0, 0, 0)));
                 }
 
                 var element = list.Items[idx];
                 var newElementResult = Reconstruct(element, indices, depth + 1, newValue);
                 if (newElementResult.IsFatal) return newElementResult;
 
-                var newItems = list.Items.SetItem(idx, newElementResult.Value!);
-                return new VerbResult(new ZohList(newItems), ImmutableArray<Diagnostic>.Empty);
+                var newItems = list.Items.SetItem(idx, ((DriverResult.Complete)newElementResult).Value!);
+                return new DriverResult.Complete(new ZohList(newItems), ImmutableArray<Diagnostic>.Empty);
             }
-            return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_index_type", $"List index must be integer, got {index.Type}", new Lexing.TextPosition(0, 0, 0)));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_index_type", $"List index must be integer, got {index.Type}", new Lexing.TextPosition(0, 0, 0)));
         }
         else if (current is ZohMap map)
         {
@@ -153,7 +154,7 @@ public static class CollectionHelpers
             }
             else
             {
-                return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_index_type", $"Map index must be string, got: {index.Type}", new Lexing.TextPosition(0, 0, 0)));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_index_type", $"Map index must be string, got: {index.Type}", new Lexing.TextPosition(0, 0, 0)));
             }
 
             var childExists = map.Items.TryGetValue(keyStr, out var child);
@@ -161,7 +162,7 @@ public static class CollectionHelpers
             {
                 if (depth < indices.Count - 1)
                 {
-                    return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_index", $"Path element '{keyStr}' does not exist", new Lexing.TextPosition(0, 0, 0)));
+                    return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_index", $"Path element '{keyStr}' does not exist", new Lexing.TextPosition(0, 0, 0)));
                 }
                 child = ZohValue.Nothing;
             }
@@ -169,10 +170,10 @@ public static class CollectionHelpers
             var newChildResult = Reconstruct(child!, indices, depth + 1, newValue);
             if (newChildResult.IsFatal) return newChildResult;
 
-            var newItems = map.Items.SetItem(keyStr, newChildResult.Value!);
-            return new VerbResult(new ZohMap(newItems), ImmutableArray<Diagnostic>.Empty);
+            var newItems = map.Items.SetItem(keyStr, ((DriverResult.Complete)newChildResult).Value!);
+            return new DriverResult.Complete(new ZohMap(newItems), ImmutableArray<Diagnostic>.Empty);
         }
 
-        return VerbResult.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_index_type", $"Cannot index into type {current.Type}", new Lexing.TextPosition(0, 0, 0)));
+        return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_index_type", $"Cannot index into type {current.Type}", new Lexing.TextPosition(0, 0, 0)));
     }
 }
