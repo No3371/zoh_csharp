@@ -1,10 +1,10 @@
 # C# Runtime Compliance Audit Roadmap
 
-> **Created:** 2026-02-23 | **Last Revised:** 2026-02-25
+> **Created:** 2026-02-23 | **Last Revised:** 2026-03-01
 > **Author:** Antigravity
 > **Scope:** Full spec compliance audit of the ZOH C# Reference Implementation
 > **Parent Navigation:** [20260207-csharp-runtime-nav.md](20260207-csharp-runtime-nav.md)
-> **Related Projex:**
+> **Related Projex:** [20260228-rng-parse-gaps-fix-plan.md](closed/20260228-rng-parse-gaps-fix-plan.md), [20260228-rng-parse-gaps-fix-log.md](closed/20260228-rng-parse-gaps-fix-log.md), [20260225-string-interpolation-formatting-plan.md](20260225-string-interpolation-formatting-plan.md), [20260226-interpolation-format-regex-free-eval.md](20260226-interpolation-format-regex-free-eval.md), [20260228-interpolate-feature-interleaving-eval.md](20260228-interpolate-feature-interleaving-eval.md)
 
 ---
 
@@ -16,21 +16,26 @@ To systematically and rigorously verify that the ZOH C# Reference Implementation
 
 ## Current Position
 
-**As of 2026-02-23:**
+**As of 2026-02-28:**
 
-The comprehensive audit of Phases 1 through 9 against the ZOH specification has been completed. Numerous compliance gaps have been identified and documented within each phase below.
+The comprehensive audit baseline is complete across Phases 1 through 9. Phase 3.4 (RNG & Parsing verbs) has now been remediated and validated through targeted and full-suite test runs. Remaining work is concentrated in unresolved runtime behavior gaps across control flow, concurrency, channels, and selected standard verbs.
+
+### Recent Progress
+- Phase 3.4 GAP 1 fixed: `/wroll` now returns fatal `invalid_value` for negative weights and `invalid_type` for non-integer weights (20260228-rng-parse-gaps-fix-log.md).
+- Phase 3.4 GAP 2 fixed: `/parse` now supports `list` and `map` targets with JSON parsing, including nested structures and malformed input diagnostics (20260228-rng-parse-gaps-fix-log.md).
+- Verification completed for the above fixes: targeted tests passed (23/23), full suite passed (605/605), build succeeded with 0 warnings and 0 errors (20260228-rng-parse-gaps-fix-log.md).
 
 ### Active Work
-- None. Audit is complete.
+- Phase 2.6 interpolation formatting parity is scoped in [20260225-string-interpolation-formatting-plan.md](20260225-string-interpolation-formatting-plan.md) with implementation approach clarified by [20260226-interpolation-format-regex-free-eval.md](20260226-interpolation-format-regex-free-eval.md).
 
 ### Known Blockers
-- None.
+- No hard external blockers identified. Remaining blockers are implementation effort and prioritization of unresolved compliance gaps.
 
 ---
 
 ## Roadmap
 
-### Phase 1: Anatomy, Parsing & Preprocessing — [Status: Next]
+### Phase 1: Anatomy, Parsing & Preprocessing - [Status: Next]
 
 **Goal:** Ensure ZOH syntax and physical script structures are parsed perfectly.
 
@@ -48,7 +53,7 @@ The comprehensive audit of Phases 1 through 9 against the ZOH specification has 
 
 ---
 
-### Phase 2: Type System, Variables & Expressions — [Status: Future]
+### Phase 2: Type System, Variables & Expressions - [Status: Future]
 
 **Goal:** Validate fundamental primitives, memory, and math evaluation.
 
@@ -66,11 +71,11 @@ The comprehensive audit of Phases 1 through 9 against the ZOH specification has 
   - **GAP:** List concatenation via the `+` operator is missing (Map concatenation is undefined/N/A per spec). `ExpressionEvaluator.EvaluateBinary` throws an `InvalidOperationException` instead of producing a combined list.
 - [x] **2.6 Interpolation (`Std.Interpolate`):** C#-style formatting (`${*var,8:N1}`), collection unrolling (`${*list...", "}`), picking (`${1|2|3}[*i]`), and evaluation specials (`$#`, `$?`).
   - Execution: Verified in `ExpressionEvaluator`. Nested interpolations (`$#`, `$?`) and collection unrolling (`...`) are supported and tested. Option picking `$(...)[idx]` works per spec.
-  - **GAP:** C#-style formatting (e.g., `,8:N1`) is not implemented. `EvaluateInterpolationMatch` evaluates the target and calls `.ToString()` directly without parsing format specifiers.
+  - **GAP:** C#-style formatting (e.g., `,8:N1`) remains unimplemented. Plan and evaluation are prepared in [20260225-string-interpolation-formatting-plan.md](20260225-string-interpolation-formatting-plan.md) and [20260226-interpolation-format-regex-free-eval.md](20260226-interpolation-format-regex-free-eval.md).
 
 ---
 
-### Phase 3: Core Verbs (Variables, Math, & Collections) — [Status: Future]
+### Phase 3: Core Verbs (Variables, Math, & Collections) - [Status: Future]
 
 **Goal:** Verify basic procedural actions.
 
@@ -85,13 +90,12 @@ The comprehensive audit of Phases 1 through 9 against the ZOH specification has 
   - **GAP 1:** The driver silently ignores the `amount` parameter if it resolves to a non-numeric type (e.g. string) instead of throwing an `invalid_type` diagnostic, defaulting to `1`.
   - **GAP 2:** Like `FirstDriver`, it does not recursively execute `ZohVerb` parameter inputs when a `/verb` literal is provided for the amount, leading to the same silent fallback to `1`.
 - [x] **3.4 RNG & Parsing Verbs:** `/rand` (inclusive/exclusive), `/roll`, `/wroll`, `/parse` (robust string conversion).
-  - Execution: Verified `RollDriver` (handles rand/roll/wroll) and `ParseDriver`.
-  - **GAP 1:** `/wroll` silently clamps negative weights to `0` instead of raising a fatal `invalid_value` diagnostic.
-  - **GAP 2:** `/parse` does not implement `list` or `map` parsing ("not yet supported" error), missing JSON-like collection parsing capability.
+  - Execution: Verified `RollDriver` and `ParseDriver`. `/wroll` now emits fatal `invalid_value` for negative weights and fatal `invalid_type` for non-integer weights. `/parse` now implements `list` and `map` parsing via JSON conversion with nested structure support and `invalid_format` diagnostics for malformed input. Coverage added in `RollTests.cs` and `ParseTests.cs` and validated by targeted/full test runs.
+  - Execution evidence: [20260228-rng-parse-gaps-fix-plan.md](closed/20260228-rng-parse-gaps-fix-plan.md), [20260228-rng-parse-gaps-fix-log.md](closed/20260228-rng-parse-gaps-fix-log.md).
 
 ---
 
-### Phase 4: Control Flow — [Status: Future]
+### Phase 4: Control Flow - [Status: Future]
 
 **Goal:** Ensure branching and looping structures are unbreakable.
 
@@ -108,9 +112,11 @@ The comprehensive audit of Phases 1 through 9 against the ZOH specification has 
   - Execution: Verified `DoDriver`.
   - **GAP:** `DoDriver` executes the evaluated `ZohVerb` but directly returns its result, failing to satisfy the "verb returned by the parameter" spec. If a verb call returns another verb, `DoDriver` should execute the returned verb, but currently does not.
 
+- Planning evidence: [20260227-phase4-control-flow-gaps-fix-plan.md](20260227-phase4-control-flow-gaps-fix-plan.md).
+
 ---
 
-### Phase 5: Concurrency, Contexts & Signals — [Status: Complete]
+### Phase 5: Concurrency, Contexts & Signals - [Status: Complete]
 
 **Goal:** Verify context boundaries and event architectures.
 
@@ -131,9 +137,12 @@ The comprehensive audit of Phases 1 through 9 against the ZOH specification has 
   - Execution: Verified `SignalDriver` correctly uses `Broadcast` and returns the number of woken contexts.
   - **GAP:** `WaitDriver` completely ignores the `timeout` named parameter, causing `/wait` to blindly block forever even if a timeout is explicitly provided.
 
+- Planning evidence: [20260227-phase5-concurrency-context-signal-gaps-fix-plan.md](20260227-phase5-concurrency-context-signal-gaps-fix-plan.md).
+
+
 ---
 
-### Phase 6: Channels Architecture — [Status: Complete]
+### Phase 6: Channels Architecture - [Status: Complete]
 
 **Goal:** Guarantee concurrent-safe FIFO pipe behaviors.
 
@@ -149,7 +158,7 @@ The comprehensive audit of Phases 1 through 9 against the ZOH specification has 
 
 ---
 
-### Phase 7: Storage & State Management — [Status: Complete]
+### Phase 7: Storage & State Management - [Status: Complete]
 
 **Goal:** Test persistence implementations according to spec.
 
@@ -162,14 +171,14 @@ The comprehensive audit of Phases 1 through 9 against the ZOH specification has 
 
 ---
 
-### Phase 8: Diagnostics & Debugging — [Status: Complete]
+### Phase 8: Diagnostics & Debugging - [Status: Complete]
 
 **Goal:** Ensure errors are trapped, reported, or escalated properly.
 
 **Milestones:**
 - [x] **8.1 Debug Logging:** `/info`, `/warning`, `/error`, `/fatal`.
   - Execution: Verified `DebugDriver`. All four verbs are implemented and registered via `VerbRegistry.RegisterCoreVerbs()`, sharing a single `DebugDriver` instance.
-  - **GAP:** `/error` and `/fatal` collapse to the same code path (`DiagnosticSeverity.Error` → `VerbResult.Fatal`), producing identical behavior. The spec likely intends `/error` to emit an error-severity diagnostic (non-fatal) while `/fatal` terminates execution — the implementation does not distinguish between them.
+  - **GAP:** `/error` and `/fatal` collapse to the same code path (`DiagnosticSeverity.Error` -> `VerbResult.Fatal`), producing identical behavior. The spec likely intends `/error` to emit an error-severity diagnostic (non-fatal) while `/fatal` terminates execution - the implementation does not distinguish between them.
 - [x] **8.2 Diagnostic Trapping:** `/try` (downgrading fatals, `catch:` execution, `[suppress]`), `/diagnose`.
   - Execution: Verified `TryDriver` and `DiagnoseDriver`. `TryDriver` properly checks the `catch:` named parameter and the `[suppress]` attribute to intercept and downgrade fatals. `DiagnoseDriver` correctly extracts `context.LastDiagnostics` and bundles them into a `ZohMap` grouped by severity. No gaps found.
 - [x] **8.3 Assertions:** `/assert` (truthy vs falsy resolution, formatting messages).
@@ -177,7 +186,7 @@ The comprehensive audit of Phases 1 through 9 against the ZOH specification has 
 
 ---
 
-### Phase 9: Standard Verbs & Attributes — [Status: Complete]
+### Phase 9: Standard Verbs & Attributes - [Status: Complete]
 
 **Goal:** Test the decoupled standard vocabulary that most ZOH scripts rely on.
 
@@ -194,15 +203,22 @@ The comprehensive audit of Phases 1 through 9 against the ZOH specification has 
 
 ## Priorities
 
-**Current focus:** Comprehensive audit finished. Detailed gap documentation is completed.
-**Next up:** Triage identified GAPs, prioritize fixes, and create patch projex to align the runtime with the ZOH specification.
+**Current focus:** Resolve high-impact remaining compliance gaps in control flow and concurrency surfaces (Phases 4-6), while keeping expression/type parity work moving.
+
+**Next up:**
+1. Execute [20260225-string-interpolation-formatting-plan.md](20260225-string-interpolation-formatting-plan.md) to close Phase 2.6 formatting gap.
+2. Create focused patch/plan projex for Phase 4.1 and 4.2 gaps (`/if`, `/switch`, `/foreach`, `breakif` execution semantics).
+3. Create focused patch/plan projex for Phase 5.2/5.3 variadic arg passing and `[inline]` behavior.
+
+**Deferred:**
+- Broad sweep on Phase 9 standard-verb coverage expansions beyond currently documented gaps until control-flow/concurrency correctness gaps are reduced.
 
 ---
 
 ## Open Questions
 
-- [ ] Will we write comprehensive `scenarios/*.md` ZOH test scripts for each of these milestones, or primarily use C# unit tests?
-- [ ] Are we ready to begin Phase 1?
+- [ ] Should we prioritize control-flow correctness (Phase 4) over interpolation formatting (Phase 2.6), or keep interpolation first because a plan is already prepared?
+- [ ] For unresolved gaps, do we want one patch-projex per gap cluster (Phase 4, 5, 6) or a single multi-phase plan with staged objectives?
 
 ---
 
@@ -213,3 +229,4 @@ The comprehensive audit of Phases 1 through 9 against the ZOH specification has 
 | 2026-02-23 | Initial roadmap created based on spec audit. |
 | 2026-02-23 | Revised to provide greater granularity, mapping directly to specific features in the specification across 9 detailed phases. |
 | 2026-02-25 | Corrected GAP 8.1 (DebugDriver exists and is registered). Restructured all milestones to separate gap bullets from execution prose for readability. |
+| 2026-02-28 | Updated status checkpoint after Phase 3.4 remediation: marked `/wroll` and `/parse` gaps resolved, added evidence links, refreshed current position/priorities, and replaced stale open questions. |

@@ -4,11 +4,13 @@ description: Plan for implementing C#-style formatting in ZOH string interpolati
 
 # String Interpolation Formatting Implementation
 
-> **Status:** Ready
+> **Status:** In Progress
 > **Created:** 2026-02-25
 > **Author:** Antigravity
 > **Source:** Direct request from spec audit compliance
 > **Related Projex:** [20260223-csharp-spec-audit-nav.md](../20260223-csharp-spec-audit-nav.md)
+> **Reviewed:** 2026-02-28 - [20260228-string-interpolation-formatting-plan-review.md](20260228-string-interpolation-formatting-plan-review.md)
+> **Review Outcome:** Needs Modification (Step 2 ordering + mixed-syntax coverage gaps)
 
 ---
 
@@ -30,7 +32,9 @@ The ZOH specification for the `/interpolate` verb states that interpolation shou
 - [ ] Interpolation matches correctly parse standard C#-style `,width` and `:format` specifiers.
 - [ ] Values are correctly formatted according to `InvariantCulture`.
 - [ ] Complex expressions containing internal colons (like `$(1:10)[%]`) do not cause parser confusion.
-- [ ] `ExpressionTests.cs` includes tests for interpolation formatting.
+- [ ] Nested interpolation special forms (`$?{...}`, `$#{...}`, `$(...)[%]`) still work when used inside formatted interpolation expressions.
+- [ ] If formatting is combined with scanner-level suffix (`}[...]`), behavior is deterministic and tested (supported with defined precedence or explicit `invalid_syntax`).
+- [ ] `ExpressionTests.cs` includes formatting and mixed-syntax regression tests.
 
 ### Out of Scope
 - Implementing other interpolation spec features like unrolling or count if they are already working.
@@ -59,14 +63,14 @@ The ZOH specification for the `/interpolate` verb states that interpolation shou
 ## Implementation
 
 ### Overview
-We will leverage `ExpressionParser`'s robust parsing to safely isolate the true expression from any suffix. By exposing how many tokens the parser consumes, the evaluator can reliably find the start of the format string in `match.Content` (using the first trailing token's string offset), extract the width and format components with simple string operations, and apply the formatting via standard C# `string.Format`.
+We will leverage `ExpressionParser`'s robust parsing to safely isolate the true expression from any format suffix. By exposing how many tokens the parser consumes, the evaluator can reliably find the start of `,width` / `:format` in the interpolation body, evaluate the core expression, then apply formatting. Scanner-level interpolation suffix (`match.Suffix`, i.e., trailing `[...]`) must be handled only after this split (or explicitly rejected when combined with formatting), to avoid parse-order conflicts.
 
 ### Step 1: Expose Parser State
 
 **Objective:** Allow `ExpressionEvaluator` to determine where the expression ends and the format suffix begins.
 
 **Files:**
-- `s:/repos/zoh/c#/src/Zoh.Runtime/Expressions/ExpressionParser.cs`
+- `s:/repos/zoh/csharp/src/Zoh.Runtime/Expressions/ExpressionParser.cs`
 
 **Changes:**
 Add the `ConsumedTokensCount` property:
@@ -89,10 +93,15 @@ public class ExpressionParser(ImmutableArray<Token> tokens)
 
 ### Step 2: Implement Formatting Logic
 
-**Objective:** Extract the format specifier and apply it using `string.Format`.
+**Objective:** Extract `,width` / `:format` from interpolation body *before* applying scanner suffix handling, then apply formatting with `string.Format`.
 
 **Files:**
-- `s:/repos/zoh/c#/src/Zoh.Runtime/Expressions/ExpressionEvaluator.cs`
+- `s:/repos/zoh/csharp/src/Zoh.Runtime/Expressions/ExpressionEvaluator.cs`
+
+**Known Break Examples (old ordering):**
+- `${*name,7}[0]` -> old flow rewrites to `$(*name,7)[0]` and parser fails before format split.
+- `${*balance:F2}[0]` -> old flow rewrites to `$(*balance:F2)[0]` and parser fails before format split.
+- `${$(10|20|30)[%],2}[0]` -> old flow rewrites to `$($(10|20|30)[%],2)[0]` and fails early on trailing comma.
 
 **Changes:**
 In `EvaluateInterpolationMatch(MatchResult match)`:
@@ -105,13 +114,10 @@ In `EvaluateInterpolationMatch(MatchResult match)`:
         }
 
         return EvaluateExprString(exprSource);
+```
 
+```csharp
 // After:
-        if (!string.IsNullOrEmpty(match.Suffix))
-        {
-            exprSource = "$(" + exprSource + ")" + match.Suffix;
-        }
-
         var lexer = new Lexer(exprSource, false);
         var result = lexer.Tokenize();
         if (result.Errors.Length > 0)
@@ -121,13 +127,17 @@ In `EvaluateInterpolationMatch(MatchResult match)`:
         var ast = parser.Parse();
         var val = Evaluate(ast);
 
+        bool hasFormatting = false;
         if (parser.ConsumedTokensCount < result.Tokens.Length - 1)
         {
             var firstTrailingToken = result.Tokens[parser.ConsumedTokensCount];
             if (firstTrailingToken.Type == TokenType.Comma || firstTrailingToken.Type == TokenType.Colon)
             {
+                hasFormatting = true;
                 var suffixOffset = firstTrailingToken.Start.Offset;
                 var formatSuffix = exprSource.Substring(suffixOffset);
+                var exprCoreSource = exprSource.Substring(0, suffixOffset).TrimEnd();
+                var coreVal = EvaluateExprString(exprCoreSource);
 
                 // Parse the format suffix: [,width][:formatString]
                 // The format string is opaque — we extract it verbatim and delegate to string.Format.
@@ -154,34 +164,47 @@ In `EvaluateInterpolationMatch(MatchResult match)`:
                 if (!string.IsNullOrEmpty(formatStr)) csFormat += ":" + formatStr;
                 csFormat += "}";
 
-                object? clrValue = val switch
+                object? clrValue = coreVal switch
                 {
                     ZohInt i => i.Value,
                     ZohFloat f => f.Value,
                     ZohStr s => s.Value,
                     ZohBool b => b.Value,
                     ZohNothing => "?",
-                    _ => val.ToString()
+                    _ => coreVal.ToString()
                 };
 
-                return new ZohStr(string.Format(System.Globalization.CultureInfo.InvariantCulture, csFormat, clrValue));
+                val = new ZohStr(string.Format(System.Globalization.CultureInfo.InvariantCulture, csFormat, clrValue));
             }
-            throw new Exception("invalid_syntax: Unexpected tokens after interpolation expression");
+            else
+            {
+                throw new Exception("invalid_syntax: Unexpected tokens after interpolation expression");
+            }
+        }
+
+        if (!string.IsNullOrEmpty(match.Suffix))
+        {
+            if (hasFormatting)
+            {
+                throw new Exception("invalid_syntax: formatting suffix (,width/:format) cannot be combined with interpolation suffix [..]");
+            }
+            exprSource = "$(" + exprSource + ")" + match.Suffix;
+            return EvaluateExprString(exprSource);
         }
 
         return val;
 ```
 
-Remove the `EvaluateExprString(exprSource);` call in this method since we evaluate it inline now.
+Remove the old early `match.Suffix` wrapping and old `EvaluateExprString(exprSource);` return in this method since evaluation now needs explicit ordering.
 
-**Rationale:** Utilizing the parser strictly separates the expression from its formatting suffix, completely avoiding bugs with nested delimiters.
+**Rationale:** This ordering prevents the parse break where `,width` / `:format` is forced into `$(...)` parsing before split, e.g., `${*name,7}[0]` becoming `$(*name,7)[0]`.
 
 ### Step 3: Add Unit Tests
 
 **Objective:** Prevent regressions and verify correctness.
 
 **Files:**
-- `s:/repos/zoh/c#/tests/Zoh.Tests/Expressions/ExpressionTests.cs`
+- `s:/repos/zoh/csharp/tests/Zoh.Tests/Expressions/ExpressionTests.cs`
 
 **Changes:**
 Add the following test method:
@@ -192,6 +215,8 @@ Add the following test method:
     {
         _variables.Set("balance", new ZohFloat(100.0));
         _variables.Set("name", new ZohStr("John"));
+        _variables.Set("score", new ZohInt(10));
+        _variables.Set("list", new ZohList([new ZohInt(1), new ZohInt(2), new ZohInt(3)]));
 
         // Width logic
         Assert.Equal(new ZohStr("|John   |"), Eval("$\"|${*name,-7}|\""));
@@ -207,10 +232,23 @@ Add the following test method:
         // Literal inside string shouldn't break parser
         _variables.Set("dict", new ZohStr("Value: 1"));
         Assert.Equal(new ZohStr("Value: 1  "), Eval("$\"${*dict,-10}\""));
+
+        // Nested special forms inside formatted interpolation
+        Assert.Equal(new ZohStr("R: Win "), Eval("$\"R: ${$?{*score >= 10 ? 'Win' : 'Lose'},-4}\""));
+        Assert.Equal(new ZohStr("C:  3"), Eval("$\"C: ${$#{*list},2}\""));
+        Assert.Contains(Eval("$\"Pick: ${$(10|20|30)[%],2}\"").ToString(), new[] { "Pick: 10", "Pick: 20", "Pick: 30" });
+
+        // Deterministic failure: formatting + scanner suffix [..] is unsupported
+        var ex1 = Assert.Throws<Exception>(() => Eval("$\"${*name,7}[0]\""));
+        Assert.Contains("cannot be combined", ex1.Message, StringComparison.Ordinal);
+
+        // Deterministic failure: malformed width
+        var ex2 = Assert.Throws<Exception>(() => Eval("$\"${*name,abc}\""));
+        Assert.Contains("format", ex2.Message, StringComparison.OrdinalIgnoreCase);
     }
 ```
 
-**Rationale:** Covers width alignment, formatting strings, and their combination.
+**Rationale:** Covers formatting core behavior, nested-feature compatibility, and explicit unsupported/malformed cases.
 
 ---
 
@@ -223,7 +261,8 @@ Add the following test method:
 | Criterion | How to Verify | Expected Result |
 |-----------|---------------|-----------------|
 | Parsing C# style specs | Run the new unit tests | Tests pass demonstrating `,width` and `:format` are parsed |
-| Complex expressions | Existing tests will implicitly check | No regressions on complex interpolation tests |
+| Mixed interpolation syntax compatibility | Run explicit mixed tests in `Eval_Interpolation_Formatting` | Nested `$?{}`, `$#{}`, and `$(...)[%]` continue to work with formatting |
+| Format + scanner suffix behavior | Run explicit negative test `${*name,7}[0]` | Deterministic `invalid_syntax` with clear message |
 
 ---
 
