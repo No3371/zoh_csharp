@@ -218,8 +218,6 @@ public class ExpressionEvaluator
 
     private ZohValue EvaluateInterpolationMatch(MatchResult match)
     {
-        string exprSource;
-
         if (match.OpenToken == "${")
         {
             var parts = match.Content.Split("...", 2, StringSplitOptions.None);
@@ -236,20 +234,29 @@ public class ExpressionEvaluator
                 }
                 return colVal;
             }
-            exprSource = match.Content;
         }
-        else if (match.OpenToken == "$#{") exprSource = "$#(" + match.Content + ")";
-        else if (match.OpenToken == "$?{") exprSource = "$?(" + match.Content + ")";
-        else throw new Exception("Unknown token " + match.OpenToken);
 
-        var lexer = new Lexer(exprSource, false);
+        var lexer = new Lexer(match.Content, false);
         var result = lexer.Tokenize();
         if (result.Errors.Length > 0)
             throw new Exception("Lexer error: " + result.Errors[0].Message);
 
         var parser = new ExpressionParser(result.Tokens);
-        var ast = parser.Parse();
-        var val = Evaluate(ast);
+        ExpressionAst ast;
+
+        if (match.OpenToken == "${") ast = parser.Parse();
+        else if (match.OpenToken == "$#{")
+        {
+            ast = new CountExpressionAst(parser.Parse());
+        }
+        else if (match.OpenToken == "$?{")
+        {
+            ast = parser.ParseInterpolationConditionalOrAny();
+        }
+        else throw new Exception("Unknown token " + match.OpenToken);
+
+        ZohValue val = Evaluate(ast);
+        ZohValue coreVal = val;
 
         bool hasFormatting = false;
         if (parser.ConsumedTokensCount < result.Tokens.Length - 1)
@@ -259,9 +266,7 @@ public class ExpressionEvaluator
             {
                 hasFormatting = true;
                 var suffixOffset = firstTrailingToken.Start.Offset;
-                var formatSuffix = exprSource.Substring(suffixOffset);
-                var exprCoreSource = exprSource.Substring(0, suffixOffset).TrimEnd();
-                var coreVal = EvaluateExprString(exprCoreSource);
+                var formatSuffix = match.Content.Substring(suffixOffset);
 
                 // Parse the format suffix: [,width][:formatString]
                 // The format string is opaque — we extract it verbatim and delegate to string.Format.
@@ -312,6 +317,14 @@ public class ExpressionEvaluator
             {
                 throw new Exception("invalid_syntax: formatting suffix (,width/:format) cannot be combined with interpolation suffix [..]");
             }
+
+            // Reconstruct exprSource to evaluate the suffix on it
+            string exprSource;
+            if (match.OpenToken == "${") exprSource = match.Content;
+            else if (match.OpenToken == "$#{") exprSource = "$#(" + match.Content + ")";
+            else if (match.OpenToken == "$?{") exprSource = "$?(" + match.Content + ")";
+            else throw new Exception("Unknown token " + match.OpenToken);
+
             exprSource = "$(" + exprSource + ")" + match.Suffix;
             return EvaluateExprString(exprSource);
         }

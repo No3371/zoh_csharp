@@ -1,12 +1,14 @@
 # Interpolation Conditional Syntax Update - C# Implementation Plan
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Created:** 2026-03-03
 > **Author:** Antigravity
 > **Source:** [20260303-interpolation-conditional-syntax-outdated-memo.md](../../projex/20260303-interpolation-conditional-syntax-outdated-memo.md)
 > **Related Projex:** [../../projex/20260303-interpolation-conditional-syntax-spec-plan.md](../../projex/20260303-interpolation-conditional-syntax-spec-plan.md)
 > **Reviewed:** 2026-03-03 - [20260303-interpolation-conditional-syntax-csharp-plan-review.md](20260303-interpolation-conditional-syntax-csharp-plan-review.md)
 > **Review Outcome:** Needs Modification (Modifications have been applied directly to this file to refine the steps).
+> **Completed:** 2026-03-03
+> **Walkthrough:** [20260303-interpolation-conditional-syntax-csharp-walkthrough.md](closed/20260303-interpolation-conditional-syntax-csharp-walkthrough.md)
 
 ---
 
@@ -25,8 +27,8 @@ This plan updates the C# implementation to correctly handle the `$?{cond ? A : B
 In commit `fa3090d`, formatting suffix extraction was added, which successfully strips `,width:format` off the end of interpolation features. However, for `$?{...}`, the `ExpressionEvaluator` naively translates this string into `$?(...)` before parsing. This means the parser is forced to evaluate `cond ? A : B, width:format` inside those parentheses as if it were a pure expression. When the parser reaches the `,` in the conditional parsing flow, it crashes expectedly.
 
 ### Success Criteria
-- [ ] `$?{cond ? A : B, width:format}` formatting handles correctly without throwing parser errors.
-- [ ] `ExpressionTests.cs` includes tests validating format suffixes with the interpolation specific syntactic blocks `$?{}` and `$#{}` directly, removing the nested `$?(...)` workaround tests.
+- [x] `$?{cond ? A : B, width:format}` formatting handles correctly without throwing parser errors.
+- [x] `ExpressionTests.cs` includes tests validating format suffixes with the interpolation specific syntactic blocks `$?{}` and `$#{}` directly, removing the nested `$?(...)` workaround tests.
 
 ### Out of Scope
 - Specification updates (handled in the parent spec plan).
@@ -164,7 +166,7 @@ Assert.Equal(new ZohStr("C:  3"), Eval("$\"C: $#{*list,2}\""));
 ---
 
 ## Verification Plan
-- [ ] `dotnet test --filter "FullyQualifiedName~ExpressionTests"` (Should pass all tests, meaning parser cleanly separated the format suffix without parens errors)
+- [x] `dotnet test --filter "FullyQualifiedName~ExpressionTests"` (Should pass all tests, meaning parser cleanly separated the format suffix without parens errors)
 
 ---
 

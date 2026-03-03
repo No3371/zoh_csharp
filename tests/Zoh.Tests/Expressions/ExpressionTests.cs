@@ -328,8 +328,8 @@ public class ExpressionTests
         Assert.Equal(new ZohStr("Value: 1  "), Eval("$\"${*dict,-10}\""));
 
         // Nested special forms inside formatted interpolation
-        Assert.Equal(new ZohStr("R: Win "), Eval("$\"R: ${$?(*score >= 10 ? 'Win' : 'Lose'),-4}\""));
-        Assert.Equal(new ZohStr("C:  3"), Eval("$\"C: ${$#(*list),2}\""));
+        Assert.Equal(new ZohStr("R: Win "), Eval("$\"R: $?{*score >= 10 ? 'Win' : 'Lose',-4}\""));
+        Assert.Equal(new ZohStr("C:  3"), Eval("$\"C: $#{*list,2}\""));
         Assert.Contains(Eval("$\"Pick: ${$(10|20|30)[%],2}\"").ToString(), new[] { "Pick: 10", "Pick: 20", "Pick: 30" });
 
         // Deterministic failure: formatting + scanner suffix [..] is unsupported
@@ -339,6 +339,38 @@ public class ExpressionTests
         // Deterministic failure: malformed width
         var ex2 = Assert.Throws<FormatException>(() => Eval("$\"${*name,abc}\""));
         Assert.Contains("format", ex2.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Eval_InterpolationSpecialForms_FormatEdgeCases()
+    {
+        _variables.Set("score", new ZohInt(10));
+        _variables.Set("list", new ZohList([new ZohInt(1), new ZohInt(2), new ZohInt(3)]));
+        _variables.Set("flag", ZohValue.True);
+
+        // $?{} with :format only (no width) — ':' after else-branch must not be swallowed by the ternary parser
+        Assert.Equal(new ZohStr("Val: 010"), Eval("$\"Val: $?{*score >= 10 ? *score : 0:D3}\""));
+
+        // $?{} with ,width:format combined — D3(10) = "010" (3 chars), width 7 = 4 spaces + "010"
+        Assert.Equal(new ZohStr("Val:     010"), Eval("$\"Val: $?{*score >= 10 ? *score : 0,7:D3}\""));
+
+        // $#{} with :format only
+        Assert.Equal(new ZohStr("Cnt: 003"), Eval("$\"Cnt: $#{*list:D3}\""));
+
+        // $#{} with ,width:format combined — D3(3) = "003" (3 chars), width 7 = 4 spaces + "003"
+        Assert.Equal(new ZohStr("Cnt:     003"), Eval("$\"Cnt: $#{*list,7:D3}\""));
+
+        // $?{} Any form ($?{A | B}) with ,width format
+        _variables.Set("nothing_var", ZohValue.Nothing);
+        Assert.Equal(new ZohStr("Fb: Win   "), Eval("$\"Fb: $?{*nothing_var | 'Win',-6}\""));
+
+        // String branches containing ',' and ':' must NOT confuse the trailing-token detector —
+        // the lexer treats them as part of the string literal, so only the outer-level ','/:' matters.
+        Assert.Equal(new ZohStr("R: yes, really"), Eval("$\"R: $?{*flag ? 'yes, really' : 'no'}\""));
+        Assert.Equal(new ZohStr("R: yes: confirmed"), Eval("$\"R: $?{*flag ? 'yes: confirmed' : 'no'}\""));
+
+        // Combined: branch with comma string + width format — 'yes, really' is 11 chars, -15 = 4 trailing spaces
+        Assert.Equal(new ZohStr("R: yes, really    "), Eval("$\"R: $?{*flag ? 'yes, really' : 'no',-15}\""));
     }
 
     [Fact]

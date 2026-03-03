@@ -41,6 +41,26 @@ public class ExpressionParser(ImmutableArray<Token> tokens)
         return ParseLogicalOr();
     }
 
+    public ExpressionAst ParseInterpolationConditionalOrAny()
+    {
+        var first = ParseLogicalOr();
+
+        if (Match(TokenType.Nothing)) // The ? token
+        {
+            var thenExpr = ParseLogicalOr();
+            Consume(TokenType.Colon, "Expected ':' in ternary");
+            var elseExpr = ParseLogicalOr();
+            return new ConditionalExpressionAst(first, thenExpr, elseExpr);
+        }
+
+        var options = new List<ExpressionAst> { first };
+        while (Match(TokenType.Pipe))
+        {
+            options.Add(ParseLogicalOr());
+        }
+        return new AnyExpressionAst(options.ToImmutableArray());
+    }
+
     private ExpressionAst ParseLogicalOr()
     {
         var left = ParseLogicalAnd();
