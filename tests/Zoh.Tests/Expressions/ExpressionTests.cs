@@ -300,6 +300,48 @@ public class ExpressionTests
         Assert.Contains("Malformed", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
+    public void Eval_Interpolation_Formatting()
+    {
+        _variables.Set("balance", new ZohFloat(100.0));
+        _variables.Set("name", new ZohStr("John"));
+        _variables.Set("score", new ZohInt(10));
+        _variables.Set("list", new ZohList([new ZohInt(1), new ZohInt(2), new ZohInt(3)]));
+
+        // Width logic
+        Assert.Equal(new ZohStr("|John   |"), Eval("$\"|${*name,-7}|\""));
+        Assert.Equal(new ZohStr("|   John|"), Eval("$\"|${*name,7}|\""));
+
+        // Format logic
+        Assert.Equal(new ZohStr("Bal: 100.00"), Eval("$\"Bal: ${*balance:F2}\""));
+        Assert.Equal(new ZohStr("Int: 0010"), Eval("$\"Int: ${*score:D4}\""));
+        Assert.Equal(new ZohStr("Hex: A"), Eval("$\"Hex: ${*score:X}\""));
+        Assert.Equal(new ZohStr("HexLower: 0a"), Eval("$\"HexLower: ${*score:x2}\""));
+        Assert.Equal(new ZohStr("Percent: 1,000.0 %"), Eval("$\"Percent: ${*score:P1}\""));
+        Assert.Equal(new ZohStr("Cust: 010.0"), Eval("$\"Cust: ${*score:000.0}\""));
+
+        // Width + Format
+        Assert.Equal(new ZohStr("Bal:   100.0"), Eval("$\"Bal: ${*balance,7:F1}\""));
+        Assert.Equal(new ZohStr("HexW: 0A   "), Eval("$\"HexW: ${*score,-5:X2}\""));
+
+        // Literal inside string shouldn't break parser
+        _variables.Set("dict", new ZohStr("Value: 1"));
+        Assert.Equal(new ZohStr("Value: 1  "), Eval("$\"${*dict,-10}\""));
+
+        // Nested special forms inside formatted interpolation
+        Assert.Equal(new ZohStr("R: Win "), Eval("$\"R: ${$?(*score >= 10 ? 'Win' : 'Lose'),-4}\""));
+        Assert.Equal(new ZohStr("C:  3"), Eval("$\"C: ${$#(*list),2}\""));
+        Assert.Contains(Eval("$\"Pick: ${$(10|20|30)[%],2}\"").ToString(), new[] { "Pick: 10", "Pick: 20", "Pick: 30" });
+
+        // Deterministic failure: formatting + scanner suffix [..] is unsupported
+        var ex1 = Assert.Throws<Exception>(() => Eval("$\"${*name,7}[0]\""));
+        Assert.Contains("cannot be combined", ex1.Message, StringComparison.Ordinal);
+
+        // Deterministic failure: malformed width
+        var ex2 = Assert.Throws<FormatException>(() => Eval("$\"${*name,abc}\""));
+        Assert.Contains("format", ex2.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Eval_Power()
     {
         Assert.Equal(new ZohInt(8), Eval("2 ** 3"));

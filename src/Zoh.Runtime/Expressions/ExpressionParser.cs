@@ -10,6 +10,8 @@ public class ExpressionParser(ImmutableArray<Token> tokens)
 {
     private int _current = 0;
 
+    public int ConsumedTokensCount => _current;
+
     private Token Peek(int offset = 0) =>
         _current + offset < tokens.Length ? tokens[_current + offset] : Token.Eof(new TextPosition(0, 0, 0));
 

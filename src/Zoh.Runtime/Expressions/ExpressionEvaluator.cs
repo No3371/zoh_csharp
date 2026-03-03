@@ -242,12 +242,81 @@ public class ExpressionEvaluator
         else if (match.OpenToken == "$?{") exprSource = "$?(" + match.Content + ")";
         else throw new Exception("Unknown token " + match.OpenToken);
 
-        if (!string.IsNullOrEmpty(match.Suffix))
+        var lexer = new Lexer(exprSource, false);
+        var result = lexer.Tokenize();
+        if (result.Errors.Length > 0)
+            throw new Exception("Lexer error: " + result.Errors[0].Message);
+
+        var parser = new ExpressionParser(result.Tokens);
+        var ast = parser.Parse();
+        var val = Evaluate(ast);
+
+        bool hasFormatting = false;
+        if (parser.ConsumedTokensCount < result.Tokens.Length - 1)
         {
-            exprSource = "$(" + exprSource + ")" + match.Suffix;
+            var firstTrailingToken = result.Tokens[parser.ConsumedTokensCount];
+            if (firstTrailingToken.Type == TokenType.Comma || firstTrailingToken.Type == TokenType.Colon)
+            {
+                hasFormatting = true;
+                var suffixOffset = firstTrailingToken.Start.Offset;
+                var formatSuffix = exprSource.Substring(suffixOffset);
+                var exprCoreSource = exprSource.Substring(0, suffixOffset).TrimEnd();
+                var coreVal = EvaluateExprString(exprCoreSource);
+
+                // Parse the format suffix: [,width][:formatString]
+                // The format string is opaque — we extract it verbatim and delegate to string.Format.
+                string? widthStr = null;
+                string? formatStr = null;
+                var s = formatSuffix.AsSpan().Trim();
+
+                if (s.Length > 0 && s[0] == ',')
+                {
+                    s = s.Slice(1).TrimStart();
+                    var colonIdx = s.IndexOf(':');
+                    var widthSpan = colonIdx >= 0 ? s.Slice(0, colonIdx) : s;
+                    widthStr = widthSpan.Trim().ToString();
+                    if (colonIdx >= 0)
+                        formatStr = s.Slice(colonIdx + 1).ToString();
+                }
+                else if (s.Length > 0 && s[0] == ':')
+                {
+                    formatStr = s.Slice(1).ToString();
+                }
+
+                string csFormat = "{0";
+                if (!string.IsNullOrEmpty(widthStr)) csFormat += "," + widthStr;
+                if (!string.IsNullOrEmpty(formatStr)) csFormat += ":" + formatStr;
+                csFormat += "}";
+
+                object? clrValue = coreVal switch
+                {
+                    ZohInt i => i.Value,
+                    ZohFloat f => f.Value,
+                    ZohStr zstr => zstr.Value,
+                    ZohBool b => b.Value,
+                    ZohNothing => "?",
+                    _ => coreVal.ToString()
+                };
+
+                val = new ZohStr(string.Format(System.Globalization.CultureInfo.InvariantCulture, csFormat, clrValue));
+            }
+            else
+            {
+                throw new Exception("invalid_syntax: Unexpected tokens after interpolation expression");
+            }
         }
 
-        return EvaluateExprString(exprSource);
+        if (!string.IsNullOrEmpty(match.Suffix))
+        {
+            if (hasFormatting)
+            {
+                throw new Exception("invalid_syntax: formatting suffix (,width/:format) cannot be combined with interpolation suffix [..]");
+            }
+            exprSource = "$(" + exprSource + ")" + match.Suffix;
+            return EvaluateExprString(exprSource);
+        }
+
+        return val;
     }
 
     private ZohValue EvaluateExprString(string source)
