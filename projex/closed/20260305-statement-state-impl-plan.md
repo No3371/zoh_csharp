@@ -1,9 +1,11 @@
 # Add Per-Statement State to Context (C# Implementation)
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Created:** 2026-03-05
 > **Author:** agent
 > **Source:** 20260304-statement-cache-staging-eval.md
+> **Completed:** 2026-03-05
+> **Walkthrough:** 20260305-statement-state-impl-walkthrough.md
 > **Related Projex:** 20260305-statement-state-spec-plan.md, 20260304-std-verbs-driver-alignment-plan-review.md
 
 ---

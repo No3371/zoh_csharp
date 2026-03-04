@@ -34,6 +34,12 @@ public class Context : IExecutionContext
     public Continuation? PendingContinuation { get; private set; }
     public int ResumeToken { get; private set; }
 
+    /// <summary>
+    /// Per-statement driver-private scratch space. Persists across suspend/resume
+    /// for the same statement. Cleared on Complete, Terminate, and ExitStory.
+    /// </summary>
+    public Dictionary<string, object>? StatementState { get; set; }
+
     public ContextHandle? Handle { get; internal set; }
     public Func<double>? ElapsedMsProvider { get; set; }
 
@@ -91,6 +97,7 @@ public class Context : IExecutionContext
             case DriverResult.Complete c:
                 LastResult = c.Value;
                 LastDiagnostics = c.Diagnostics;
+                StatementState = null;
                 if (c.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Fatal))
                 {
                     SetState(ContextState.Terminated);
@@ -212,6 +219,7 @@ public class Context : IExecutionContext
         ExecuteDefers(_storyDefers);
         ExecuteDefers(_contextDefers);
 
+        StatementState = null;
         SignalManager.UnsubscribeContext(this);
 
         State = ContextState.Terminated;
@@ -229,6 +237,7 @@ public class Context : IExecutionContext
     public void ExitStory()
     {
         ExecuteDefers(_storyDefers);
+        StatementState = null;
         Variables.ClearStory();
     }
 
