@@ -34,6 +34,9 @@ public class Context : IExecutionContext
     public Continuation? PendingContinuation { get; private set; }
     public int ResumeToken { get; private set; }
 
+    public ContextHandle? Handle { get; internal set; }
+    public Func<double>? ElapsedMsProvider { get; set; }
+
     public DriverResult ExecuteVerb(ValueAst verb, IExecutionContext context)
     {
         return VerbExecutor?.Invoke(verb, context) ?? DriverResult.Complete.Ok();
@@ -111,26 +114,27 @@ public class Context : IExecutionContext
 
     private void BlockOnRequest(WaitRequest request)
     {
+        var elapsedMs = ElapsedMsProvider?.Invoke() ?? 0;
         switch (request)
         {
             case SleepRequest s:
-                WaitCondition = DateTimeOffset.UtcNow.AddMilliseconds(s.DurationMs);
+                WaitCondition = new SleepCondition(elapsedMs + s.DurationMs);
                 SetState(ContextState.Sleeping);
                 break;
 
             case SignalRequest m:
                 SignalManager.Subscribe(m.MessageName, this);
-                WaitCondition = m.MessageName;
+                WaitCondition = new SignalWaitCondition(m.MessageName, elapsedMs, m.TimeoutMs);
                 SetState(ContextState.WaitingMessage);
                 break;
 
             case JoinContextRequest c:
-                WaitCondition = c.ContextId;
+                WaitCondition = new ContextJoinCondition(c.ContextId);
                 SetState(ContextState.WaitingContext);
                 break;
 
             case HostRequest h:
-                WaitCondition = h.TimeoutMs;
+                WaitCondition = new HostWaitCondition(elapsedMs, h.TimeoutMs);
                 SetState(ContextState.WaitingHost);
                 break;
 
@@ -232,7 +236,7 @@ public class Context : IExecutionContext
 
     public int InstructionPointer { get; set; }
     public CompiledStory? CurrentStory { get; set; }
-    public object? WaitCondition { get; set; }
+    public WaitConditionState? WaitCondition { get; set; }
 
     public Context Clone()
     {
@@ -245,8 +249,9 @@ public class Context : IExecutionContext
             StatementExecutor = StatementExecutor,
             StoryLoader = StoryLoader,
             ContextScheduler = ContextScheduler,
+            ElapsedMsProvider = ElapsedMsProvider,
             LastResult = LastResult
-            // ResumeToken and PendingContinuation start fresh (defaults: 0, null)
+            // ResumeToken, PendingContinuation, Handle start fresh (defaults: 0, null, null)
         };
         return newContext;
     }

@@ -15,7 +15,7 @@ public class ConverseDriverTests
     {
         public List<ConverseRequest> Requests { get; } = new();
 
-        public void OnConverse(IExecutionContext context, ConverseRequest request)
+        public void OnConverse(ContextHandle handle, ConverseRequest request)
         {
             Requests.Add(request);
         }

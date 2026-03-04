@@ -109,7 +109,7 @@ public class ConverseDriver : IVerbDriver
 
         if (_handler != null)
         {
-            _handler.OnConverse(ctx, request);
+            _handler.OnConverse(ctx.Handle!, request);
 
             if (shouldWait)
             {

@@ -13,7 +13,7 @@ public class PromptDriverTests
     {
         public List<PromptRequest> Requests { get; } = new();
 
-        public void OnPrompt(IExecutionContext context, PromptRequest request)
+        public void OnPrompt(ContextHandle handle, PromptRequest request)
         {
             Requests.Add(request);
         }

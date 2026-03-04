@@ -6,5 +6,5 @@ namespace Zoh.Runtime.Verbs.Standard.Presentation;
 
 public interface IChooseFromHandler
 {
-    void OnChooseFrom(IExecutionContext context, ChooseRequest request);
+    void OnChooseFrom(ContextHandle handle, ChooseRequest request);
 }

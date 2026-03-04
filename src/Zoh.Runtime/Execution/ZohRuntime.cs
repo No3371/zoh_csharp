@@ -27,6 +27,12 @@ public class ZohRuntime
     public IReadOnlyList<Context> Contexts => _contexts;
     private readonly List<Context> _contexts = new();
     private readonly Dictionary<string, CompiledStory> _storyCache = new();
+    private double _elapsedMs;
+    private readonly Dictionary<string, ContextHandle> _handles = new();
+
+    internal double ElapsedMs => _elapsedMs;
+
+    public IReadOnlyCollection<ContextHandle> Handles => _handles.Values;
 
     public ZohRuntime() : this(RuntimeConfig.Default) { }
 
@@ -97,7 +103,7 @@ public class ZohRuntime
         return null;
     }
 
-    public Context CreateContext(CompiledStory story)
+    private Context CreateContextInternal(CompiledStory story)
     {
         var store = new VariableStore(new Dictionary<string, Variable>());
         var ctx = new Context(store, Storage, Channels, SignalManager);
@@ -106,15 +112,135 @@ public class ZohRuntime
         ctx.StatementExecutor = ExecuteStatement;
         ctx.StoryLoader = GetCompiledStory;
         ctx.ContextScheduler = AddContext;
+        ctx.ElapsedMsProvider = () => _elapsedMs;
         ctx.CurrentStory = story;
 
+        var handle = new ContextHandle(ctx);
+        ctx.Handle = handle;
+        _handles[ctx.Id] = handle;
         _contexts.Add(ctx);
         return ctx;
+    }
+
+    [Obsolete("Use StartContext() which returns a ContextHandle.")]
+    public Context CreateContext(CompiledStory story)
+    {
+        return CreateContextInternal(story);
     }
 
     public void AddContext(Context ctx)
     {
         _contexts.Add(ctx);
+    }
+
+    /// <summary>
+    /// Creates a new context for the given story and returns an opaque handle.
+    /// The context begins in Running state and will execute on the next Tick().
+    /// </summary>
+    public ContextHandle StartContext(CompiledStory story)
+    {
+        var ctx = CreateContextInternal(story);
+        return ctx.Handle!;
+    }
+
+    /// <summary>
+    /// Advances the runtime by deltaTimeMs. Accumulates elapsed time, resolves
+    /// blocked contexts whose wait conditions are met, then runs all RUNNING contexts.
+    /// </summary>
+    public void Tick(double deltaTimeMs)
+    {
+        _elapsedMs += deltaTimeMs;
+
+        for (int i = 0; i < _contexts.Count; i++)
+        {
+            var ctx = _contexts[i];
+
+            if (ctx.State != ContextState.Running && ctx.State != ContextState.Terminated)
+            {
+                var token = ctx.ResumeToken;
+                var outcome = ResolveWait(ctx);
+                if (outcome != null)
+                {
+                    ctx.Resume(outcome, token);
+                }
+            }
+
+            if (ctx.State == ContextState.Running)
+            {
+                ctx.Run();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Checks if a blocked context's wait condition is met.
+    /// Returns WaitOutcome if ready to resume, null if still waiting.
+    /// </summary>
+    private WaitOutcome? ResolveWait(Context ctx)
+    {
+        switch (ctx.State)
+        {
+            case ContextState.Sleeping:
+                if (ctx.WaitCondition is SleepCondition sleep && _elapsedMs >= sleep.WakeTimeMs)
+                    return new WaitCompleted(ZohValue.Nothing);
+                return null;
+
+            case ContextState.WaitingHost:
+                // Host-driven: scheduler only handles timeout.
+                // Host calls runtime.Resume(handle, value) to fulfill.
+                if (ctx.WaitCondition is HostWaitCondition host && host.IsTimedOut(_elapsedMs))
+                    return new WaitTimedOut();
+                return null;
+
+            case ContextState.WaitingMessage:
+                // Fulfillment handled by SignalManager.Broadcast (fast path).
+                // Scheduler only handles timeout.
+                if (ctx.WaitCondition is SignalWaitCondition sig && sig.IsTimedOut(_elapsedMs))
+                {
+                    SignalManager.Unsubscribe(sig.MessageName, ctx);
+                    return new WaitTimedOut();
+                }
+                return null;
+
+            case ContextState.WaitingContext:
+                if (ctx.WaitCondition is ContextJoinCondition join)
+                {
+                    var target = _contexts.FirstOrDefault(c => c.Id == join.TargetContextId);
+                    if (target == null || target.State == ContextState.Terminated)
+                        return new WaitCompleted(target?.LastResult ?? ZohValue.Nothing);
+                }
+                return null;
+
+            case ContextState.WaitingChannel:
+                // Value delivery handled by PushDriver fast path.
+                // Scheduler only handles timeout.
+                if (ctx.WaitCondition is ChannelWaitCondition chan && chan.IsTimedOut(_elapsedMs))
+                    return new WaitTimedOut();
+                return null;
+
+            default:
+                return null;
+        }
+    }
+
+    /// <summary>
+    /// Resumes a WAITING_HOST context with the given value.
+    /// The only public path for host code to unblock a suspended context.
+    /// </summary>
+    public void Resume(ContextHandle handle, ZohValue value)
+    {
+        var ctx = handle.InternalContext;
+        var token = ctx.ResumeToken;
+        ctx.Resume(new WaitCompleted(value), token);
+    }
+
+    /// <summary>
+    /// Returns the execution result for a terminated context.
+    /// Throws if the context has not terminated.
+    /// </summary>
+    public ExecutionResult GetResult(ContextHandle handle)
+    {
+        return new ExecutionResult(handle.InternalContext);
     }
 
     private DriverResult ExecuteStatement(IExecutionContext ctx, VerbCallAst call)
@@ -181,17 +307,20 @@ public class ZohRuntime
         }
     }
 
+    [Obsolete("Use Tick() to drive execution.")]
     public void Run(Context ctx)
     {
         ctx.Run();
     }
 
+    [Obsolete("Use StartContext() + Tick().")]
     public ZohValue RunToCompletion(Context ctx)
     {
         Run(ctx);
         return ctx.LastResult ?? ZohNothing.Instance;
     }
 
+    [Obsolete("Use StartContext() + Tick().")]
     public Context RunToCompletion(string source)
     {
         var story = LoadStory(source);

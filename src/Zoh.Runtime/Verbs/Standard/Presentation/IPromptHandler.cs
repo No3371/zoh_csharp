@@ -10,5 +10,5 @@ public record PromptRequest(
 
 public interface IPromptHandler
 {
-    void OnPrompt(IExecutionContext context, PromptRequest request);
+    void OnPrompt(ContextHandle handle, PromptRequest request);
 }

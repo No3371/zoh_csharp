@@ -165,4 +165,12 @@ public class VariableStore
     {
         _storyVariables.Clear();
     }
+
+    /// <summary>Returns all variable names across both story and context scopes.</summary>
+    public IReadOnlyList<string> GetAllKeys()
+    {
+        var keys = new HashSet<string>(_storyVariables.Keys);
+        keys.UnionWith(_contextVariables.Keys);
+        return keys.ToList().AsReadOnly();
+    }
 }

@@ -13,7 +13,7 @@ public class ChooseDriverTests
     {
         public List<ChooseRequest> Requests { get; } = new();
 
-        public void OnChoose(IExecutionContext context, ChooseRequest request)
+        public void OnChoose(ContextHandle handle, ChooseRequest request)
         {
             Requests.Add(request);
         }

@@ -1,6 +1,8 @@
 # C# Runtime API Surface Alignment
 
-> **Status:** In Progress
+> **Status:** Complete
+> **Completed:** 2026-03-05
+> **Walkthrough:** 20260305-runtime-api-surface-alignment-walkthrough.md
 > **Created:** 2026-03-05
 > **Author:** Agent
 > **Source:** 20260304-runtime-api-surface-spec-plan-walkthrough.md

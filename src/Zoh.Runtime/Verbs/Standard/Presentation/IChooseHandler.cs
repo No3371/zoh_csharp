@@ -16,5 +16,5 @@ public record ChooseRequest(
 
 public interface IChooseHandler
 {
-    void OnChoose(IExecutionContext context, ChooseRequest request);
+    void OnChoose(ContextHandle handle, ChooseRequest request);
 }

@@ -17,6 +17,9 @@ public class RuntimeConfig
     /// <summary>Whether diagnostics are collected and accessible via /diagnose.</summary>
     public bool EnableDiagnostics { get; set; } = true;
 
+    /// <summary>Statement budget per context.Run() invocation. 0 = unlimited.</summary>
+    public int MaxStatementsPerTick { get; set; } = 0;
+
     /// <summary>Default RuntimeConfig with no limits.</summary>
     public static RuntimeConfig Default => new();
 }

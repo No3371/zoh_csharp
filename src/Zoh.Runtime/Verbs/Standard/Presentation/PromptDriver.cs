@@ -53,7 +53,7 @@ public class PromptDriver : IVerbDriver
 
         if (_handler != null)
         {
-            _handler.OnPrompt(ctx, request);
+            _handler.OnPrompt(ctx.Handle!, request);
             return new DriverResult.Suspend(new Continuation(
                 new HostRequest(),
                 outcome => outcome switch

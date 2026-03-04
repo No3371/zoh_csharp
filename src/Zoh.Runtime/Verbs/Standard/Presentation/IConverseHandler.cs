@@ -13,5 +13,5 @@ public record ConverseRequest(
 
 public interface IConverseHandler
 {
-    void OnConverse(IExecutionContext context, ConverseRequest request);
+    void OnConverse(ContextHandle handle, ConverseRequest request);
 }

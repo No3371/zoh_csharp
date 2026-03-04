@@ -100,7 +100,7 @@ public class ChooseFromDriver : IVerbDriver
 
         if (_handler != null)
         {
-            _handler.OnChooseFrom(ctx, request);
+            _handler.OnChooseFrom(ctx.Handle!, request);
             return new DriverResult.Suspend(new Continuation(
                 new HostRequest(),
                 outcome => outcome switch
