@@ -130,6 +130,8 @@ public class ZohRuntime
 
     public void AddContext(Context ctx)
     {
+        ctx.Handle ??= new ContextHandle(ctx);
+        _handles[ctx.Id] = ctx.Handle;
         _contexts.Add(ctx);
     }
 
@@ -205,9 +207,9 @@ public class ZohRuntime
             case ContextState.WaitingContext:
                 if (ctx.WaitCondition is ContextJoinCondition join)
                 {
-                    var target = _contexts.FirstOrDefault(c => c.Id == join.TargetContextId);
-                    if (target == null || target.State == ContextState.Terminated)
-                        return new WaitCompleted(target?.LastResult ?? ZohValue.Nothing);
+                    var target = join.TargetHandle;
+                    if (target.State == ContextState.Terminated)
+                        return new WaitCompleted(target.InternalContext.LastResult);
                 }
                 return null;
 

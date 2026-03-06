@@ -136,7 +136,7 @@ public class Context : IExecutionContext
                 break;
 
             case JoinContextRequest c:
-                WaitCondition = new ContextJoinCondition(c.ContextId);
+                WaitCondition = new ContextJoinCondition(c.Handle);
                 SetState(ContextState.WaitingContext);
                 break;
 

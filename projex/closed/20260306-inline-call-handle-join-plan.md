@@ -1,7 +1,8 @@
 # Option A: Handle-Backed `/call [inline]` Join and Variable Copy
 
-> **Status:** In Progress
-> **Created:** 2026-03-06
+> **Status:** Complete [PATCHED]
+> **Completed:** 2026-03-07
+> **Walkthrough:** [20260306-inline-call-handle-join-walkthrough.md](./20260306-inline-call-handle-join-walkthrough.md)
 > **Author:** Agent
 > **Source:** 20260305-inline-call-variable-copy-proposal.md (Option A selected)
 > **Related Projex:** 20260305-inline-call-variable-copy-proposal.md, 20260304-runtime-spec-gaps-memo.md, 20260306-inline-call-handle-join-spec-plan.md, 20260227-phase5-concurrency-context-signal-gaps-fix-plan.md

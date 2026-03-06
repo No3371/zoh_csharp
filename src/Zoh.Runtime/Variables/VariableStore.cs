@@ -52,6 +52,28 @@ public class VariableStore
         return false;
     }
 
+    public bool TryGetWithScope(string name, out ZohValue value, out Scope scope)
+    {
+        name = name.ToLowerInvariant();
+        if (_storyVariables.TryGetValue(name, out var v))
+        {
+            value = v.Value;
+            scope = Scope.Story;
+            return true;
+        }
+
+        if (_contextVariables.TryGetValue(name, out var cv))
+        {
+            value = cv.Value;
+            scope = Scope.Context;
+            return true;
+        }
+
+        value = ZohValue.Nothing;
+        scope = Scope.Story;
+        return false;
+    }
+
     public void Set(string name, ZohValue value, Scope? specificScope = null)
     {
         if (!IsValidVariableName(name))

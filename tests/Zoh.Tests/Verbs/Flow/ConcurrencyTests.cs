@@ -105,8 +105,45 @@ public class ConcurrencyTests
         var suspend = Assert.IsType<DriverResult.Suspend>(result);
         var req = Assert.IsType<JoinContextRequest>(suspend.Continuation.Request);
         Assert.Single(scheduled);
-        Assert.Equal(scheduled[0].Id, req.ContextId);
+        Assert.Single(scheduled);
+        Assert.Equal(scheduled[0].Id, req.Handle.Id);
         Assert.Equal(ContextState.Running, ctx.State); // driver no longer mutates state
+    }
+
+    [Fact]
+    public void Call_Inline_CopiesVariablesBack()
+    {
+        var story = CreateStory("main", "sub");
+        var ctx = CreateContext(story);
+        ctx.Variables.Set("in_out", new ZohInt(1));
+
+        var scheduled = new List<Context>();
+        ctx.ContextScheduler = (c) => scheduled.Add(c);
+
+        var driver = new CallDriver();
+        var attrs = ImmutableArray.Create(new AttributeAst("inline", null, new TextPosition(1, 1, 0)));
+        // /call [inline] "sub", *in_out;
+        var call = new VerbCallAst("core", "call", false, attrs,
+            ImmutableDictionary<string, ValueAst>.Empty,
+            ImmutableArray.Create<ValueAst>(new ValueAst.String("sub"), new ValueAst.Reference("in_out")),
+            new TextPosition(1, 1, 0));
+
+        var result = driver.Execute(ctx, call);
+
+        Assert.True(result.IsSuccess);
+        var suspend = Assert.IsType<DriverResult.Suspend>(result);
+
+        var child = scheduled[0];
+        // Mutate in child
+        child.Variables.Set("in_out", new ZohInt(42));
+
+        // Complete the wait
+        var resumeResult = suspend.Continuation.OnFulfilled(new WaitCompleted(ZohValue.Nothing));
+
+        Assert.True(resumeResult.IsSuccess);
+
+        // Assert value copied back to parent
+        Assert.Equal(new ZohInt(42), ctx.Variables.Get("in_out"));
     }
 
     [Fact]

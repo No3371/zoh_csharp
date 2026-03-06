@@ -22,7 +22,7 @@ public sealed record SignalWaitCondition(
         TimeoutMs.HasValue && elapsedMs >= StartTimeMs + TimeoutMs.Value;
 }
 
-public sealed record ContextJoinCondition(string TargetContextId) : WaitConditionState;
+public sealed record ContextJoinCondition(ContextHandle TargetHandle) : WaitConditionState;
 
 public sealed record ChannelWaitCondition(
     string ChannelName, double StartTimeMs, double? TimeoutMs) : WaitConditionState

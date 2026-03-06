@@ -25,27 +25,84 @@ public class CallDriver : IVerbDriver
 
         string targetLabel = "";
         string? targetStoryName = null;
+        var transferRefs = new List<ValueAst.Reference>();
 
-        if (call.UnnamedParams.Length == 1)
+        if (call.UnnamedParams.Length == 0)
         {
-            var val = ValueResolver.Resolve(call.UnnamedParams[0], ctx);
-            if (val is ZohStr s) targetLabel = s.Value;
-            else return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_arg", "Call label must be a string.", call.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "arg_count", "Call requires at least 1 argument.", call.Start));
         }
-        else if (call.UnnamedParams.Length == 2)
+
+        // Try parsing first element as story or label
+        var firstArg = call.UnnamedParams[0];
+        var val0 = ValueResolver.Resolve(call.UnnamedParams[0], ctx);
+        int paramIndex = 1;
+
+        if (val0 is ZohNothing)
         {
-            var val0 = ValueResolver.Resolve(call.UnnamedParams[0], ctx);
-            if (val0 is ZohStr s0) targetStoryName = s0.Value;
-            else if (val0 is ZohNothing) targetStoryName = null;
-            else return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_arg", "Call story must be a string or nothing.", call.Start));
+            // Explicit null story: `/call ?, "label", ...`
+            if (call.UnnamedParams.Length < 2)
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "arg_count", "Call requires a label after a null story.", call.Start));
 
             var val1 = ValueResolver.Resolve(call.UnnamedParams[1], ctx);
             if (val1 is ZohStr s1) targetLabel = s1.Value;
             else return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_arg", "Call label must be a string.", call.Start));
+            paramIndex = 2;
+        }
+        else if (val0 is ZohStr s0)
+        {
+            // Could be just "label" or "story", "label"
+            if (call.UnnamedParams.Length > 1)
+            {
+                // Check if the second argument evaluates to a string (which means first was story)
+                // But Wait, what if second arg is a variable reference evaluating to something else? 
+                // Zoh spec typically prefers explicit `?, "label"` for local, or `"story", "label"` for remote. 
+                // But `/call "label";` is also valid for local. 
+                // Let's check if param 1 is a Reference. If so, it might be a transfer param. 
+                // If it is NOT a Reference, or if we evaluate it and it's a string, it might be a label.
+                var arg1 = call.UnnamedParams[1];
+                if (arg1 is ValueAst.Reference r)
+                {
+                    // If it's a reference, it's ambiguous if resolving to string. 
+                    // Let's assume: if length=2 and both resolve to string, it's story, label.
+                    // But if it's a Reference, it's a transfer param of the form `/call "label", *var`. 
+                    targetLabel = s0.Value;
+                }
+                else
+                {
+                    var val1 = ValueResolver.Resolve(call.UnnamedParams[1], ctx);
+                    if (val1 is ZohStr s1)
+                    {
+                        targetStoryName = s0.Value;
+                        targetLabel = s1.Value;
+                        paramIndex = 2;
+                    }
+                    else
+                    {
+                        targetLabel = s0.Value;
+                    }
+                }
+            }
+            else
+            {
+                targetLabel = s0.Value;
+            }
         }
         else
         {
-            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "arg_count", "Call requires 1 or 2 arguments.", call.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_arg", "Call target must be a string or nothing.", call.Start));
+        }
+
+        // Collect transfer refs
+        for (int i = paramIndex; i < call.UnnamedParams.Length; i++)
+        {
+            if (call.UnnamedParams[i] is ValueAst.Reference refAst)
+            {
+                transferRefs.Add(refAst);
+            }
+            else
+            {
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_arg", "Call transfer parameters must be references.", call.Start));
+            }
         }
 
         bool isClone = call.Attributes.Any(a => a.Name.Equals("clone", StringComparison.OrdinalIgnoreCase));
@@ -86,6 +143,15 @@ public class CallDriver : IVerbDriver
             return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_checkpoint", $"Label '{targetLabel}' not found.", call.Start));
         }
 
+        // Transfer params into child context before validating the contract
+        foreach (var r in transferRefs)
+        {
+            if (ctx.Variables.TryGetWithScope(r.Name, out var val, out var scope))
+            {
+                newCtx.Variables.Set(r.Name, val, scope);
+            }
+        }
+
         var validation = newCtx.ValidateContract(targetLabel);
         if (validation.IsFatal) return validation;
 
@@ -93,17 +159,40 @@ public class CallDriver : IVerbDriver
 
         // Schedule child
         ctx.ContextScheduler(newCtx);
+        var childHandle = newCtx.Handle ??= new ContextHandle(newCtx);
+
+        bool shouldInline = call.Attributes.Any(a => a.Name.Equals("inline", StringComparison.OrdinalIgnoreCase));
 
         // Suspend parent until child terminates
         return new DriverResult.Suspend(new Continuation(
-            new JoinContextRequest(newCtx.Id),
-            outcome => outcome switch
+            new JoinContextRequest(childHandle),
+            outcome =>
             {
-                WaitCompleted c => DriverResult.Complete.Ok(c.Value),
-                WaitCancelled x => new DriverResult.Complete(
-                    ZohNothing.Instance,
-                    ImmutableArray.Create(new Diagnostic(DiagnosticSeverity.Error, x.Code, x.Message, call.Start))),
-                _ => DriverResult.Complete.Ok()
+                switch (outcome)
+                {
+                    case WaitCompleted c:
+                        if (shouldInline)
+                        {
+                            var finalStore = childHandle.InternalContext.Variables;
+                            foreach (var r in transferRefs)
+                            {
+                                var varName = r.Name;
+                                if (finalStore.TryGetWithScope(varName, out var childVal, out var childScope))
+                                {
+                                    ctx.Variables.Set(varName, childVal, childScope);
+                                }
+                            }
+                        }
+                        return DriverResult.Complete.Ok(c.Value);
+
+                    case WaitCancelled x:
+                        return new DriverResult.Complete(
+                            ZohNothing.Instance,
+                            ImmutableArray.Create(new Diagnostic(DiagnosticSeverity.Error, x.Code, x.Message, call.Start)));
+
+                    default:
+                        return DriverResult.Complete.Ok();
+                }
             }
         ));
     }
