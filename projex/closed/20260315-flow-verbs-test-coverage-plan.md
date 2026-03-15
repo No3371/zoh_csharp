@@ -1,7 +1,8 @@
 # Flow Verbs Test Coverage Plan
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Created:** 2026-03-15
+> **Walkthrough:** 20260315-flow-verbs-test-coverage-walkthrough.md
 > **Author:** Agent
 > **Source:** Direct request (Unit Test Discovery)
 > **Related Projex:** None

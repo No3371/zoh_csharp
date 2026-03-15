@@ -49,6 +49,12 @@ namespace Zoh.Runtime.Verbs.Flow
                 else
                 {
                     compareVal = ZohBool.True;
+                    
+                    // Spec type validation when comparing against default true
+                    if (!(subjectVal is ZohBool) && !(subjectVal is ZohNothing))
+                    {
+                        return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", $"Condition must be a boolean or nothing when no 'is' parameter is provided. Got: {subjectVal.GetTypeString()}", call.Start));
+                    }
                 }
 
                 // 3. Compare
