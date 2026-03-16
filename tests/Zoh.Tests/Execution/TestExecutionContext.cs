@@ -31,6 +31,17 @@ public class TestExecutionContext : IExecutionContext
     }
 
     public ChannelManager ChannelManager { get; } = new();
+    public ZohRuntime Runtime { get; } = new();
+
+    private readonly Dictionary<string, ZohValue> _flags = new();
+
+    public ZohValue? ResolveFlag(string name)
+    {
+        if (_flags.TryGetValue(name, out var v)) return v;
+        return Runtime.GetFlag(name);
+    }
+
+    public void SetContextFlag(string name, ZohValue value) => _flags[name] = value;
 
     public DriverResult ExecuteVerb(ValueAst verb, IExecutionContext context)
     {

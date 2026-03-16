@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Zoh.Runtime.Diagnostics;
 using Zoh.Runtime.Preprocessing;
+using Zoh.Runtime.Types;
 
 namespace Zoh.Tests.Preprocessing;
 
@@ -294,7 +295,7 @@ Line2|%|
         var processor = new EmbedPreprocessor(reader);
         var context = new PreprocessorContext("#embed \"${locale}.zoh\";", "/main.zoh")
         {
-            RuntimeFlags = new Dictionary<string, string> { ["locale"] = "en" }
+            RuntimeFlags = new Dictionary<string, ZohValue> { ["locale"] = new ZohStr("en") }
         };
 
         var result = processor.Process(context);
@@ -330,7 +331,7 @@ Line2|%|
         var processor = new EmbedPreprocessor(reader);
         var context = new PreprocessorContext("#embed \"${filename}\";", "/main.zoh")
         {
-            RuntimeFlags = new Dictionary<string, string> { ["filename"] = "flag-value" }
+            RuntimeFlags = new Dictionary<string, ZohValue> { ["filename"] = new ZohStr("flag-value") }
         };
 
         var result = processor.Process(context);

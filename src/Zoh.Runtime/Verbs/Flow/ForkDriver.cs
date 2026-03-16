@@ -70,12 +70,15 @@ public class ForkDriver : IVerbDriver
             // Reuse Storage and Channels
             newCtx = new Context(store, ctx.Storage, ctx.ChannelManager, ctx.SignalManager)
             {
+                Runtime = ctx.Runtime,
                 VerbExecutor = ctx.VerbExecutor,
                 StoryLoader = ctx.StoryLoader,
                 ContextScheduler = ctx.ContextScheduler,
                 CurrentStory = ctx.CurrentStory // Inherit story initially? Or Null?
             };
         }
+
+        ctx.CopyContextFlagsTo(newCtx);
 
         // Resolve Target
         CompiledStory? story = newCtx.CurrentStory;

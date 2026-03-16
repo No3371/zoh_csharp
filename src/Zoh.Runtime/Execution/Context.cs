@@ -22,10 +22,12 @@ public class Context : IExecutionContext
 
     private readonly Stack<ValueAst> _storyDefers = new();
     private readonly Stack<ValueAst> _contextDefers = new();
+    private readonly Dictionary<string, ZohValue> _flags = new();
 
     public IList<Diagnostic> LastDiagnostics { get; set; } = ImmutableList<Diagnostic>.Empty;
 
     // To be injected or set by Runtime
+    public ZohRuntime Runtime { get; internal set; } = null!;
     public Func<ValueAst, IExecutionContext, DriverResult>? VerbExecutor { get; set; }
     public Func<IExecutionContext, VerbCallAst, DriverResult>? StatementExecutor { get; set; }
     public Func<string, CompiledStory?>? StoryLoader { get; set; }
@@ -42,6 +44,14 @@ public class Context : IExecutionContext
 
     public ContextHandle? Handle { get; internal set; }
     public Func<double>? ElapsedMsProvider { get; set; }
+
+    public void SetContextFlag(string name, ZohValue value) => _flags[name] = value;
+
+    public ZohValue? ResolveFlag(string name)
+    {
+        if (_flags.TryGetValue(name, out var v)) return v;
+        return Runtime.GetFlag(name);
+    }
 
     public DriverResult ExecuteVerb(ValueAst verb, IExecutionContext context)
     {
@@ -252,6 +262,7 @@ public class Context : IExecutionContext
         var newVars = Variables.Clone();
         var newContext = new Context(newVars, Storage, ChannelManager, SignalManager)
         {
+            Runtime = Runtime,
             InstructionPointer = InstructionPointer,
             CurrentStory = CurrentStory,
             VerbExecutor = VerbExecutor,
@@ -262,7 +273,16 @@ public class Context : IExecutionContext
             LastResult = LastResult
             // ResumeToken, PendingContinuation, Handle start fresh (defaults: 0, null, null)
         };
+        CopyContextFlagsTo(newContext);
         return newContext;
+    }
+
+    internal void CopyContextFlagsTo(Context other)
+    {
+        foreach (var (key, value) in _flags)
+        {
+            other._flags[key] = value;
+        }
     }
 
     public DriverResult ValidateContract(string checkpointName)

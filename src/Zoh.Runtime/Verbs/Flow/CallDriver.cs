@@ -117,12 +117,15 @@ public class CallDriver : IVerbDriver
             var store = new VariableStore(new Dictionary<string, Variable>());
             newCtx = new Context(store, ctx.Storage, ctx.ChannelManager, ctx.SignalManager)
             {
+                Runtime = ctx.Runtime,
                 VerbExecutor = ctx.VerbExecutor,
                 StoryLoader = ctx.StoryLoader,
                 ContextScheduler = ctx.ContextScheduler,
                 CurrentStory = ctx.CurrentStory
             };
         }
+
+        ctx.CopyContextFlagsTo(newCtx);
 
         CompiledStory? story = newCtx.CurrentStory;
 

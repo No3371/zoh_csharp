@@ -27,12 +27,17 @@ public class ZohRuntime
     public IReadOnlyList<Context> Contexts => _contexts;
     private readonly List<Context> _contexts = new();
     private readonly Dictionary<string, CompiledStory> _storyCache = new();
+    private readonly Dictionary<string, ZohValue> _flags = new();
     private double _elapsedMs;
     private readonly Dictionary<string, ContextHandle> _handles = new();
 
     internal double ElapsedMs => _elapsedMs;
 
     public IReadOnlyCollection<ContextHandle> Handles => _handles.Values;
+
+    public void SetFlag(string name, ZohValue value) => _flags[name] = value;
+    public ZohValue? GetFlag(string name) => _flags.TryGetValue(name, out var v) ? v : null;
+    internal IReadOnlyDictionary<string, ZohValue> Flags => _flags;
 
     public ZohRuntime() : this(RuntimeConfig.Default) { }
 
@@ -56,7 +61,10 @@ public class ZohRuntime
         string processed = source;
         foreach (var pp in Handlers.Preprocessors)
         {
-            var ctx = new PreprocessorContext(processed, sourcePath);
+            var ctx = new PreprocessorContext(processed, sourcePath)
+            {
+                RuntimeFlags = _flags
+            };
             var result = pp.Process(ctx);
             diagnostics.AddRange(result.Diagnostics);
             if (diagnostics.HasFatalErrors)
@@ -107,6 +115,7 @@ public class ZohRuntime
     {
         var store = new VariableStore(new Dictionary<string, Variable>());
         var ctx = new Context(store, Storage, Channels, SignalManager);
+        ctx.Runtime = this;
 
         ctx.VerbExecutor = ExecuteVerb;
         ctx.StatementExecutor = ExecuteStatement;
@@ -130,6 +139,7 @@ public class ZohRuntime
 
     public void AddContext(Context ctx)
     {
+        ctx.Runtime = this;
         ctx.Handle ??= new ContextHandle(ctx);
         _handles[ctx.Id] = ctx.Handle;
         _contexts.Add(ctx);

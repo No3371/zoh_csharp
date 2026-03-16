@@ -4,6 +4,7 @@ using Zoh.Runtime.Diagnostics;
 using System.Text;
 using System.Collections.Immutable;
 using Zoh.Runtime.Lexing;
+using Zoh.Runtime.Types;
 
 namespace Zoh.Runtime.Preprocessing;
 
@@ -150,7 +151,7 @@ public class EmbedPreprocessor(IFileReader fileReader) : IPreprocessor
 
             // 2. Runtime flags
             if (context.RuntimeFlags.TryGetValue(name, out var flagVal))
-                return flagVal;
+                return flagVal is ZohStr s ? s.Value : flagVal.ToString();
 
             // 3. Story metadata
             if (context.Metadata.TryGetValue(name, out var metaVal))

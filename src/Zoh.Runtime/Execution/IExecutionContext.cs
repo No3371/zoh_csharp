@@ -35,4 +35,9 @@ public interface IExecutionContext
     ChannelManager ChannelManager { get; }
 
     IPersistentStorage Storage { get; }
+
+    // Flags
+    ZohRuntime Runtime { get; }
+    ZohValue? ResolveFlag(string name);
+    void SetContextFlag(string name, ZohValue value);
 }

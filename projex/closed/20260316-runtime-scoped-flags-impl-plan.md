@@ -1,7 +1,9 @@
 # Runtime-Scoped Flags — C# Implementation
 
-> **Status:** In Progress
+> **Status:** Complete (2026-03-16)
 > **Created:** 2026-03-16
+> **Completed:** 2026-03-16
+> **Walkthrough:** `20260316-runtime-scoped-flags-impl-walkthrough.md`
 > **Author:** Claude
 > **Source:** Spec commits `ce45ab7`, `da860b8`, `04b0997`; impl spec `09_runtime.md`
 > **Related Projex:** `20260316-spec-catchup-followup.md`, `20260316-embed-variable-interpolation-impl-plan.md`
@@ -26,12 +28,12 @@ The spec defines a flag system (spec `1_concepts.md`, impl `09_runtime.md`) with
 
 ### Success Criteria
 
-- [ ] `ZohRuntime` has `flags: Dictionary<string, ZohValue>` with `SetFlag`/`GetFlag` API
-- [ ] `Context` has `flags: Dictionary<string, ZohValue>` copied on fork
-- [ ] `/flag` verb driver sets context-scoped flags by default, runtime-scoped with `[scope: "runtime"]`
-- [ ] Flag resolution: context → runtime → null
-- [ ] `IPreprocessor.Process` receives runtime flags
-- [ ] `dotnet test` passes
+- [x] `ZohRuntime` has `flags: Dictionary<string, ZohValue>` with `SetFlag`/`GetFlag` API
+- [x] `Context` has `flags: Dictionary<string, ZohValue>` copied on fork
+- [x] `/flag` verb driver sets context-scoped flags by default, runtime-scoped with `[scope: "runtime"]`
+- [x] Flag resolution: context → runtime → null
+- [x] `IPreprocessor.Process` receives runtime flags
+- [ ] `dotnet test` passes (blocked in this environment: `NU1301` to `api.nuget.org`)
 
 ### Out of Scope
 

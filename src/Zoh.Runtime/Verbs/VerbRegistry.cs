@@ -125,6 +125,7 @@ public class VerbRegistry
     public void RegisterCoreVerbs()
     {
         Register(new Core.SetDriver());
+        Register(new Core.FlagDriver());
         Register(new Core.GetDriver());
         Register(new Core.DropDriver());
         Register(new Core.CaptureDriver());
