@@ -33,5 +33,9 @@ public class PreprocessorContext(string sourceText, string sourcePath)
     public string SourceText { get; } = sourceText;
     public string SourcePath { get; } = sourcePath;
 
-    // Can be extended with shared state if needed (e.g. define map)
+    /// <summary>Runtime-scoped flags available for path interpolation.</summary>
+    public Dictionary<string, string> RuntimeFlags { get; set; } = new();
+
+    /// <summary>Story metadata (key: value; pairs from the header), populated before embed processing.</summary>
+    public Dictionary<string, string> Metadata { get; set; } = new();
 }

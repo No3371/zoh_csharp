@@ -267,6 +267,158 @@ Line2|%|
         Assert.Contains("/v \" A\";", result.ProcessedText);
     }
 
+    // --- Embed interpolation and #embed? tests ---
+
+    [Fact]
+    public void Embed_InterpolatesFilename()
+    {
+        var reader = new MockFileReader();
+        reader.AddFile("/main.zoh", "content");
+        reader.AddFile("/main", "embedded content");
+
+        var processor = new EmbedPreprocessor(reader);
+        var context = new PreprocessorContext("#embed \"${filename}\";\n/done;", "/main.zoh");
+
+        var result = processor.Process(context);
+
+        if (!result.Success) throw new Exception("Embed failed: " + string.Join(", ", result.Diagnostics));
+        Assert.Contains("embedded content", result.ProcessedText);
+    }
+
+    [Fact]
+    public void Embed_InterpolatesRuntimeFlag()
+    {
+        var reader = new MockFileReader();
+        reader.AddFile("/en.zoh", "/set *lang \"en\";");
+
+        var processor = new EmbedPreprocessor(reader);
+        var context = new PreprocessorContext("#embed \"${locale}.zoh\";", "/main.zoh")
+        {
+            RuntimeFlags = new Dictionary<string, string> { ["locale"] = "en" }
+        };
+
+        var result = processor.Process(context);
+
+        if (!result.Success) throw new Exception("Embed failed: " + string.Join(", ", result.Diagnostics));
+        Assert.Contains("/set *lang \"en\";", result.ProcessedText);
+    }
+
+    [Fact]
+    public void Embed_InterpolatesMetadata()
+    {
+        var reader = new MockFileReader();
+        reader.AddFile("/fr.zoh", "/set *lang \"fr\";");
+
+        var processor = new EmbedPreprocessor(reader);
+        var source = "My Story\nlocale: fr;\n===\n\n#embed \"${locale}.zoh\";";
+        var context = new PreprocessorContext(source, "/main.zoh");
+
+        var result = processor.Process(context);
+
+        if (!result.Success) throw new Exception("Embed failed: " + string.Join(", ", result.Diagnostics));
+        Assert.Contains("/set *lang \"fr\";", result.ProcessedText);
+    }
+
+    [Fact]
+    public void Embed_ResolutionOrder_BuiltinBeforeFlag()
+    {
+        // "filename" is a built-in — runtime flag with same name should not override
+        var reader = new MockFileReader();
+        reader.AddFile("/main", "builtin wins");
+        reader.AddFile("/flag-value", "flag wins");
+
+        var processor = new EmbedPreprocessor(reader);
+        var context = new PreprocessorContext("#embed \"${filename}\";", "/main.zoh")
+        {
+            RuntimeFlags = new Dictionary<string, string> { ["filename"] = "flag-value" }
+        };
+
+        var result = processor.Process(context);
+
+        if (!result.Success) throw new Exception("Embed failed: " + string.Join(", ", result.Diagnostics));
+        Assert.Contains("builtin wins", result.ProcessedText);
+    }
+
+    [Fact]
+    public void Embed_UnknownVariable_ResolvesToEmpty()
+    {
+        var reader = new MockFileReader();
+        reader.AddFile("/.zoh", "empty path content");
+
+        var processor = new EmbedPreprocessor(reader);
+        var context = new PreprocessorContext("#embed \"${unknown}.zoh\";", "/main.zoh");
+
+        var result = processor.Process(context);
+
+        if (!result.Success) throw new Exception("Embed failed: " + string.Join(", ", result.Diagnostics));
+        Assert.Contains("empty path content", result.ProcessedText);
+    }
+
+    [Fact]
+    public void EmbedOptional_SilentlySkips_WhenFileMissing()
+    {
+        var reader = new MockFileReader();
+        // no files added — file not found
+
+        var processor = new EmbedPreprocessor(reader);
+        var context = new PreprocessorContext("#embed? \"missing.zoh\";\n/done;", "/main.zoh");
+
+        var result = processor.Process(context);
+
+        Assert.True(result.Success);
+        Assert.DoesNotContain("missing.zoh", result.ProcessedText);
+        Assert.Contains("/done;", result.ProcessedText);
+    }
+
+    [Fact]
+    public void EmbedOptional_Embeds_WhenFileExists()
+    {
+        var reader = new MockFileReader();
+        reader.AddFile("/optional.zoh", "/set *x 1;");
+
+        var processor = new EmbedPreprocessor(reader);
+        var context = new PreprocessorContext("#embed? \"optional.zoh\";\n/done;", "/main.zoh");
+
+        var result = processor.Process(context);
+
+        if (!result.Success) throw new Exception("Embed failed: " + string.Join(", ", result.Diagnostics));
+        Assert.Contains("/set *x 1;", result.ProcessedText);
+        Assert.Contains("/done;", result.ProcessedText);
+    }
+
+    [Fact]
+    public void EmbedOptional_StillFatal_OnCircularDependency()
+    {
+        var reader = new MockFileReader();
+        reader.AddFile("/a.zoh", "#embed? \"b.zoh\";");
+        reader.AddFile("/b.zoh", "#embed? \"a.zoh\";");
+
+        var processor = new EmbedPreprocessor(reader);
+        var context = new PreprocessorContext("#embed? \"a.zoh\";", "/main.zoh");
+
+        var result = processor.Process(context);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Diagnostics, d => d.Code == "PRE001");
+    }
+
+    [Fact]
+    public void Embed_Static_BehaviorUnchanged()
+    {
+        var reader = new MockFileReader();
+        reader.AddFile("/lib.zoh", "/set *x 42;");
+
+        var processor = new EmbedPreprocessor(reader);
+        var context = new PreprocessorContext("#embed \"lib.zoh\";\n/set *y 2;", "/main.zoh");
+
+        var result = processor.Process(context);
+
+        if (!result.Success) throw new Exception("Embed failed: " + string.Join(", ", result.Diagnostics));
+        var lines = result.ProcessedText.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        Assert.Equal("/set *x 42;", lines[0].Trim());
+        Assert.Equal("/set *y 2;", lines[1].Trim());
+    }
+
     [Fact]
     public void Macro_Escaping_Percent()
     {
