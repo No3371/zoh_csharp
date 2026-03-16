@@ -59,6 +59,35 @@ public class ConverseDriverTests
         Assert.Equal(ContextState.WaitingHost, ctx.State);
         Assert.Single(handler.Requests);
         Assert.Equal("Hello World", handler.Requests[0].Contents[0]);
+        Assert.Null(handler.Requests[0].Tag);
+    }
+
+    [Fact]
+    public void Converse_WithTagAttribute_PassesTagToHandler()
+    {
+        var handler = new MockConverseHandler();
+        var runtime = CreateRuntimeWithConverse(handler);
+
+        CompiledStory story;
+        try
+        {
+            story = runtime.LoadStory(@"
+            @start
+            /converse [tag:""line-1""] ""Hello World"";
+            ");
+        }
+        catch (CompilationException ex)
+        {
+            var msg = string.Join("\n", ex.Diagnostics.Select(d => d.Message));
+            throw new System.Exception("Compilation failed: " + msg, ex);
+        }
+        var ctx = runtime.CreateContext(story);
+
+        runtime.Run(ctx);
+
+        Assert.Equal(ContextState.WaitingHost, ctx.State);
+        var request = Assert.Single(handler.Requests);
+        Assert.Equal("line-1", request.Tag);
     }
 
     [Fact]

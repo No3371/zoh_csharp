@@ -15,7 +15,8 @@ public record ShowRequest(
     double PosZ,
     double FadeDuration,
     double Opacity,
-    string Easing);
+    string Easing,
+    string? Tag = null);
 
 public interface IShowHandler
 {

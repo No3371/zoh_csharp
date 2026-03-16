@@ -12,7 +12,8 @@ public record ChooseRequest(
     string Style,
     string? Prompt,
     double? TimeoutMs,
-    IReadOnlyList<ChoiceItem> Choices);
+    IReadOnlyList<ChoiceItem> Choices,
+    string? Tag = null);
 
 public interface IChooseHandler
 {

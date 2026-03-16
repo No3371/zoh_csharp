@@ -58,6 +58,35 @@ public class PromptDriverTests
         Assert.Equal("What is your name?", request.PromptText);
         Assert.Null(request.TimeoutMs);
         Assert.Equal("default", request.Style);
+        Assert.Null(request.Tag);
+    }
+
+    [Fact]
+    public void Prompt_WithTagAttribute_PassesTagToHandler()
+    {
+        var handler = new MockPromptHandler();
+        var runtime = CreateRuntimeWithPrompt(handler);
+
+        CompiledStory story;
+        try
+        {
+            story = runtime.LoadStory(@"
+            @start
+            /prompt [tag:""ask-name""] ""What is your name?"";
+            ");
+        }
+        catch (CompilationException ex)
+        {
+            var msg = string.Join("\n", ex.Diagnostics.Select(d => d.Message));
+            throw new System.Exception("Compilation failed: " + msg, ex);
+        }
+
+        var ctx = runtime.CreateContext(story);
+        runtime.Run(ctx);
+
+        Assert.Equal(ContextState.WaitingHost, ctx.State);
+        var request = handler.Requests.Single();
+        Assert.Equal("ask-name", request.Tag);
     }
 
     [Fact]

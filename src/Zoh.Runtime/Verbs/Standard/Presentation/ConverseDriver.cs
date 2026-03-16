@@ -31,6 +31,7 @@ public class ConverseDriver : IVerbDriver
         string? portrait = ResolveAttributeToString(call, "Portrait", ctx);
         bool isAppend = HasAttribute(call, "Append");
         string style = ResolveAttributeToString(call, "Style", ctx) ?? "dialog";
+        string? tag = ResolveAttributeToString(call, "tag", ctx);
 
         // Wait behavior: [Wait] attr > runtime flag 'interactive' > default true
         bool shouldWait = true;
@@ -105,7 +106,7 @@ public class ConverseDriver : IVerbDriver
             return DriverResult.Complete.Ok(); // Nothing to say
         }
 
-        var request = new ConverseRequest(speaker, portrait, isAppend, style, timeoutMs, contents);
+        var request = new ConverseRequest(speaker, portrait, isAppend, style, timeoutMs, contents, Tag: tag);
 
         if (_handler != null)
         {

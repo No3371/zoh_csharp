@@ -7,7 +7,8 @@ public record PlayRequest(
     string Id,
     double Volume,
     int Loops,
-    string Easing);
+    string Easing,
+    string? Tag = null);
 
 public interface IPlayHandler
 {

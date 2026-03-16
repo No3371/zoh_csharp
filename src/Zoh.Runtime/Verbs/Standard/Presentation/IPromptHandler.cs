@@ -6,7 +6,8 @@ namespace Zoh.Runtime.Verbs.Standard.Presentation;
 public record PromptRequest(
     string Style,
     string? PromptText,
-    double? TimeoutMs);
+    double? TimeoutMs,
+    string? Tag = null);
 
 public interface IPromptHandler
 {

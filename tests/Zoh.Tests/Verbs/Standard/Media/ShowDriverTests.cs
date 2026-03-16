@@ -56,6 +56,26 @@ public class ShowDriverTests
         Assert.Equal(0, req.FadeDuration);
         Assert.Equal(1.0, req.Opacity);
         Assert.Equal("linear", req.Easing);
+        Assert.Null(req.Tag);
+    }
+
+    [Fact]
+    public void Show_WithTagAttribute_PassesTagToHandler()
+    {
+        var handler = new MockShowHandler();
+        var runtime = CreateRuntimeWithMockHandler(handler);
+
+        var story = runtime.LoadStory(@"
+        @start
+        /show [tag:""intro""] ""image.png"";
+        ");
+
+        var context = runtime.CreateContext(story);
+        runtime.Run(context);
+
+        Assert.Equal(ContextState.Terminated, context.State);
+        var req = Assert.Single(handler.Requests);
+        Assert.Equal("intro", req.Tag);
     }
 
     [Fact]

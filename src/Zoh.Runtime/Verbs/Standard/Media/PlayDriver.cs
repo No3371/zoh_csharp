@@ -31,8 +31,9 @@ public class PlayDriver : IVerbDriver
         double volume = ResolveAttributeToDouble(call, "Volume", ctx) ?? 1.0;
         int loops = ResolveAttributeToInt(call, "Loops", ctx) ?? 1;
         string easing = ResolveAttributeToString(call, "Easing", ctx) ?? "linear";
+        string? tag = ResolveAttributeToString(call, "tag", ctx);
 
-        var request = new PlayRequest(resource, id, volume, loops, easing);
+        var request = new PlayRequest(resource, id, volume, loops, easing, Tag: tag);
 
         _handler?.OnPlay(ctx, request);
 

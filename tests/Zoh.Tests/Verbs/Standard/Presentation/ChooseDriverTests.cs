@@ -58,9 +58,39 @@ public class ChooseDriverTests
         Assert.Equal(ContextState.WaitingHost, ctx.State);
         var request = handler.Requests.Single();
         Assert.Equal("Where to??", request.Prompt);
+        Assert.Null(request.Tag);
         Assert.Equal(2, request.Choices.Count);
         Assert.Equal("North", request.Choices[0].Text);
         Assert.Equal("n", ((ZohStr)request.Choices[0].Value).Value);
+    }
+
+    [Fact]
+    public void Choose_WithTagAttribute_PassesTagToHandler()
+    {
+        var handler = new MockChooseHandler();
+        var runtime = CreateRuntimeWithChoose(handler);
+
+        CompiledStory story;
+        try
+        {
+            story = runtime.LoadStory(@"
+            @start
+            /choose [tag:""nav""] prompt:""Where to??"",
+                true, ""North"", ""n"";
+            ");
+        }
+        catch (CompilationException ex)
+        {
+            var msg = string.Join("\n", ex.Diagnostics.Select(d => d.Message));
+            throw new System.Exception("Compilation failed: " + msg, ex);
+        }
+
+        var ctx = runtime.CreateContext(story);
+        runtime.Run(ctx);
+
+        Assert.Equal(ContextState.WaitingHost, ctx.State);
+        var request = handler.Requests.Single();
+        Assert.Equal("nav", request.Tag);
     }
 
     [Fact]

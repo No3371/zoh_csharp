@@ -65,6 +65,36 @@ public class ChooseFromDriverTests
         Assert.Equal("n", ((ZohStr)request.Choices[0].Value).Value);
         Assert.Equal("South", request.Choices[1].Text);
         Assert.Equal("s", ((ZohStr)request.Choices[1].Value).Value);
+        Assert.Null(request.Tag);
+    }
+
+    [Fact]
+    public void ChooseFrom_WithTagAttribute_PassesTagToHandler()
+    {
+        var handler = new MockChooseFromHandler();
+        var runtime = CreateRuntimeWithChooseFrom(handler);
+
+        CompiledStory story;
+        try
+        {
+            story = runtime.LoadStory(@"
+            @start
+            *list <- [{""text"": ""OK"", ""value"": 1}];
+            /chooseFrom [tag:""confirm""] prompt:""Continue?"", *list;
+            ");
+        }
+        catch (CompilationException ex)
+        {
+            var msg = string.Join("\n", ex.Diagnostics.Select(d => d.Message));
+            throw new System.Exception("Compilation failed: " + msg, ex);
+        }
+
+        var ctx = runtime.CreateContext(story);
+        runtime.Run(ctx);
+
+        Assert.Equal(ContextState.WaitingHost, ctx.State);
+        var request = handler.Requests.Single();
+        Assert.Equal("confirm", request.Tag);
     }
 
     [Fact]

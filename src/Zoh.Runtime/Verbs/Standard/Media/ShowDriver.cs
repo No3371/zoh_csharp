@@ -41,10 +41,12 @@ public class ShowDriver : IVerbDriver
         double fade = ResolveAttributeToDouble(call, "Fade", ctx) ?? 0;
         double opacity = ResolveAttributeToDouble(call, "Opacity", ctx) ?? 1.0;
         string easing = ResolveAttributeToString(call, "Easing", ctx) ?? "linear";
+        string? tag = ResolveAttributeToString(call, "tag", ctx);
 
         var request = new ShowRequest(
             resource, id, rw, rh, width, height,
-            anchor, posX, posY, posZ, fade, opacity, easing);
+            anchor, posX, posY, posZ, fade, opacity, easing,
+            Tag: tag);
 
         _handler?.OnShow(ctx, request);
 

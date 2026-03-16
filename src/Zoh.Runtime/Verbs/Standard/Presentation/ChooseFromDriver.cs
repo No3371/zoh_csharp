@@ -26,6 +26,7 @@ public class ChooseFromDriver : IVerbDriver
         string? speaker = ResolveAttributeToString(call, "By", ctx);
         string? portrait = ResolveAttributeToString(call, "Portrait", ctx);
         string style = ResolveAttributeToString(call, "Style", ctx) ?? "default";
+        string? tag = ResolveAttributeToString(call, "tag", ctx);
 
         string? prompt = null;
         var promptAst = GetNamedParam(call, "prompt");
@@ -96,7 +97,7 @@ public class ChooseFromDriver : IVerbDriver
             return DriverResult.Complete.Ok(ZohValue.Nothing);
         }
 
-        var request = new ChooseRequest(speaker, portrait, style, prompt, timeoutMs, choices);
+        var request = new ChooseRequest(speaker, portrait, style, prompt, timeoutMs, choices, Tag: tag);
 
         if (_handler != null)
         {

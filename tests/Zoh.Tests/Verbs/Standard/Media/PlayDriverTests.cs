@@ -47,6 +47,26 @@ public class PlayDriverTests
         Assert.Equal(1.0, req.Volume);
         Assert.Equal(1, req.Loops);
         Assert.Equal("linear", req.Easing);
+        Assert.Null(req.Tag);
+    }
+
+    [Fact]
+    public void Play_WithTagAttribute_PassesTagToHandler()
+    {
+        var handler = new MockPlayHandler();
+        var runtime = CreateRuntimeWithMockHandler(handler);
+
+        var story = runtime.LoadStory(@"
+        @start
+        /play [tag:""bgm""] ""bgm.mp3"";
+        ");
+
+        var context = runtime.CreateContext(story);
+        runtime.Run(context);
+
+        Assert.Equal(ContextState.Terminated, context.State);
+        var req = Assert.Single(handler.Requests);
+        Assert.Equal("bgm", req.Tag);
     }
 
     [Fact]

@@ -23,6 +23,7 @@ public class PromptDriver : IVerbDriver
         if (ctx == null) return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_context", "Prompt requires a valid Context.", call.Start));
 
         string style = ResolveAttributeToString(call, "Style", ctx) ?? "default";
+        string? tag = ResolveAttributeToString(call, "tag", ctx);
 
         string? promptText = null;
         if (call.UnnamedParams.Length > 0)
@@ -49,7 +50,7 @@ public class PromptDriver : IVerbDriver
             }
         }
 
-        var request = new PromptRequest(style, promptText, timeoutMs);
+        var request = new PromptRequest(style, promptText, timeoutMs, Tag: tag);
 
         if (_handler != null)
         {

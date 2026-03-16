@@ -9,7 +9,8 @@ public record ConverseRequest(
     bool Append,
     string Style,
     double? TimeoutMs,
-    IReadOnlyList<string> Contents);
+    IReadOnlyList<string> Contents,
+    string? Tag = null);
 
 public interface IConverseHandler
 {
