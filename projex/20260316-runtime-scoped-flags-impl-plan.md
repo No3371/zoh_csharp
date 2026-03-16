@@ -1,6 +1,6 @@
 # Runtime-Scoped Flags — C# Implementation
 
-> **Status:** Ready
+> **Status:** In Progress
 > **Created:** 2026-03-16
 > **Author:** Claude
 > **Source:** Spec commits `ce45ab7`, `da860b8`, `04b0997`; impl spec `09_runtime.md`
