@@ -69,7 +69,7 @@ Allows hosts to read `[tag]` metadata without breaking existing handler implemen
 
 ## Verification
 
-**Method:** `dotnet test csharp/Zoh.sln`
+**Method:** `dotnet test Zoh.sln`
 
 **Result:**
 ```
