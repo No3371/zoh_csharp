@@ -182,7 +182,7 @@ public class ChooseFromDriverTests
         Assert.Equal(ContextState.Terminated, ctx.State);
         Assert.Empty(handler.Requests);
         Assert.Equal(ZohValue.Nothing, internalCtx.LastResult);
-        Assert.Contains(internalCtx.LastDiagnostics, d => d.Severity == DiagnosticSeverity.Warning && d.Code == "no_choices");
+        Assert.Contains(internalCtx.LastDiagnostics, d => d.Severity == DiagnosticSeverity.Warning && d.Code == "invalid_params");
     }
 
     [Fact]

@@ -29,7 +29,7 @@ public class CallDriver : IVerbDriver
 
         if (call.UnnamedParams.Length == 0)
         {
-            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "arg_count", "Call requires at least 1 argument.", call.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_params", "Call requires at least 1 argument.", call.Start));
         }
 
         // Try parsing first element as story or label
@@ -41,7 +41,7 @@ public class CallDriver : IVerbDriver
         {
             // Explicit null story: `/call ?, "label", ...`
             if (call.UnnamedParams.Length < 2)
-                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "arg_count", "Call requires a label after a null story.", call.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_params", "Call requires a label after a null story.", call.Start));
 
             var val1 = ValueResolver.Resolve(call.UnnamedParams[1], ctx);
             if (val1 is ZohStr s1) targetLabel = s1.Value;

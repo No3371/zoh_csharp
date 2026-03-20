@@ -99,7 +99,7 @@ public class ChooseDriver : IVerbDriver
         if (choices.Count == 0)
         {
             return new DriverResult.Complete(ZohValue.Nothing, ImmutableArray.Create(
-                new Diagnostic(DiagnosticSeverity.Warning, "no_choices", "No visible choices", call.Start)));
+                new Diagnostic(DiagnosticSeverity.Warning, "invalid_params", "No visible choices", call.Start)));
         }
 
         var request = new ChooseRequest(speaker, portrait, style, prompt, timeoutMs, choices, Tag: tag);

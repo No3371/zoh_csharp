@@ -90,14 +90,14 @@ public class ChooseFromDriver : IVerbDriver
             else
             {
                 // Expected list, but didn't get one. Handled by generic error or ignored based on spec
-                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Error, "type_error", "chooseFrom requires a list as its first argument.", call.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "chooseFrom requires a list as its first argument.", call.Start));
             }
         }
 
         if (choices.Count == 0 && timeoutMs == null)
         {
             return new DriverResult.Complete(ZohValue.Nothing, ImmutableArray.Create(
-                new Diagnostic(DiagnosticSeverity.Warning, "no_choices", "ChooseFrom has no visible choices and no timeout.", call.Start)));
+                new Diagnostic(DiagnosticSeverity.Warning, "invalid_params", "ChooseFrom has no visible choices and no timeout.", call.Start)));
         }
 
         var request = new ChooseRequest(speaker, portrait, style, prompt, timeoutMs, choices, Tag: tag);

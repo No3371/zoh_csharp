@@ -18,7 +18,7 @@ public class SleepDriver : IVerbDriver
 
         if (call.UnnamedParams.Length != 1)
         {
-            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "arg_count", "Sleep requires 1 argument (duration in seconds).", call.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_params", "Sleep requires 1 argument (duration in seconds).", call.Start));
         }
 
         var val = ValueResolver.Resolve(call.UnnamedParams[0], ctx);

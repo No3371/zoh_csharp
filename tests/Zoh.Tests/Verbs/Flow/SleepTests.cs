@@ -2,6 +2,7 @@ using Xunit;
 using Zoh.Runtime.Execution;
 using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Verbs.Flow;
+using Zoh.Runtime.Verbs.Signals;
 using Zoh.Runtime.Verbs;
 using Zoh.Runtime.Types;
 using Zoh.Runtime.Variables;
@@ -41,4 +42,53 @@ public class SleepTests
         Assert.True(req.DurationMs >= 1000);
         Assert.Equal(ContextState.Running, ctx.State); // driver no longer mutates state
     }
+
+    [Fact]
+    public void Sleep_MissingArgument_ReturnsFatalWithInvalidParams()
+    {
+        var ctx = CreateContext();
+        var driver = new SleepDriver();
+        var call = new VerbCallAst(null, "sleep", false, ImmutableArray<AttributeAst>.Empty,
+            ImmutableDictionary<string, ValueAst>.Empty,
+            ImmutableArray<ValueAst>.Empty,
+            new TextPosition(1, 1, 0));
+
+        var result = driver.Execute(ctx, call);
+
+        Assert.True(result.IsFatal);
+        Assert.Contains(result.DiagnosticsOrEmpty, d => d.Code == "invalid_params");
+    }
+
+    [Fact]
+    public void Wait_MissingArgument_ReturnsFatalWithInvalidParams()
+    {
+        var ctx = CreateContext();
+        var driver = new WaitDriver();
+        var call = new VerbCallAst(null, "wait", false, ImmutableArray<AttributeAst>.Empty,
+            ImmutableDictionary<string, ValueAst>.Empty,
+            ImmutableArray<ValueAst>.Empty,
+            new TextPosition(1, 1, 0));
+
+        var result = driver.Execute(ctx, call);
+
+        Assert.True(result.IsFatal);
+        Assert.Contains(result.DiagnosticsOrEmpty, d => d.Code == "invalid_params");
+    }
+
+    [Fact]
+    public void Signal_MissingArgument_ReturnsFatalWithInvalidParams()
+    {
+        var ctx = CreateContext();
+        var driver = new SignalDriver();
+        var call = new VerbCallAst(null, "signal", false, ImmutableArray<AttributeAst>.Empty,
+            ImmutableDictionary<string, ValueAst>.Empty,
+            ImmutableArray<ValueAst>.Empty,
+            new TextPosition(1, 1, 0));
+
+        var result = driver.Execute(ctx, call);
+
+        Assert.True(result.IsFatal);
+        Assert.Contains(result.DiagnosticsOrEmpty, d => d.Code == "invalid_params");
+    }
 }
+

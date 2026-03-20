@@ -47,7 +47,7 @@ public class JumpDriver : IVerbDriver
         }
         else
         {
-            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "arg_count", "Jump requires 1 or 2 arguments.", call.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_params", "Jump requires 1 or 2 arguments.", call.Start));
         }
 
         // Check if we need to switch story

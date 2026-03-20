@@ -18,7 +18,7 @@ public class SignalDriver : IVerbDriver
 
         if (call.UnnamedParams.Length < 1)
         {
-            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "arg_count", "Signal requires at least 1 argument (signal name).", call.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_params", "Signal requires at least 1 argument (signal name).", call.Start));
         }
 
         var signalNameVal = ValueResolver.Resolve(call.UnnamedParams[0], ctx);

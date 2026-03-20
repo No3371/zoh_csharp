@@ -1,10 +1,12 @@
 # Diagnostic Code: Standardize to `invalid_params`
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Created:** 2026-03-20
+> **Completed:** 2026-03-20
 > **Author:** Agent
 > **Source:** Direct request
 > **Related Projex:** 20260316-spec-catchup-followup.md, 20260316-presentation-verb-diagnostics-alignment-plan.md, 202603201807-diagnostic-code-invalid-params-plan.md (sibling — impl spec)
+> **Walkthrough:** 202603201757-diagnostic-code-invalid-params-walkthrough.md
 
 ---
 

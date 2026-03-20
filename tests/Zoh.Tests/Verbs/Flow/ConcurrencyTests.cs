@@ -160,4 +160,60 @@ public class ConcurrencyTests
         Assert.True(result.IsSuccess);
         Assert.Equal(ContextState.Terminated, ctx.State);
     }
+
+    // --- Invalid params (missing arg) tests ---
+
+    [Fact]
+    public void Jump_MissingArgument_ReturnsFatalWithInvalidParams()
+    {
+        var story = CreateStory("main", "somewhere");
+        var ctx = CreateContext(story);
+        var driver = new JumpDriver();
+        var call = new VerbCallAst("core", "jump", false, ImmutableArray<AttributeAst>.Empty,
+            ImmutableDictionary<string, ValueAst>.Empty,
+            ImmutableArray<ValueAst>.Empty,
+            new TextPosition(1, 1, 0));
+
+        var result = driver.Execute(ctx, call);
+
+        Assert.True(result.IsFatal);
+        Assert.Contains(result.DiagnosticsOrEmpty, d => d.Code == "invalid_params");
+    }
+
+    [Fact]
+    public void Fork_MissingArgument_ReturnsFatalWithInvalidParams()
+    {
+        var story = CreateStory("main", "somewhere");
+        var ctx = CreateContext(story);
+        ctx.ContextScheduler = (_) => { };
+        var driver = new ForkDriver();
+        var call = new VerbCallAst("core", "fork", false, ImmutableArray<AttributeAst>.Empty,
+            ImmutableDictionary<string, ValueAst>.Empty,
+            ImmutableArray<ValueAst>.Empty,
+            new TextPosition(1, 1, 0));
+
+        var result = driver.Execute(ctx, call);
+
+        Assert.True(result.IsFatal);
+        Assert.Contains(result.DiagnosticsOrEmpty, d => d.Code == "invalid_params");
+    }
+
+    [Fact]
+    public void Call_MissingArgument_ReturnsFatalWithInvalidParams()
+    {
+        var story = CreateStory("main", "sub");
+        var ctx = CreateContext(story);
+        ctx.ContextScheduler = (_) => { };
+        var driver = new CallDriver();
+        var call = new VerbCallAst("core", "call", false, ImmutableArray<AttributeAst>.Empty,
+            ImmutableDictionary<string, ValueAst>.Empty,
+            ImmutableArray<ValueAst>.Empty,
+            new TextPosition(1, 1, 0));
+
+        var result = driver.Execute(ctx, call);
+
+        Assert.True(result.IsFatal);
+        Assert.Contains(result.DiagnosticsOrEmpty, d => d.Code == "invalid_params");
+    }
 }
+
