@@ -1,6 +1,6 @@
 # Presentation Verb Diagnostics Alignment — C# Implementation
 
-> **Status:** Ready
+> **Status:** In Progress
 > **Created:** 2026-03-16
 > **Author:** Claude
 > **Source:** Spec commit `cd9af5f`; impl spec `10_std_verbs.md`
