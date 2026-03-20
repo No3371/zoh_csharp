@@ -6,6 +6,7 @@ using Zoh.Runtime.Lexing;
 using Zoh.Runtime.Expressions;
 using System.Collections.Generic;
 using System;
+using System.Collections.Immutable;
 
 namespace Zoh.Runtime.Verbs.Standard.Presentation;
 
@@ -65,6 +66,11 @@ public class ChooseDriver : IVerbDriver
 
             // Evaluate visibility
             var visVal = ValueResolver.Resolve(args[i], ctx);
+            if (visVal is ZohVerb verbVis)
+            {
+                var visResult = ctx.ExecuteVerb(verbVis.VerbValue, ctx);
+                visVal = visResult is DriverResult.Complete vc ? vc.Value : ZohValue.Nothing;
+            }
             if (!visVal.IsTruthy()) continue;
 
             // Evaluate text
@@ -90,11 +96,10 @@ public class ChooseDriver : IVerbDriver
             choices.Add(new ChoiceItem(text, valResult));
         }
 
-        if (choices.Count == 0 && timeoutMs == null)
+        if (choices.Count == 0)
         {
-            // According to spec, if no choices are visible and no timeout, it's a soft error or just returns nothing?
-            // "If all evaluated choices are false, returns Nothing."
-            return DriverResult.Complete.Ok(ZohValue.Nothing);
+            return new DriverResult.Complete(ZohValue.Nothing, ImmutableArray.Create(
+                new Diagnostic(DiagnosticSeverity.Warning, "no_choices", "No visible choices", call.Start)));
         }
 
         var request = new ChooseRequest(speaker, portrait, style, prompt, timeoutMs, choices, Tag: tag);
@@ -107,6 +112,10 @@ public class ChooseDriver : IVerbDriver
                 outcome => outcome switch
                 {
                     WaitCompleted c => DriverResult.Complete.Ok(c.Value),
+                    WaitTimedOut => new DriverResult.Complete(ZohValue.Nothing, ImmutableArray.Create(
+                        new Diagnostic(DiagnosticSeverity.Info, "timeout", "Choose timed out", call.Start))),
+                    WaitCancelled wc => new DriverResult.Complete(ZohValue.Nothing, ImmutableArray.Create(
+                        new Diagnostic(DiagnosticSeverity.Error, wc.Code, wc.Message, call.Start))),
                     _ => DriverResult.Complete.Ok()
                 }
             ));

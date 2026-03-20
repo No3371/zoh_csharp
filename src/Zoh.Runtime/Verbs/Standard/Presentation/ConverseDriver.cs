@@ -3,10 +3,11 @@ using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Types;
 using Zoh.Runtime.Variables;
 using Zoh.Runtime.Diagnostics;
-using Zoh.Runtime.Execution;
 using Zoh.Runtime.Lexing;
 using Zoh.Runtime.Expressions;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using Zoh.Runtime.Verbs;
 
 namespace Zoh.Runtime.Verbs.Standard.Presentation;
 
@@ -87,12 +88,6 @@ public class ConverseDriver : IVerbDriver
 
             if (contentVal is ZohStr str)
             {
-                // To evaluate interpolation on a plain string, we can construct an AST or see if ExpressionParser helps.
-                // Wait, if it's already a ZohStr, it might have been passed as a literal string.
-                // In Zoh, strings passed to verbs are interpolated during resolution if they are InterpolateExpressionAst.
-                // ValueResolver handles this!
-                // Wait, if we just do: `ValueResolver.Resolve(param, ctx)`, a literal string interpolation AST WILL be evaluated and returned as an interpolated ZohStr.
-                // We DON'T need to re-interpolate!
                 contents.Add(str.Value);
             }
             else
@@ -119,6 +114,10 @@ public class ConverseDriver : IVerbDriver
                     outcome => outcome switch
                     {
                         WaitCompleted c => DriverResult.Complete.Ok(c.Value),
+                        WaitTimedOut => new DriverResult.Complete(ZohValue.Nothing, ImmutableArray.Create(
+                            new Diagnostic(DiagnosticSeverity.Info, "timeout", "Converse timed out", call.Start))),
+                        WaitCancelled wc => new DriverResult.Complete(ZohValue.Nothing, ImmutableArray.Create(
+                            new Diagnostic(DiagnosticSeverity.Error, wc.Code, wc.Message, call.Start))),
                         _ => DriverResult.Complete.Ok()
                     }
                 ));

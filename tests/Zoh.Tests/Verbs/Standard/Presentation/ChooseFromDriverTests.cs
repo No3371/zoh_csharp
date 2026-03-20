@@ -4,6 +4,8 @@ using Zoh.Runtime.Verbs.Standard.Presentation;
 using Zoh.Runtime.Types;
 using System.Collections.Generic;
 using System.Linq;
+using Zoh.Runtime.Diagnostics;
+using Zoh.Runtime.Verbs;
 
 namespace Zoh.Tests.Verbs.Standard.Presentation;
 
@@ -159,5 +161,74 @@ public class ChooseFromDriverTests
         Assert.Equal("Alert", request.Portrait);
         Assert.Equal("Box", request.Style);
         Assert.Equal(10000.0, request.TimeoutMs);
+    }
+
+    [Fact]
+    public void ChooseFrom_EmptyChoices_ReturnsWarning()
+    {
+        var handler = new MockChooseFromHandler();
+        var runtime = CreateRuntimeWithChooseFrom(handler);
+
+        var story = runtime.LoadStory(@"
+            @start
+            *myList <- [];
+            /chooseFrom *myList;
+        ");
+        
+        var ctx = runtime.CreateContext(story);
+        runtime.Run(ctx);
+
+        var internalCtx = (Zoh.Runtime.Execution.Context)ctx;
+        Assert.Equal(ContextState.Terminated, ctx.State);
+        Assert.Empty(handler.Requests);
+        Assert.Equal(ZohValue.Nothing, internalCtx.LastResult);
+        Assert.Contains(internalCtx.LastDiagnostics, d => d.Severity == DiagnosticSeverity.Warning && d.Code == "no_choices");
+    }
+
+    [Fact]
+    public void ChooseFrom_ResumeTimedOut_ReturnsInfoNothing()
+    {
+        var handler = new MockChooseFromHandler();
+        var runtime = CreateRuntimeWithChooseFrom(handler);
+
+        var story = runtime.LoadStory(@"
+            @start
+            *myList <- [{""text"": ""Choice"", ""value"": 1}];
+            /chooseFrom *myList;
+        ");
+        
+        var ctx = runtime.CreateContext(story);
+        runtime.Run(ctx);
+
+        var internalCtx = (Zoh.Runtime.Execution.Context)ctx;
+        internalCtx.Resume(new WaitTimedOut(), internalCtx.ResumeToken);
+        runtime.Run(ctx);
+
+        Assert.Equal(ContextState.Terminated, ctx.State);
+        Assert.Contains(internalCtx.LastDiagnostics, d => d.Severity == DiagnosticSeverity.Info && d.Code == "timeout");
+        Assert.Equal(ZohValue.Nothing, internalCtx.LastResult);
+    }
+
+    [Fact]
+    public void ChooseFrom_ResumeCancelled_ReturnsError()
+    {
+        var handler = new MockChooseFromHandler();
+        var runtime = CreateRuntimeWithChooseFrom(handler);
+
+        var story = runtime.LoadStory(@"
+            @start
+            *myList <- [{""text"": ""Choice"", ""value"": 1}];
+            /chooseFrom *myList;
+        ");
+        
+        var ctx = runtime.CreateContext(story);
+        runtime.Run(ctx);
+
+        var internalCtx = (Zoh.Runtime.Execution.Context)ctx;
+        internalCtx.Resume(new WaitCancelled("cancel_code", "Cancelled via API"), internalCtx.ResumeToken);
+        runtime.Run(ctx);
+
+        Assert.Equal(ContextState.Terminated, ctx.State);
+        Assert.Contains(internalCtx.LastDiagnostics, d => d.Severity == DiagnosticSeverity.Error && d.Code == "cancel_code");
     }
 }

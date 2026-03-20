@@ -4,6 +4,8 @@ using Zoh.Runtime.Verbs.Standard.Presentation;
 using Zoh.Runtime.Types;
 using System.Collections.Generic;
 using System.Linq;
+using Zoh.Runtime.Diagnostics;
+using Zoh.Runtime.Verbs;
 
 namespace Zoh.Tests.Verbs.Standard.Presentation;
 
@@ -129,7 +131,7 @@ public class PromptDriverTests
         {
             story = runtime.LoadStory(@"
             @start
-            /prompt timeout:0, ""Fast""; -> *result;
+            /prompt timeout:0, ""Fast"";
             ");
         }
         catch (CompilationException ex)
@@ -141,9 +143,54 @@ public class PromptDriverTests
         var ctx = runtime.CreateContext(story);
         runtime.Run(ctx);
 
-        // When timeout is <= 0, the driver should complete immediately with empty string.
+        // When timeout is <= 0, the driver should complete immediately with Nothing.
+        var internalCtx = (Zoh.Runtime.Execution.Context)ctx;
         Assert.Equal(ContextState.Terminated, ctx.State);
         Assert.Empty(handler.Requests); // Should NOT even hit the handler
-        Assert.Equal("", ((ZohStr)ctx.Variables.Get("result")).Value);
+        Assert.Equal(ZohValue.Nothing, internalCtx.LastResult);
+        Assert.Contains(internalCtx.LastDiagnostics, d => d.Severity == DiagnosticSeverity.Info && d.Code == "timeout");
+    }
+
+    [Fact]
+    public void Prompt_ResumeTimedOut_ReturnsInfoNothing()
+    {
+        var handler = new MockPromptHandler();
+        var runtime = CreateRuntimeWithPrompt(handler);
+
+        var story = runtime.LoadStory(@"
+            @start
+            /prompt ""Name?"";
+        ");
+        var ctx = runtime.CreateContext(story);
+        runtime.Run(ctx);
+
+        var internalCtx = (Zoh.Runtime.Execution.Context)ctx;
+        internalCtx.Resume(new WaitTimedOut(), internalCtx.ResumeToken);
+        runtime.Run(ctx);
+
+        Assert.Equal(ContextState.Terminated, ctx.State);
+        Assert.Contains(internalCtx.LastDiagnostics, d => d.Severity == DiagnosticSeverity.Info && d.Code == "timeout");
+        Assert.Equal(ZohValue.Nothing, internalCtx.LastResult);
+    }
+
+    [Fact]
+    public void Prompt_ResumeCancelled_ReturnsError()
+    {
+        var handler = new MockPromptHandler();
+        var runtime = CreateRuntimeWithPrompt(handler);
+
+        var story = runtime.LoadStory(@"
+            @start
+            /prompt ""Name?"";
+        ");
+        var ctx = runtime.CreateContext(story);
+        runtime.Run(ctx);
+
+        var internalCtx = (Zoh.Runtime.Execution.Context)ctx;
+        internalCtx.Resume(new WaitCancelled("cancel_code", "Cancelled"), internalCtx.ResumeToken);
+        runtime.Run(ctx);
+
+        Assert.Equal(ContextState.Terminated, ctx.State);
+        Assert.Contains(internalCtx.LastDiagnostics, d => d.Severity == DiagnosticSeverity.Error && d.Code == "cancel_code");
     }
 }

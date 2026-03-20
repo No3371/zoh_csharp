@@ -3,7 +3,9 @@ using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Types;
 using Zoh.Runtime.Diagnostics;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System;
+using Zoh.Runtime.Verbs;
 
 namespace Zoh.Runtime.Verbs.Standard.Presentation;
 
@@ -44,12 +46,12 @@ public class ChooseFromDriver : IVerbDriver
             var tVal = ValueResolver.Resolve(timeoutAst, ctx);
             if (tVal is ZohFloat f)
             {
-                if (f.Value <= 0) return DriverResult.Complete.Ok(ZohValue.Nothing);
+                if (f.Value <= 0) return CreateTimeoutResult(call);
                 timeoutMs = f.Value * 1000.0;
             }
             else if (tVal is ZohInt i)
             {
-                if (i.Value <= 0) return DriverResult.Complete.Ok(ZohValue.Nothing);
+                if (i.Value <= 0) return CreateTimeoutResult(call);
                 timeoutMs = i.Value * 1000.0;
             }
         }
@@ -94,7 +96,8 @@ public class ChooseFromDriver : IVerbDriver
 
         if (choices.Count == 0 && timeoutMs == null)
         {
-            return DriverResult.Complete.Ok(ZohValue.Nothing);
+            return new DriverResult.Complete(ZohValue.Nothing, ImmutableArray.Create(
+                new Diagnostic(DiagnosticSeverity.Warning, "no_choices", "ChooseFrom has no visible choices and no timeout.", call.Start)));
         }
 
         var request = new ChooseRequest(speaker, portrait, style, prompt, timeoutMs, choices, Tag: tag);
@@ -107,12 +110,21 @@ public class ChooseFromDriver : IVerbDriver
                 outcome => outcome switch
                 {
                     WaitCompleted c => DriverResult.Complete.Ok(c.Value),
+                    WaitTimedOut => CreateTimeoutResult(call),
+                    WaitCancelled wc => new DriverResult.Complete(ZohValue.Nothing, ImmutableArray.Create(
+                        new Diagnostic(DiagnosticSeverity.Error, wc.Code, wc.Message, call.Start))),
                     _ => DriverResult.Complete.Ok()
                 }
             ));
         }
 
         return DriverResult.Complete.Ok(ZohValue.Nothing);
+    }
+
+    private DriverResult CreateTimeoutResult(VerbCallAst call)
+    {
+        return new DriverResult.Complete(ZohValue.Nothing, ImmutableArray.Create(
+            new Diagnostic(DiagnosticSeverity.Info, "timeout", "ChooseFrom timed out", call.Start)));
     }
 
     private string? ResolveAttributeToString(VerbCallAst call, string name, Context ctx)
