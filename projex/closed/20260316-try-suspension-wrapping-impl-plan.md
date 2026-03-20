@@ -1,6 +1,6 @@
 # Try Suspension Wrapping — C# Implementation
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Created:** 2026-03-16
 > **Author:** Claude
 > **Source:** Spec commit `8a243ee`; impl spec `07_control_flow.md` lines 393–440
@@ -8,6 +8,8 @@
 > **Worktree:** Yes
 > **Reviewed:** 2026-03-20 — `20260320-try-suspension-wrapping-impl-plan-review.md`
 > **Review Outcome:** Valid — proceed to execute. Minor: rename `catchHandler` → `catchVerb` in proposed code; note catch-suspension edge case as known pre-existing issue.
+> **Completed:** 2026-03-20
+> **Walkthrough:** `20260316-try-suspension-wrapping-impl-plan-walkthrough.md`
 
 ---
 
@@ -30,14 +32,14 @@ Spec (impl `07_control_flow.md`) defines a `handleTryResult` helper that interce
 
 ### Success Criteria
 
-- [ ] TryDriver wraps Suspend continuations with a `HandleTryResult` helper
-- [ ] Wrapped continuations preserve the original `WaitRequest`
-- [ ] Fatal diagnostics from resumed continuations are downgraded to errors
-- [ ] Catch handler executes for fatals after resume
-- [ ] `[suppress]` clears diagnostics from resumed results
-- [ ] Chained suspensions (Suspend → resume → Suspend → resume) handled recursively
-- [ ] All existing tests pass
-- [ ] New tests cover suspension wrapping scenarios
+- [x] TryDriver wraps Suspend continuations with a `HandleTryResult` helper
+- [x] Wrapped continuations preserve the original `WaitRequest`
+- [x] Fatal diagnostics from resumed continuations are downgraded to errors
+- [x] Catch handler executes for fatals after resume
+- [x] `[suppress]` clears diagnostics from resumed results
+- [x] Chained suspensions (Suspend → resume → Suspend → resume) handled recursively
+- [x] All existing tests pass
+- [x] New tests cover suspension wrapping scenarios
 
 ### Out of Scope
 
