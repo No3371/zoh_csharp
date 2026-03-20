@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using Zoh.Runtime.Execution;
 using Zoh.Runtime.Parsing.Ast;
@@ -30,12 +31,37 @@ public class WaitDriver : IVerbDriver
 
         string signalName = s.Value;
 
+        double? timeoutMs = null;
+        foreach (var param in call.NamedParams)
+        {
+            if (param.Key.Equals("timeout", StringComparison.OrdinalIgnoreCase))
+            {
+                var tVal = ValueResolver.Resolve(param.Value, ctx);
+                if (tVal is ZohFloat f)
+                {
+                    if (f.Value <= 0)
+                        return new DriverResult.Complete(ZohValue.Nothing, ImmutableArray.Create(
+                            new Diagnostic(DiagnosticSeverity.Info, "timeout", "The timeout was reached.", call.Start)));
+                    timeoutMs = f.Value * 1000.0;
+                }
+                else if (tVal is ZohInt i)
+                {
+                    if (i.Value <= 0)
+                        return new DriverResult.Complete(ZohValue.Nothing, ImmutableArray.Create(
+                            new Diagnostic(DiagnosticSeverity.Info, "timeout", "The timeout was reached.", call.Start)));
+                    timeoutMs = i.Value * 1000.0;
+                }
+                break;
+            }
+        }
+
         return new DriverResult.Suspend(new Continuation(
-            new SignalRequest(signalName),
+            new SignalRequest(signalName, timeoutMs),
             outcome => outcome switch
             {
                 WaitCompleted c => DriverResult.Complete.Ok(c.Value),
-                WaitTimedOut => DriverResult.Complete.Ok(),
+                WaitTimedOut => new DriverResult.Complete(ZohValue.Nothing, ImmutableArray.Create(
+                    new Diagnostic(DiagnosticSeverity.Info, "timeout", "The timeout was reached.", call.Start))),
                 WaitCancelled x => new DriverResult.Complete(
                     ZohNothing.Instance,
                     ImmutableArray.Create(new Diagnostic(DiagnosticSeverity.Error, x.Code, x.Message, call.Start))),

@@ -58,7 +58,7 @@ public class PromptDriver : IVerbDriver
         {
             _handler.OnPrompt(ctx.Handle!, request);
             return new DriverResult.Suspend(new Continuation(
-                new HostRequest(),
+                new HostRequest(timeoutMs),
                 outcome => outcome switch
                 {
                     WaitCompleted c => DriverResult.Complete.Ok(c.Value),

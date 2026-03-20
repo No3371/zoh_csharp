@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Immutable;
 using Zoh.Runtime.Execution;
 using Zoh.Runtime.Types;
 using Zoh.Runtime.Diagnostics;
@@ -40,6 +42,30 @@ public class PushVerbDriver : IVerbDriver
 
         var value = Zoh.Runtime.Execution.ValueResolver.Resolve(call.UnnamedParams[1], context);
 
+        double? timeoutMs = null;
+        foreach (var param in call.NamedParams)
+        {
+            if (param.Key.Equals("timeout", StringComparison.OrdinalIgnoreCase))
+            {
+                var tVal = Zoh.Runtime.Execution.ValueResolver.Resolve(param.Value, context);
+                if (tVal is ZohFloat f)
+                {
+                    if (f.Value <= 0)
+                        return new DriverResult.Complete(ZohValue.Nothing, ImmutableArray.Create(
+                            new Diagnostic(DiagnosticSeverity.Info, "timeout", "The timeout was reached.", call.Start)));
+                    timeoutMs = f.Value * 1000.0;
+                }
+                else if (tVal is ZohInt i)
+                {
+                    if (i.Value <= 0)
+                        return new DriverResult.Complete(ZohValue.Nothing, ImmutableArray.Create(
+                            new Diagnostic(DiagnosticSeverity.Info, "timeout", "The timeout was reached.", call.Start)));
+                    timeoutMs = i.Value * 1000.0;
+                }
+                break;
+            }
+        }
+
         if (!context.ChannelManager.Exists(channel.Name))
             return DriverResult.Complete.Error(ZohValue.Nothing, new Diagnostic(DiagnosticSeverity.Error, "not_found", $"Channel does not exist: {channel.Name}", call.Start));
 
@@ -68,6 +94,30 @@ public class PullVerbDriver : IVerbDriver
         var currentGen = context.ChannelManager.GetGeneration(channel.Name);
         if (currentGen == 0)
             return DriverResult.Complete.Error(ZohValue.Nothing, new Diagnostic(DiagnosticSeverity.Error, "not_found", $"Channel does not exist: {channel.Name}", call.Start));
+
+        double? timeoutMs = null;
+        foreach (var param in call.NamedParams)
+        {
+            if (param.Key.Equals("timeout", StringComparison.OrdinalIgnoreCase))
+            {
+                var tVal = Zoh.Runtime.Execution.ValueResolver.Resolve(param.Value, context);
+                if (tVal is ZohFloat f)
+                {
+                    if (f.Value <= 0)
+                        return new DriverResult.Complete(ZohValue.Nothing, ImmutableArray.Create(
+                            new Diagnostic(DiagnosticSeverity.Info, "timeout", "The timeout was reached.", call.Start)));
+                    timeoutMs = f.Value * 1000.0;
+                }
+                else if (tVal is ZohInt i)
+                {
+                    if (i.Value <= 0)
+                        return new DriverResult.Complete(ZohValue.Nothing, ImmutableArray.Create(
+                            new Diagnostic(DiagnosticSeverity.Info, "timeout", "The timeout was reached.", call.Start)));
+                    timeoutMs = i.Value * 1000.0;
+                }
+                break;
+            }
+        }
 
         // For now: non-blocking pull. Blocking requires async redesign.
         var result = context.ChannelManager.TryPull(channel.Name, currentGen);

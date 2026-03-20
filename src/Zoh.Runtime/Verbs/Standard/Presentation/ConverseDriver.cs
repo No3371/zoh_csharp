@@ -61,12 +61,14 @@ public class ConverseDriver : IVerbDriver
             var tVal = ValueResolver.Resolve(timeoutAst, ctx);
             if (tVal is ZohFloat f)
             {
-                if (f.Value <= 0) return DriverResult.Complete.Ok(); // Immediate timeout, per spec
+                if (f.Value <= 0) return new DriverResult.Complete(ZohValue.Nothing, ImmutableArray.Create(
+                    new Diagnostic(DiagnosticSeverity.Info, "timeout", "Converse timed out", call.Start)));
                 timeoutMs = f.Value * 1000.0; // Assume supplied as seconds, convert to ms
             }
             else if (tVal is ZohInt i)
             {
-                if (i.Value <= 0) return DriverResult.Complete.Ok(); // Immediate timeout
+                if (i.Value <= 0) return new DriverResult.Complete(ZohValue.Nothing, ImmutableArray.Create(
+                    new Diagnostic(DiagnosticSeverity.Info, "timeout", "Converse timed out", call.Start)));
                 timeoutMs = i.Value * 1000.0;
             }
         }
@@ -110,7 +112,7 @@ public class ConverseDriver : IVerbDriver
             if (shouldWait)
             {
                 return new DriverResult.Suspend(new Continuation(
-                    new HostRequest(),
+                    new HostRequest(timeoutMs),
                     outcome => outcome switch
                     {
                         WaitCompleted c => DriverResult.Complete.Ok(c.Value),

@@ -47,12 +47,14 @@ public class ChooseDriver : IVerbDriver
             var tVal = ValueResolver.Resolve(timeoutAst, ctx);
             if (tVal is ZohFloat f)
             {
-                if (f.Value <= 0) return DriverResult.Complete.Ok(ZohValue.Nothing);
+                if (f.Value <= 0) return new DriverResult.Complete(ZohValue.Nothing, ImmutableArray.Create(
+                    new Diagnostic(DiagnosticSeverity.Info, "timeout", "Choose timed out", call.Start)));
                 timeoutMs = f.Value * 1000.0;
             }
             else if (tVal is ZohInt i)
             {
-                if (i.Value <= 0) return DriverResult.Complete.Ok(ZohValue.Nothing);
+                if (i.Value <= 0) return new DriverResult.Complete(ZohValue.Nothing, ImmutableArray.Create(
+                    new Diagnostic(DiagnosticSeverity.Info, "timeout", "Choose timed out", call.Start)));
                 timeoutMs = i.Value * 1000.0;
             }
         }
@@ -108,7 +110,7 @@ public class ChooseDriver : IVerbDriver
         {
             _handler.OnChoose(ctx.Handle!, request);
             return new DriverResult.Suspend(new Continuation(
-                new HostRequest(),
+                new HostRequest(timeoutMs),
                 outcome => outcome switch
                 {
                     WaitCompleted c => DriverResult.Complete.Ok(c.Value),

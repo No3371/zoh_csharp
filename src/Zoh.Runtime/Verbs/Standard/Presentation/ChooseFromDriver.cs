@@ -106,7 +106,7 @@ public class ChooseFromDriver : IVerbDriver
         {
             _handler.OnChooseFrom(ctx.Handle!, request);
             return new DriverResult.Suspend(new Continuation(
-                new HostRequest(),
+                new HostRequest(timeoutMs),
                 outcome => outcome switch
                 {
                     WaitCompleted c => DriverResult.Complete.Ok(c.Value),

@@ -220,7 +220,7 @@ public class ChooseFromDriverTests
             *myList <- [{""text"": ""Choice"", ""value"": 1}];
             /chooseFrom *myList;
         ");
-        
+
         var ctx = runtime.CreateContext(story);
         runtime.Run(ctx);
 
@@ -230,5 +230,65 @@ public class ChooseFromDriverTests
 
         Assert.Equal(ContextState.Terminated, ctx.State);
         Assert.Contains(internalCtx.LastDiagnostics, d => d.Severity == DiagnosticSeverity.Error && d.Code == "cancel_code");
+    }
+
+    [Fact]
+    public void ChooseFrom_TimeoutZero_ReturnsInfoDiagnosticImmediately()
+    {
+        var handler = new MockChooseFromHandler();
+        var runtime = CreateRuntimeWithChooseFrom(handler);
+
+        var story = runtime.LoadStory(@"
+            @start
+            *myList <- [{""text"": ""A"", ""value"": 1}];
+            /chooseFrom timeout:0, *myList;
+        ");
+        var ctx = runtime.CreateContext(story);
+        runtime.Run(ctx);
+
+        var internalCtx = (Zoh.Runtime.Execution.Context)ctx;
+        Assert.Equal(ContextState.Terminated, ctx.State);
+        Assert.Empty(handler.Requests);
+        Assert.Equal(ZohValue.Nothing, internalCtx.LastResult);
+        Assert.Contains(internalCtx.LastDiagnostics, d => d.Severity == DiagnosticSeverity.Info && d.Code == "timeout");
+    }
+
+    [Fact]
+    public void ChooseFrom_TimeoutNegative_ReturnsInfoDiagnosticImmediately()
+    {
+        var handler = new MockChooseFromHandler();
+        var runtime = CreateRuntimeWithChooseFrom(handler);
+
+        var story = runtime.LoadStory(@"
+            @start
+            *myList <- [{""text"": ""A"", ""value"": 1}];
+            /chooseFrom timeout:-1, *myList;
+        ");
+        var ctx = runtime.CreateContext(story);
+        runtime.Run(ctx);
+
+        var internalCtx = (Zoh.Runtime.Execution.Context)ctx;
+        Assert.Equal(ContextState.Terminated, ctx.State);
+        Assert.Empty(handler.Requests);
+        Assert.Contains(internalCtx.LastDiagnostics, d => d.Severity == DiagnosticSeverity.Info && d.Code == "timeout");
+    }
+
+    [Fact]
+    public void ChooseFrom_TimeoutQuestion_NoImmediateTimeout()
+    {
+        var handler = new MockChooseFromHandler();
+        var runtime = CreateRuntimeWithChooseFrom(handler);
+
+        var story = runtime.LoadStory(@"
+            @start
+            *myList <- [{""text"": ""A"", ""value"": 1}];
+            /chooseFrom timeout:?, *myList;
+        ");
+        var ctx = runtime.CreateContext(story);
+        runtime.Run(ctx);
+
+        Assert.Equal(ContextState.WaitingHost, ctx.State);
+        var request = handler.Requests.Single();
+        Assert.Null(request.TimeoutMs);
     }
 }

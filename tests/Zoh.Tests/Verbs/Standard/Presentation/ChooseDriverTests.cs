@@ -237,4 +237,61 @@ public class ChooseDriverTests
         Assert.Equal(ContextState.Terminated, ctx.State);
         Assert.Contains(internalCtx.LastDiagnostics, d => d.Severity == DiagnosticSeverity.Error && d.Code == "cancel_code");
     }
+
+    [Fact]
+    public void Choose_TimeoutZero_ReturnsInfoDiagnosticImmediately()
+    {
+        var handler = new MockChooseHandler();
+        var runtime = CreateRuntimeWithChoose(handler);
+
+        var story = runtime.LoadStory(@"
+            @start
+            /choose timeout:0, true, ""Option"", 1;
+        ");
+        var ctx = runtime.CreateContext(story);
+        runtime.Run(ctx);
+
+        var internalCtx = (Zoh.Runtime.Execution.Context)ctx;
+        Assert.Equal(ContextState.Terminated, ctx.State);
+        Assert.Empty(handler.Requests);
+        Assert.Equal(ZohValue.Nothing, internalCtx.LastResult);
+        Assert.Contains(internalCtx.LastDiagnostics, d => d.Severity == DiagnosticSeverity.Info && d.Code == "timeout");
+    }
+
+    [Fact]
+    public void Choose_TimeoutNegative_ReturnsInfoDiagnosticImmediately()
+    {
+        var handler = new MockChooseHandler();
+        var runtime = CreateRuntimeWithChoose(handler);
+
+        var story = runtime.LoadStory(@"
+            @start
+            /choose timeout:-1, true, ""Option"", 1;
+        ");
+        var ctx = runtime.CreateContext(story);
+        runtime.Run(ctx);
+
+        var internalCtx = (Zoh.Runtime.Execution.Context)ctx;
+        Assert.Equal(ContextState.Terminated, ctx.State);
+        Assert.Empty(handler.Requests);
+        Assert.Contains(internalCtx.LastDiagnostics, d => d.Severity == DiagnosticSeverity.Info && d.Code == "timeout");
+    }
+
+    [Fact]
+    public void Choose_TimeoutQuestion_NoImmediateTimeout()
+    {
+        var handler = new MockChooseHandler();
+        var runtime = CreateRuntimeWithChoose(handler);
+
+        var story = runtime.LoadStory(@"
+            @start
+            /choose timeout:?, true, ""Option"", 1;
+        ");
+        var ctx = runtime.CreateContext(story);
+        runtime.Run(ctx);
+
+        Assert.Equal(ContextState.WaitingHost, ctx.State);
+        Assert.Single(handler.Requests);
+        Assert.Null(handler.Requests[0].TimeoutMs);
+    }
 }

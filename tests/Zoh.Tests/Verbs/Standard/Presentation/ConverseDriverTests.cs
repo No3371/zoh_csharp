@@ -225,4 +225,79 @@ public class ConverseDriverTests
         Assert.Equal(ContextState.Terminated, ctx.State);
         Assert.Contains(internalCtx.LastDiagnostics, d => d.Severity == DiagnosticSeverity.Error && d.Code == "cancel_code");
     }
+
+    [Fact]
+    public void Converse_TimeoutZero_ReturnsInfoDiagnosticImmediately()
+    {
+        var handler = new MockConverseHandler();
+        var runtime = CreateRuntimeWithConverse(handler);
+
+        var story = runtime.LoadStory(@"
+            @start
+            /converse timeout:0, ""Fast"";
+        ");
+        var ctx = runtime.CreateContext(story);
+        runtime.Run(ctx);
+
+        var internalCtx = (Zoh.Runtime.Execution.Context)ctx;
+        Assert.Equal(ContextState.Terminated, ctx.State);
+        Assert.Empty(handler.Requests);
+        Assert.Equal(ZohValue.Nothing, internalCtx.LastResult);
+        Assert.Contains(internalCtx.LastDiagnostics, d => d.Severity == DiagnosticSeverity.Info && d.Code == "timeout");
+    }
+
+    [Fact]
+    public void Converse_TimeoutNegative_ReturnsInfoDiagnosticImmediately()
+    {
+        var handler = new MockConverseHandler();
+        var runtime = CreateRuntimeWithConverse(handler);
+
+        var story = runtime.LoadStory(@"
+            @start
+            /converse timeout:-1, ""Fast"";
+        ");
+        var ctx = runtime.CreateContext(story);
+        runtime.Run(ctx);
+
+        var internalCtx = (Zoh.Runtime.Execution.Context)ctx;
+        Assert.Equal(ContextState.Terminated, ctx.State);
+        Assert.Empty(handler.Requests);
+        Assert.Contains(internalCtx.LastDiagnostics, d => d.Severity == DiagnosticSeverity.Info && d.Code == "timeout");
+    }
+
+    [Fact]
+    public void Converse_TimeoutQuestion_NoImmediateTimeout()
+    {
+        var handler = new MockConverseHandler();
+        var runtime = CreateRuntimeWithConverse(handler);
+
+        var story = runtime.LoadStory(@"
+            @start
+            /converse timeout:?, ""Talk"";
+        ");
+        var ctx = runtime.CreateContext(story);
+        runtime.Run(ctx);
+
+        Assert.Equal(ContextState.WaitingHost, ctx.State);
+        Assert.Single(handler.Requests);
+        Assert.Null(handler.Requests[0].TimeoutMs);
+    }
+
+    [Fact]
+    public void Converse_TimeoutPositive_PassesTimeoutMsToHostRequest()
+    {
+        var handler = new MockConverseHandler();
+        var runtime = CreateRuntimeWithConverse(handler);
+
+        var story = runtime.LoadStory(@"
+            @start
+            /converse timeout:5, ""Talk"";
+        ");
+        var ctx = runtime.CreateContext(story);
+        runtime.Run(ctx);
+
+        Assert.Equal(ContextState.WaitingHost, ctx.State);
+        Assert.Single(handler.Requests);
+        Assert.Equal(5000.0, handler.Requests[0].TimeoutMs);
+    }
 }
