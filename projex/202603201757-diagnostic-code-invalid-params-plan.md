@@ -1,6 +1,6 @@
 # Diagnostic Code: Standardize to `invalid_params`
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-03-20
 > **Author:** Agent
 > **Source:** Direct request
