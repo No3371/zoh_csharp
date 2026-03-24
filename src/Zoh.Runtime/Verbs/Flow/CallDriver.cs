@@ -45,7 +45,7 @@ public class CallDriver : IVerbDriver
 
             var val1 = ValueResolver.Resolve(call.UnnamedParams[1], ctx);
             if (val1 is ZohStr s1) targetLabel = s1.Value;
-            else return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_arg", "Call label must be a string.", call.Start));
+            else return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Call label must be a string.", call.Start));
             paramIndex = 2;
         }
         else if (val0 is ZohStr s0)
@@ -89,7 +89,7 @@ public class CallDriver : IVerbDriver
         }
         else
         {
-            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_arg", "Call target must be a string or nothing.", call.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Call target must be a string or nothing.", call.Start));
         }
 
         // Collect transfer refs
@@ -101,7 +101,7 @@ public class CallDriver : IVerbDriver
             }
             else
             {
-                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_arg", "Call transfer parameters must be references.", call.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Call transfer parameters must be references.", call.Start));
             }
         }
 

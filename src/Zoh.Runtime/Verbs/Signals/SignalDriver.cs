@@ -24,7 +24,7 @@ public class SignalDriver : IVerbDriver
         var signalNameVal = ValueResolver.Resolve(call.UnnamedParams[0], ctx);
         if (signalNameVal is not ZohStr s)
         {
-            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_arg", "Signal name must be a string.", call.Start));
+            return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Signal name must be a string.", call.Start));
         }
 
         string signalName = s.Value;

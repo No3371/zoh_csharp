@@ -26,7 +26,7 @@ public class SleepDriver : IVerbDriver
 
         if (val is ZohInt i) durationSeconds = i.Value;
         else if (val is ZohFloat f) durationSeconds = f.Value;
-        else return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_arg", "Sleep duration must be a number.", call.Start));
+        else return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Sleep duration must be a number.", call.Start));
 
         if (durationSeconds < 0) durationSeconds = 0;
 

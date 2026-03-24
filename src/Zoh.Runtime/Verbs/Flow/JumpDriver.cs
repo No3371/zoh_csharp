@@ -31,7 +31,7 @@ public class JumpDriver : IVerbDriver
             }
             else
             {
-                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_arg", "Jump label must be a string.", call.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Jump label must be a string.", call.Start));
             }
         }
         else if (call.UnnamedParams.Length == 2)
@@ -39,11 +39,11 @@ public class JumpDriver : IVerbDriver
             var val0 = ValueResolver.Resolve(call.UnnamedParams[0], ctx);
             if (val0 is ZohStr s0) targetStoryName = s0.Value;
             else if (val0 is ZohNothing) targetStoryName = null;
-            else return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_arg", "Jump story must be a string or nothing.", call.Start));
+            else return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Jump story must be a string or nothing.", call.Start));
 
             var val1 = ValueResolver.Resolve(call.UnnamedParams[1], ctx);
             if (val1 is ZohStr s1) targetLabel = s1.Value;
-            else return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_arg", "Jump label must be a string.", call.Start));
+            else return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Jump label must be a string.", call.Start));
         }
         else
         {

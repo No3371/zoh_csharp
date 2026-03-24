@@ -48,7 +48,7 @@ public class RollDriver : IVerbDriver
         // wroll val1, weight1, val2, weight2
         var args = verb.UnnamedParams;
         if (args.Length % 2 != 0)
-            return DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Error, "invalid_args", "Weighted roll requires pairs of (value, weight)", verb.Start));
+            return DriverResult.Complete.Fatal(new Diagnostics.Diagnostic(Diagnostics.DiagnosticSeverity.Fatal, "invalid_params", "Weighted roll requires pairs of (value, weight)", verb.Start));
 
         var pairs = new List<(ZohValue Val, int Weight)>();
         int totalWeight = 0;
