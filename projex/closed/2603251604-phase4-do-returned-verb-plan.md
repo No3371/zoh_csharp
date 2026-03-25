@@ -3,7 +3,7 @@
 > **Status:** Complete
 > **Created:** 2026-03-25
 > **Completed:** 2026-03-25
-> **Patch / walkthrough:** `projex/closed/2603251810-phase4-do-returned-verb-patch.md`
+> **Patch / walkthrough:** `2603251810-phase4-do-returned-verb-patch.md` (same folder)
 > **Author:** Agent (split from `20260227-phase4-control-flow-gaps-fix-plan.md`)
 > **Source:** Split of `20260227-phase4-control-flow-gaps-fix-plan.md` Step 5 + matching tests
 > **Related Projex:** `20260227-phase4-control-flow-gaps-fix-plan.md`, `2603251430-20260227-phase4-control-flow-gaps-fix-plan-review.md`

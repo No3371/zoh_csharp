@@ -23,7 +23,7 @@ Work is divided into **five independently executable plans** (same `csharp/` sco
 | `2603251603-phase4-flowutils-breakif-verb-plan.md` | `breakif` / `continueif` verb conditions — **Complete** (patch `2603251825-phase4-flowutils-breakif-verb-patch.md`) |
 | `2603251604-phase4-do-returned-verb-plan.md` | `/do` second hop (returned verb) — **Complete** (patch `2603251810-phase4-do-returned-verb-patch.md`) |
 
-**Progress (2026-03-25):** Done — `2603251600` (walkthrough), `2603251601` (closed + walkthrough), `2603251603` (patch), `2603251604` (patch). Open — `2603251602` `/foreach` iterator reference. Optional follow-ups: sequence-named test for verb `breakif` (`2603252100-…-memo.md`); suspend/fatal propagation for verb conditions in `FlowUtils` vs `IfDriver` (`2603252101-…-memo.md`).
+**Progress (2026-03-25):** Done — `2603251600`–`2603251601` + `2603251603`–`2603251604` **plans closed** under `projex/closed/` (patches/walkthroughs as recorded). Open — `2603251602` `/foreach` iterator reference. Optional follow-ups: sequence-named test for verb `breakif` (`2603252100-…-memo.md`); suspend/fatal propagation for verb conditions in `FlowUtils` vs `IfDriver` (`2603252101-…-memo.md`).
 
 **Closure:** Umbrella + audit nav Phase 4 item close when **`2603251602`** lands and the **Success Criteria** below are satisfied (checklist).
 

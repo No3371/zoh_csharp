@@ -1,7 +1,7 @@
 # Patch walkthrough: Phase 4 `/do` — execute verb returned by first run
 
 > **Execution date:** 2026-03-25  
-> **Source plan:** `projex/2603251604-phase4-do-returned-verb-plan.md`  
+> **Source plan:** `2603251604-phase4-do-returned-verb-plan.md` (closed with this patch)  
 > **Directive:** `patch-projex`  
 > **Base branch:** `main`  
 > **Result:** Success
