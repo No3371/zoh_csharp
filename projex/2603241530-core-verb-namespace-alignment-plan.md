@@ -1,6 +1,6 @@
 # Core Verb Namespace Alignment
 
-> **Status:** Ready
+> **Status:** In Progress
 > **Created:** 2026-03-24
 > **Author:** Claude
 > **Source:** Follow-up from `2603201530-core-verb-namespace-restructure-plan.md` (spec)
