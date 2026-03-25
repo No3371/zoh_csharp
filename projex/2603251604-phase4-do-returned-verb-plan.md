@@ -1,7 +1,9 @@
 # Phase 4: `/do` Execute Returned Verb
 
-> **Status:** Ready
+> **Status:** Complete
 > **Created:** 2026-03-25
+> **Completed:** 2026-03-25
+> **Patch / walkthrough:** `projex/closed/2603251810-phase4-do-returned-verb-patch.md`
 > **Author:** Agent (split from `20260227-phase4-control-flow-gaps-fix-plan.md`)
 > **Source:** Split of `20260227-phase4-control-flow-gaps-fix-plan.md` Step 5 + matching tests
 > **Related Projex:** `20260227-phase4-control-flow-gaps-fix-plan.md`, `2603251430-20260227-phase4-control-flow-gaps-fix-plan-review.md`
@@ -26,11 +28,11 @@ When the first `/do` argument executes and returns a `ZohVerb`, run that returne
 
 ### Success Criteria
 
-- [ ] First arg resolves to `ZohVerb` → execute first verb.
-- [ ] If first result value is `ZohVerb`, execute second verb; return second result (respect fatals on first hop).
-- [ ] Single extra hop only (not unbounded recursion) — per umbrella plan assumption.
-- [ ] New test: `Do_ExecutesVerbReturnedByFirstExecution` (or equivalent).
-- [ ] Full `dotnet test` passes.
+- [x] First arg resolves to `ZohVerb` → execute first verb.
+- [x] If first result value is `ZohVerb`, execute second verb; return second result (respect fatals on first hop).
+- [x] Single extra hop only (not unbounded recursion) — per umbrella plan assumption.
+- [x] New test: `Do_ExecutesVerbReturnedByFirstExecution` (or equivalent).
+- [x] Full `dotnet test` passes.
 
 ### Out of Scope
 
@@ -86,8 +88,8 @@ Adjust to match exact types (`VerbResult`, `ValueOrNothing`, etc.) in codebase.
 
 ## Verification Plan
 
-- [ ] `dotnet test --filter "FullyQualifiedName~ControlFlowVerbsTests"`
-- [ ] `dotnet test`
+- [x] `dotnet test --filter "FullyQualifiedName~ControlFlowVerbsTests"`
+- [x] `dotnet test`
 
 ---
 
