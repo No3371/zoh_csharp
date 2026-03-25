@@ -7,7 +7,7 @@
 > **Author:** Codex
 > **Source:** Direct request — gaps identified in [20260223-csharp-spec-audit-nav.md](20260223-csharp-spec-audit-nav.md) Phase 4
 > **Related Projex:** [20260223-csharp-spec-audit-nav.md](20260223-csharp-spec-audit-nav.md)
-> **Follow-up memos:** `2603252100-phase4-sequence-breakif-verb-test-gap-memo.md`, `2603252101-phase4-flowutils-condition-suspend-fatal-memo.md`
+> **Follow-up memos:** `2603252101-phase4-flowutils-condition-suspend-fatal-memo.md` (sequence/`breakif` memo `2603252100` closed via `2603252220-phase4-sequence-breakif-verb-test-patch.md`)
 
 ---
 
@@ -23,7 +23,7 @@ Work is divided into **five independently executable plans** (same `csharp/` sco
 | `2603251603-phase4-flowutils-breakif-verb-plan.md` | `breakif` / `continueif` verb conditions — **Complete** (patch `2603251825-phase4-flowutils-breakif-verb-patch.md`) |
 | `2603251604-phase4-do-returned-verb-plan.md` | `/do` second hop (returned verb) — **Complete** (patch `2603251810-phase4-do-returned-verb-patch.md`) |
 
-**Progress (2026-03-25):** Done — `2603251600`–`2603251601` + `2603251603`–`2603251604` **plans closed** under `projex/closed/` (patches/walkthroughs as recorded). Open — `2603251602` `/foreach` iterator reference. Optional follow-ups: sequence-named test for verb `breakif` (`2603252100-…-memo.md`); suspend/fatal propagation for verb conditions in `FlowUtils` vs `IfDriver` (`2603252101-…-memo.md`).
+**Progress (2026-03-25):** Done — `2603251600`–`2603251601` + `2603251603`–`2603251604` **plans closed** under `projex/closed/` (patches/walkthroughs as recorded). Open — `2603251602` `/foreach` iterator reference. Optional follow-up: suspend/fatal propagation for verb conditions in `FlowUtils` vs `IfDriver` (`2603252101-…-memo.md`). Sequence + verb `breakif` test: **done** (`2603252220-phase4-sequence-breakif-verb-test-patch.md`).
 
 **Closure:** Umbrella + audit nav Phase 4 item close when **`2603251602`** lands and the **Success Criteria** below are satisfied (checklist).
 
@@ -39,7 +39,7 @@ Original Phase 4 control-flow gaps vs spec; **most are fixed** in child executio
 4. **`FlowUtils`:** **Done** — `breakif` / `continueif` execute verb conditions (`2603251603` + patch `2603251825`); see memo `2603252101` for suspend/fatal propagation nuance.
 5. **`DoDriver`:** **Done** — single follow-up hop when first result is `ZohVerb` (`2603251604` + patch `2603251810`).
 
-Optional test/doc parity: verb `breakif` on **`/sequence`** — memo `2603252100`.
+Verb `breakif` on **`/sequence`:** regression `Sequence_BreakIfVerb_UsesReturnedBoolean` (`2603252220-phase4-sequence-breakif-verb-test-patch.md`).
 
 **Scope:** Control-flow/runtime driver code and directly related verb tests in `csharp/src/Zoh.Runtime` and `csharp/tests/Zoh.Tests`.
 **Estimated Changes:** Same five runtime touchpoints + extensions to `FlowTests.cs` and `ControlFlowVerbsTests.cs` (optional small extra test file).
@@ -98,7 +98,7 @@ Optional test/doc parity: verb `breakif` on **`/sequence`** — memo `2603252100
 | `csharp/src/Zoh.Runtime/Verbs/Flow/ForeachDriver.cs` | `/foreach` | **Open** — `ValueAst.Reference` iterator (`2603251602`) |
 | `csharp/src/Zoh.Runtime/Verbs/Flow/FlowUtils.cs` | `breakif` / `continueif` | **Done** |
 | `csharp/src/Zoh.Runtime/Verbs/Flow/DoDriver.cs` | `/do` | **Done** — second hop |
-| `csharp/tests/Zoh.Tests/Verbs/Flow/FlowTests.cs` | Flow tests | **Mostly done**; optional: sequence + verb `breakif` (`2603252100`) |
+| `csharp/tests/Zoh.Tests/Verbs/Flow/FlowTests.cs` | Flow tests | **Done** for Phase 4 items to date, including `Sequence_BreakIfVerb_UsesReturnedBoolean` (`2603252220`) |
 | `csharp/tests/Zoh.Tests/Verbs/Core/ControlFlowVerbsTests.cs` | `/do` tests | **Done** — returned-verb chain |
 
 ### Dependencies
@@ -230,7 +230,7 @@ Apply the same logic to `ShouldContinue` (spec symmetry with `breakif`).
 
 **Rationale:** Spec states `/verb` in `breakif` / `continueif` uses returned value; unexecuted `ZohVerb` is incorrectly truthy today.
 
-**Verification:** Add loop/sequence test using `breakif: /verb;` that should stop only when returned boolean becomes true.
+**Verification:** Add loop/sequence test using `breakif: /verb;` that should stop only when returned boolean becomes true. Loop + foreach covered in `2603251825`; sequence-named test: `Sequence_BreakIfVerb_UsesReturnedBoolean` in `2603252220`.
 
 ---
 
@@ -281,7 +281,7 @@ return first;
 - `If_DefaultComparison_InvalidTypeAfterSubjectEval` — non-bool result when `is` omitted, after any verb subject if applicable.
 - `Switch_EvaluatesVerbCaseValues`.
 - `Foreach_AcceptsReferenceIterator`.
-- `Loop_BreakIfVerb_UsesReturnedBoolean` (and optionally `continueif` mirror).
+- `Loop_BreakIfVerb_UsesReturnedBoolean` (and optionally `continueif` mirror); `Sequence_BreakIfVerb_UsesReturnedBoolean` (`2603252220`).
 - `Do_ExecutesVerbReturnedByFirstExecution`.
 
 Use existing `TestExecutionContext` patterns and helper drivers already present in test suite to avoid introducing brittle scaffolding.
@@ -313,7 +313,7 @@ Use existing `TestExecutionContext` patterns and helper drivers already present 
 | `/if` default typing guard | Test with non-bool evaluated subject, `is` omitted | **Met** |
 | `/switch` verb case eval | New switch test | **Met** (`2603251601`) |
 | `/foreach` reference iterator | New foreach test | **Pending** (`2603251602`) |
-| `breakif` / `continueif` verbs | New test(s) | **Met** (`2603251603`); sequence-named test optional (`2603252100`) |
+| `breakif` / `continueif` verbs | New test(s) | **Met** (`2603251603` / `2603251825`); sequence + verb `breakif` **Met** (`2603252220`) |
 | `/do` returned verb | New `/do` test | **Met** (`2603251604`) |
 | No regressions | Full test run | **Met** after each merge; final pass when foreach lands |
 

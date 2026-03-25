@@ -243,6 +243,23 @@ namespace Zoh.Tests.Verbs.Flow
         }
 
         [Fact]
+        public void Sequence_BreakIfVerb_UsesReturnedBoolean()
+        {
+            _context.RegisterDriver("breakif_always_false", new BreakIfAlwaysFalseDriver());
+            _context.Variables.Set("count", new ZohInt(0));
+
+            var seqCall = CreateVerbCall("sequence",
+                new ValueAst.Verb(CreateVerbCall("increase", new ValueAst.Reference("count"))),
+                new ValueAst.Verb(CreateVerbCall("increase", new ValueAst.Reference("count"))),
+                new ValueAst.Verb(CreateVerbCall("increase", new ValueAst.Reference("count"))));
+            seqCall = AddNamedParam(seqCall, "breakif", new ValueAst.Verb(CreateVerbCall("breakif_always_false")));
+
+            _context.ExecuteVerb(seqCall);
+
+            Assert.Equal(3L, _context.Variables.Get("count").AsInt().Value);
+        }
+
+        [Fact]
         public void Foreach_ContinueIfVerb_UsesReturnedBoolean()
         {
             _context.RegisterDriver("continueif_two_then_false", new ContinueIfTwoThenFalseDriver());

@@ -1,5 +1,6 @@
 # Memo: `sequence` + `breakif:` verb — test gap
 
+> **Status:** Consumed — `2603252220-phase4-sequence-breakif-verb-test-patch.md`  
 > **Date:** 2026-03-25  
 > **Author:** Agent  
 > **Source Type:** Issue  
@@ -21,6 +22,7 @@ Umbrella plan Step 4 verification called for a loop **or sequence** test using `
 
 ## Related Projex
 
+- `2603252220-phase4-sequence-breakif-verb-test-patch.md` (consumes this memo)
 - `20260227-phase4-control-flow-gaps-fix-plan.md`
 - `2603251603-phase4-flowutils-breakif-verb-plan.md`
 - `2603251825-phase4-flowutils-breakif-verb-patch.md`
