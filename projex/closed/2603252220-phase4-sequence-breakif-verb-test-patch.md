@@ -31,7 +31,7 @@ Added `Sequence_BreakIfVerb_UsesReturnedBoolean` in `FlowTests.cs` so Step 4’s
 
 ### Projex
 
-**File:** `csharp/projex/20260227-phase4-control-flow-gaps-fix-plan.md`  
+**File:** `csharp/projex/closed/20260227-phase4-control-flow-gaps-fix-plan.md`  
 **Change Type:** Modified  
 
 **What changed:** Removed optional follow-up for memo `2603252100`; noted patch in Key Files / verification tables / Step 4 bullets where the sequence test was listed as optional.
@@ -63,5 +63,5 @@ dotnet test                                                          → 714 pas
 | Document | Relationship | Update Made |
 |----------|--------------|-------------|
 | `2603252100-phase4-sequence-breakif-verb-test-gap-memo.md` | Source memo | Marked consumed |
-| `20260227-phase4-control-flow-gaps-fix-plan.md` | Umbrella | Optional sequence test closed via this patch |
+| `20260227-phase4-control-flow-gaps-fix-plan.md` (in `closed/`) | Umbrella | Optional sequence test closed via this patch |
 | `2603251825-phase4-flowutils-breakif-verb-patch.md` | Prior breakif patch | Complementary — adds sequence-named regression |

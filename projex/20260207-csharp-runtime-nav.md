@@ -1,38 +1,42 @@
 # C# Runtime Implementation Roadmap
 
-> **Created:** 2026-02-07 | **Last Revised:** 2026-02-22
-> **Scope:** Full ZOH language runtime implementation in C#
-> **Parent Navigation:** None (Root for C# implementation)
-> **Related Projex:** [Review](20260207-csharp-runtime-nav-review.md), [Red Team](../../projex/20260207-spec-impl-redteam.md)
+> **Created:** 2026-02-07 | **Last Revised:** 2026-03-26
+> **Git:** C# history lives in the **nested repo** `csharp/` (`git -C csharp log …`). The parent `zoh` checkout may show `csharp/` as untracked — use the nested repo for blame and archaeology.
+> **Scope:** Full ZOH language runtime implementation in C# (structure, features, integration, polish)
+> **Parent Navigation:** None (root for this implementation area)
+> **Child navigation:** [20260223-csharp-spec-audit-nav.md](20260223-csharp-spec-audit-nav.md) — spec-by-spec compliance and remaining behavioral gaps
+> **Related Projex:** [20260227-phase5-concurrency-context-signal-gaps-fix-plan.md](20260227-phase5-concurrency-context-signal-gaps-fix-plan.md) (plan text partially superseded — see Git history; **remaining:** `/jump`/`/fork` var transfer), [closed/20260227-phase4-control-flow-gaps-fix-plan.md](closed/20260227-phase4-control-flow-gaps-fix-plan.md) (closed umbrella — control-flow compliance). Historical red-team / spec–impl follow-ups: `spec/.projex/closed/` (e.g. channel race condition, inconsistency patches).
 
 ---
 
 ## Vision
 
-To build a robust, spec-compliant, and high-performance ZOH runtime in C# that serves as a reference implementation. The runtime should support the full language specification, including advanced features like concurrency, channels, and custom verb extensions, while maintaining a clean and testable architecture.
+To build a robust, spec-aligned, and high-performance ZOH runtime in C# that serves as a reference implementation. The runtime should support the full language specification, including concurrency, channels, and standard verbs, with a clean and testable architecture. **Implementation milestones** (this document) track major capability layers; **compliance** (child nav) tracks line-by-line spec parity and schedules focused fix plans.
 
 ---
 
 ## Current Position
 
-**As of 2026-02-23:**
+**As of 2026-03-26:**
 
-Phase 4 (Runtime Architecture) is **complete**. The runtime now features a formalized handler-registry architecture, comprehensive storage drivers, a robust compilation pipeline, a complete validation layer, and a decoupled host-continuation model for interactive verbs, including full support for Standard Presentation and Media verbs. **Phase 5 (Integration & Polish)** is the immediate next objective, focusing on end-to-end testing, storage backends, red-team remediation, and documentation.
+**Structural phases 1–4 (this roadmap)** remain **done** — lexer through standard presentation/media verbs, validation pipeline, storage drivers, continuation model, and runtime core formalization as scoped here.
+
+**Since the last revision (2026-02-23):** a large amount of **spec-hardening** landed: control-flow semantics (`/if`, `/switch`, `/foreach`, `breakif`/`continueif`, `/do`), suspend/fatal propagation for verb conditions, RNG/parse fixes, diagnostic cleanup, core-verb namespace alignment, and related tests. Full suite: **719** passing (`dotnet test` on `Zoh.Tests`).
+
+**What is *not* done at spec level** (see child nav): Phase **5–6** audit items — **still open:** variadic `var` transfer on **`/jump`** and **`/fork`** (per `JumpDriver` / `ForkDriver`); Phase **6** blocking `/pull`, pull `timeout`, and further items in the child nav. **Already landed** (git-backed; child nav updated): `/flag` (`451d387`), `/wait` + `timeout:` on `MessageContinuation` (`2c74be7` + `WaitDriver`), `/call` trailing `*var` + `[inline]` merge (`CallDriver`, inline join `cf4f5bd`). Narrow follow-up plan: [20260227-phase5-concurrency-context-signal-gaps-fix-plan.md](20260227-phase5-concurrency-context-signal-gaps-fix-plan.md) (scope trimmed to remaining gaps).
 
 ### Recent Progress
-- **Phase 4.5 Complete**: Standard Verbs (Media) — Implemented `ShowDriver`, `HideDriver`, `PlayDriver`, `PlayOneDriver`, `StopDriver`, `PauseDriver`, `ResumeDriver`, `SetVolumeDriver` with their respective validators and decoupled media handler interfaces (2026-02-23).
-  - Execution: [Plan](closed/20260222-std-verbs-media-csharp-plan.md) | [Walkthrough](closed/20260222-std-verbs-media-csharp-walkthrough.md)
-- **Phase 4.4 Complete**: Standard Verbs (Presentation) — Implemented `ConverseDriver`, `ChooseDriver`, `ChooseFromDriver`, `PromptDriver` using fully decoupled host handler interfaces, accompanied by their respective `*Validator`s (2026-02-22)
-  - Execution: [Plan](closed/20260222-std-verbs-presentation-csharp-plan.md) | [Walkthrough](closed/20260222-std-verbs-presentation-csharp-walkthrough.md) | [Audit](20260222-std-verbs-presentation-csharp-audit.md)
-- **Architecture Refactor**: Verb Driver Continuation — Decoupled blocking verbs from the tick-loop scheduler via a `VerbContinuation` discriminated union (`HostContinuation`, `SleepContinuation`, `ContextContinuation`, `MessageContinuation`). Deprecated `Context.SetState()` in favor of functional yields (2026-02-22)
-  - Execution: [Walkthrough](closed/20260222-verb-driver-continuation-csharp-walkthrough.md)
-- **Phase 4.3 Complete**: Validation Pipeline — Implemented Story and Verb validators, diagnostic aggregation, and VerbResolutionValidator (2026-02-16)
+- Control-flow / expression compliance wave (2026-02-28–03-26): closed umbrella [closed/20260227-phase4-control-flow-gaps-fix-plan.md](closed/20260227-phase4-control-flow-gaps-fix-plan.md); condition suspend/fatal propagation (`bbc3ef2`); supporting patches/walkthroughs under `csharp/projex/closed/`.
+- March 2026 runtime hardening (see **Git history** below): try/suspension wrapping (`cf349b2`), presentation wait diagnostics, diagnostic code normalization, **timeout consistency** across verb drivers (`2c74be7`), **`/flag`** (`451d387`), embed/preprocessor flags, flow-verb test coverage (`d5bfe11`), **inline `/call` join** (`cf4f5bd`), core **namespace alignment** (`ca35285`), Phase 4 control-flow closure cluster (`6b3de81`…`bbc3ef2`).
+- Audit nav updated for Phase 4 closure and Phase 2.5/2.6 implementation reality: [20260223-csharp-spec-audit-nav.md](20260223-csharp-spec-audit-nav.md).
+- Earlier Phase 4.x deliveries unchanged in substance — presentation/media verbs, continuation refactor, validation, storage completion (see Roadmap below and existing closed walkthroughs).
 
 ### Active Work
-- **Phase 5**: Integration & Polish — Preparing for end-to-end scenario testing and addressing remaining technical debt.
+- **Primary:** Close remaining **navigation** gaps (`/jump` / `/fork` variadic transfer) per trimmed [20260227-phase5-concurrency-context-signal-gaps-fix-plan.md](20260227-phase5-concurrency-context-signal-gaps-fix-plan.md); follow child nav for Phase **6** (channels) and other audit lines.
+- **Parallel (Phase 5 of *this* roadmap):** integration scenarios, storage backends, docs, performance — still largely ahead (see milestones).
 
 ### Known Blockers
-- None currently identified
+- None technical; sequencing is prioritization between compliance fixes (child nav) and integration/polish milestones below.
 
 ---
 
@@ -57,7 +61,7 @@ Phase 4 (Runtime Architecture) is **complete**. The runtime now features a forma
 **Milestones:**
 - [x] Type System (Value hierarchy, Coercion, Truthiness)
 - [x] Variable Storage (Scopes, Shadowing)
-- [x] Expression Evaluation (Operators, Interpolation, Special forms)
+- [x] Expression Evaluation (Operators, Interpolation, Special forms) — *ongoing spec tweaks tracked in child nav (e.g. list `+`, format suffixes implemented)*
 - [x] Core Verbs (Flow control, Collection manipulation, Debugging)
 - [x] Core Runtime Features (AST nodes, Value parsing, Attribute parsing)
 
@@ -68,14 +72,17 @@ Phase 4 (Runtime Architecture) is **complete**. The runtime now features a forma
 **Goal:** Enable complex story flows, parallel execution, and inter-context communication.
 
 **Milestones:**
-- [x] **Control Flow Verbs** — `If`, `Switch`, `Loop`, `While`, `Foreach`, `Sequence`.
-- [x] **Context & Navigation** — Implemented `Jump`, `Fork`, `Call`, `Exit`, `Sleep`.
+- [x] **Control Flow Verbs** — `If`, `Switch`, `Loop`, `While`, `Foreach`, `Sequence` — *initial feature set; March 2026 work closed major spec deviations (see closed Phase 4 umbrella).*
+- [x] **Context & Navigation** — `Jump`, `Fork`, `Call`, `Exit`, `Sleep`.
   - Execution: [Walkthrough](closed/20260207-context-navigation-walkthrough.md)
-- [x] **Channel System** — Implemented `ChannelManager`, `Push`, `Pull` (with value/error result), `Close`.
+  - *Spec note:* **`/jump`** still accepts only 1–2 args (no trailing `*var` transfer). **`/call`** supports trailing references + `[inline]` (see child nav / git `cf4f5bd`). **`/fork`** still 1–2 args only.
+- [x] **Channel System** — `ChannelManager`, `Push`, `Pull`, `Close`.
   - Execution: [Walkthrough](closed/20260207-channel-racecond-walkthrough.md)
-- [x] **Signal System** — Implemented `SignalManager`, `Wait`, `Signal`.
+  - *Spec note:* blocking pull and timeouts — child nav Phase 6.
+- [x] **Signal System** — `SignalManager`, `Wait`, `Signal`.
   - Plan: [20260207-signal-system-plan.md](closed/20260207-signal-system-plan.md)
   - Execution: [Walkthrough](closed/20260207-signal-system-walkthrough.md)
+  - *Spec note:* `/wait` **`timeout:`** supported (`WaitDriver` + `2c74be7`); audit nav updated.
 
 ---
 
@@ -83,7 +90,7 @@ Phase 4 (Runtime Architecture) is **complete**. The runtime now features a forma
 
 **Goal:** Formalize the runtime into a cohesive, extensible architecture with handler registries, a compilation pipeline, persistence, validation, and the standard verb interface — following `impl/09_runtime.md` through `impl/12_validation.md`.
 
-**Milestone sequencing rationale:** Runtime Core establishes the handler-registry pattern that Storage, Validation, and Standard Verbs all plug into. Storage is nearly complete (Read/Write drivers + InMemoryStorage exist). Validation provides developer guardrails before we surface the host-facing Standard Verbs.
+**Milestone sequencing rationale:** Runtime Core establishes the handler-registry pattern that Storage, Validation, and Standard Verbs plug into. Storage is nearly complete (Read/Write drivers + InMemoryStorage exist). Validation provides developer guardrails before we surface the host-facing Standard Verbs.
 
 **Milestones:**
 
@@ -122,14 +129,15 @@ Phase 4 (Runtime Architecture) is **complete**. The runtime now features a forma
 
 ---
 
-### Phase 5: Integration & Polish — [Status: In Progress]
+### Phase 5: Integration, Spec Closure & Polish — [Status: In Progress]
 
-**Goal:** Ensure correctness, stability, usability, and production readiness.
+**Goal:** Production readiness: correctness vs `spec/`, stability, usability, and non–InMemory storage.
 
 **Milestones:**
+- [ ] **Conformance backlog** — Line-item gaps vs `spec/` and `impl/`, prioritized in [20260223-csharp-spec-audit-nav.md](20260223-csharp-spec-audit-nav.md). Next focused work: [20260227-phase5-concurrency-context-signal-gaps-fix-plan.md](20260227-phase5-concurrency-context-signal-gaps-fix-plan.md) (**remaining:** `/jump` + `/fork` variadic transfer; plan body superseded for `/flag`, `/wait`, `/call`).
 - [ ] **Integration Testing** — End-to-end scenarios from `13_testing.md`; multi-story, multi-context flows
 - [ ] **Storage Backends** — File-based backend (`.zohstore` files), optional SQLite backend
-- [ ] **Red-Team Remediation** — Address remaining findings from `20260207-spec-impl-redteam.md`: resource limit enforcement, defer error handling semantics, expression injection safe patterns
+- [ ] **Hardening** — Resource limits, defer/error semantics, safe expression patterns — cross-check child nav and historical `spec/.projex/closed/` red-team / inconsistency work
 - [ ] **Documentation** — Public API docs, usage examples, verb reference
 - [ ] **Performance** — Profiling, optimization, benchmark suite
 
@@ -137,20 +145,19 @@ Phase 4 (Runtime Architecture) is **complete**. The runtime now features a forma
 
 ## Priorities
 
-**Current focus:** Phase 5 — Integration & Polish. Evaluating the next immediate step, such as Integration Testing (end-to-end scenarios) or Storage Backends (File/SQLite).
+**Current focus:** Drive **spec compliance** for concurrency/navigation/signals (Phase 5 plan above + child nav Phases 5–6) while keeping **integration testing** and **storage backends** in view for reference-runtime usefulness.
 
-**Next up:** Resolving red-team findings and public API documentation.
+**Next up:** Implement `/jump`/`/fork` var transfer (or close plan as obsolete with a patch-projex); then channel semantics (pull/blocking/timeout) per audit nav; continue hardening as surfaced by audits.
 
-**Deferred:** Performance optimizations.
+**Deferred:** Performance optimizations and broad doc polish until critical spec gaps shrink.
 
 ---
 
 ## Open Questions
 
-## Open Questions
-
+- [ ] Implement **`/jump` + `/fork` var transfer** in one change set or split by verb for review?
 - [x] Does the current `pull` implementation return a result object (old spec) or value/error (new spec)? **(Answer: Value/Error via VerbResult)**
-- [x] Are there other discrepancies from the recent "Spec/Impl Inconsistencies" finding that need to be addressed in C#? **(Answer: Addressed via multiple patches)**
+- [x] Are there other discrepancies from the recent "Spec/Impl Inconsistencies" finding that need to be addressed in C#? **(Answer: Addressed via multiple patches; new gaps tracked in child audit nav)**
 - [x] Should Phase 4 begin with Runtime Core or Standard Verbs? **(Answer: Runtime Core — it defines the handler registries that Standard Verbs plug into)**
 - [x] What persistence mechanism should be used for Save/Load? **(Answer: InMemoryStorage for Phase 4 development/testing; file/SQLite backends deferred to Phase 5)**
 - [x] Should verb validators be opt-in (registered per verb) or mandatory (auto-generated from signatures)? **(Answer: Opt-in, explicitly implemented per verb as specific classes, e.g. `SetValidator`)**
@@ -158,10 +165,35 @@ Phase 4 (Runtime Architecture) is **complete**. The runtime now features a forma
 
 ---
 
+## Git history (evidence)
+
+Use the **nested** repository:
+
+```bash
+cd csharp
+git log --oneline -40
+git log --oneline --date=short --format="%h %ad %s" -- src/Zoh.Runtime/Verbs/
+```
+
+**Representative commits** (authoritative for “what landed when”; hashes from `main` as of 2026-03-26):
+
+| When | Theme | Example `git` |
+|------|--------|----------------|
+| 2026-03-25–26 | Phase 4 control-flow compliance (`/if`, `/switch`, `/foreach`, `breakif`, `/do`, suspend/fatal) | `6b3de81` … `bbc3ef2` |
+| 2026-03-25 | `core.nav` / `core.signal` namespace alignment | `ca35285` |
+| 2026-03-20 | Try/suspension wrapping; presentation wait diagnostics; diagnostic `invalid_params` / `invalid_type`; **timeout consistency** (7 drivers) | `cf349b2`, `d733253`, `2dc45e2`, `2c74be7` |
+| 2026-03-16 | **`/flag`** + runtime-scoped flags; embed path interpolation / preprocessor | `451d387`, `79f6ad8` |
+| 2026-03-15 | Flow verb error-path tests | `d5bfe11` |
+| 2026-03-07 | **`/call` `[inline]`** join handle fix | `cf4f5bd` |
+
+Test count in commit messages climbed **665 → 719** across this window (`cf349b2` → `bbc3ef2`); run `dotnet test` on `Zoh.Tests` for the current number.
+
+---
+
 ## Revision Log
 
 | Date | Summary of Changes |
-|------|--------------------|
+|------|---------------------|
 | 2026-02-07 | Initial roadmap created by converting `csharp/task.md`. |
 | 2026-02-13 | Phase 3 marked complete. Signal System, Story Header Parsing, Virtual Tokens, CRLF handling, and multiple quality improvements completed. Ready for Phase 4. |
 | 2026-02-14 | Phase 4 restructured into five sequenced milestones (4.1–4.5) based on dependency analysis. Resolved ordering and persistence open questions. Added new questions for presentation handler async model and validator strategy. Red-team remediation items and storage backends moved to Phase 5. Updated test count to 515. |
@@ -170,4 +202,5 @@ Phase 4 (Runtime Architecture) is **complete**. The runtime now features a forma
 | 2026-02-22 | Adopted Per-Driver continuation model for Phase 4.4 and 4.5, replacing monolithic `IPresentationHandler` and `IMediaHandler` with driver-specific interfaces to maximize logic reuse. |
 | 2026-02-22 | Phase 4.4 (Standard Verbs - Presentation) marked complete based on `20260222-std-verbs-presentation-csharp-walkthrough.md`. Updated Active Work to Phase 4.5 (Standard Verbs - Media). Logged architectural refactor of `VerbContinuation` discriminated union. |
 | 2026-02-23 | Phase 4.5 (Standard Verbs - Media) marked complete based on `20260222-std-verbs-media-csharp-walkthrough.md`. Phase 4 is now fully complete. Updated Active Work to Phase 5 (Integration & Polish). |
-
+| 2026-03-26 | Navigate-projex: child link to spec audit nav; Phase 5 reframed (conformance + integration/polish); Current Position through March 2026 (719 tests, control-flow umbrella closed); Phase 3 notes for remaining spec gaps; removed stale/broken Related Projex links; fixed duplicate Open Questions heading; Priorities aligned with Phase 5 gap plan. |
+| 2026-03-26 | Cross-checked **`csharp/` nested git log**: added Git history (evidence) section, commit index, nested-repo note; corrected Phase 5 “remaining work” (`/flag`, `/wait`, `/call` already shipped; `/jump`/`/fork` transfer still open). |
