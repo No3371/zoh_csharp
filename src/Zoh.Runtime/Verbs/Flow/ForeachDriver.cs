@@ -61,15 +61,15 @@ namespace Zoh.Runtime.Verbs.Flow
             {
                 context.Variables.Set(varName, item);
 
-                if (FlowUtils.ShouldBreak(call, context))
-                {
-                    break;
-                }
+                var breakResult = FlowUtils.EvaluateBreakIf(call, context);
+                if (breakResult is DriverResult.Suspend) return breakResult;
+                if (breakResult is { IsFatal: true }) return breakResult;
+                if (breakResult != null) break;
 
-                if (FlowUtils.ShouldContinue(call, context))
-                {
-                    continue;
-                }
+                var continueResult = FlowUtils.EvaluateContinueIf(call, context);
+                if (continueResult is DriverResult.Suspend) return continueResult;
+                if (continueResult is { IsFatal: true }) return continueResult;
+                if (continueResult != null) continue;
 
                 var result = context.ExecuteVerb(verbToRun.VerbValue, context);
                 if (result.IsFatal) return result;

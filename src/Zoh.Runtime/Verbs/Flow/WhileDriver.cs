@@ -37,7 +37,12 @@ namespace Zoh.Runtime.Verbs.Flow
                 // If subject is a verb, execute it to get the value
                 if (subjectVal is ZohVerb vSubject)
                 {
-                    subjectVal = context.ExecuteVerb(vSubject.VerbValue, context).ValueOrNothing;
+                    var condResult = context.ExecuteVerb(vSubject.VerbValue, context);
+                    if (condResult is DriverResult.Suspend)
+                        return condResult;
+                    if (condResult.IsFatal)
+                        return condResult;
+                    subjectVal = condResult.ValueOrNothing;
                 }
 
                 // 2. Resolve comparison value ('is' param), default true

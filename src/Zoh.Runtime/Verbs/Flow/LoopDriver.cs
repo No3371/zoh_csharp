@@ -36,10 +36,10 @@ namespace Zoh.Runtime.Verbs.Flow
 
             while (isInfinite || count < iterations)
             {
-                if (FlowUtils.ShouldBreak(call, context))
-                {
-                    break;
-                }
+                var breakResult = FlowUtils.EvaluateBreakIf(call, context);
+                if (breakResult is DriverResult.Suspend) return breakResult;
+                if (breakResult is { IsFatal: true }) return breakResult;
+                if (breakResult != null) break;
 
                 var result = context.ExecuteVerb(verbToRun.VerbValue, context);
                 if (result.IsFatal) return result;

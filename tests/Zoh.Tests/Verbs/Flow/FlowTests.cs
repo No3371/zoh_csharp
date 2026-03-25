@@ -7,6 +7,7 @@ using Zoh.Runtime.Verbs;
 using Zoh.Runtime.Verbs.Flow;
 using Zoh.Runtime.Verbs.Math;
 using Zoh.Runtime.Verbs.Var;
+using Zoh.Runtime.Verbs.Signal;
 using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Lexing;
 using Zoh.Runtime.Variables;
@@ -29,6 +30,8 @@ namespace Zoh.Tests.Verbs.Flow
             _context.RegisterDriver("while", new WhileDriver());
             _context.RegisterDriver("foreach", new ForeachDriver());
             _context.RegisterDriver("sequence", new SequenceDriver());
+            _context.RegisterDriver("suspend_cond", new SuspendingCondDriver());
+            _context.RegisterDriver("fatal_cond", new FatalCondDriver());
 
             // Register helper drivers for side effects
             _context.RegisterDriver("increase", new IncreaseDriver());
@@ -307,6 +310,79 @@ namespace Zoh.Tests.Verbs.Flow
         }
 
         [Fact]
+        public void Loop_BreakIfVerb_PropagatesSuspend()
+        {
+            _context.Variables.Set("x", new ZohInt(0));
+            var loopCall = CreateVerbCall("loop",
+                new ValueAst.Integer(-1),
+                new ValueAst.Verb(CreateVerbCall("set", new ValueAst.Reference("x"), new ValueAst.Integer(1))));
+            loopCall = AddNamedParam(loopCall, "breakif", new ValueAst.Verb(CreateVerbCall("suspend_cond")));
+
+            var result = _context.ExecuteVerb(loopCall);
+
+            Assert.IsType<DriverResult.Suspend>(result);
+            Assert.Equal(0L, _context.Variables.Get("x").AsInt().Value);
+        }
+
+        [Fact]
+        public void Loop_BreakIfVerb_PropagatesFatal()
+        {
+            _context.Variables.Set("x", new ZohInt(0));
+            var loopCall = CreateVerbCall("loop",
+                new ValueAst.Integer(-1),
+                new ValueAst.Verb(CreateVerbCall("set", new ValueAst.Reference("x"), new ValueAst.Integer(1))));
+            loopCall = AddNamedParam(loopCall, "breakif", new ValueAst.Verb(CreateVerbCall("fatal_cond")));
+
+            var result = _context.ExecuteVerb(loopCall);
+
+            Assert.True(result.IsFatal);
+            Assert.Equal(0L, _context.Variables.Get("x").AsInt().Value);
+        }
+
+        [Fact]
+        public void Sequence_BreakIfVerb_PropagatesSuspend()
+        {
+            _context.Variables.Set("count", new ZohInt(0));
+            var seqCall = CreateVerbCall("sequence",
+                new ValueAst.Verb(CreateVerbCall("increase", new ValueAst.Reference("count"))),
+                new ValueAst.Verb(CreateVerbCall("increase", new ValueAst.Reference("count"))));
+            seqCall = AddNamedParam(seqCall, "breakif", new ValueAst.Verb(CreateVerbCall("suspend_cond")));
+
+            var result = _context.ExecuteVerb(seqCall);
+
+            Assert.IsType<DriverResult.Suspend>(result);
+            Assert.Equal(0L, _context.Variables.Get("count").AsInt().Value);
+        }
+
+        [Fact]
+        public void While_ConditionVerb_PropagatesSuspend()
+        {
+            _context.Variables.Set("x", new ZohInt(0));
+            var call = CreateVerbCall("while",
+                new ValueAst.Verb(CreateVerbCall("suspend_cond")),
+                new ValueAst.Verb(CreateVerbCall("set", new ValueAst.Reference("x"), new ValueAst.Integer(1))));
+
+            var result = _context.ExecuteVerb(call);
+
+            Assert.IsType<DriverResult.Suspend>(result);
+            Assert.Equal(0L, _context.Variables.Get("x").AsInt().Value);
+        }
+
+        [Fact]
+        public void While_ConditionVerb_PropagatesFatal()
+        {
+            _context.Variables.Set("x", new ZohInt(0));
+            var call = CreateVerbCall("while",
+                new ValueAst.Verb(CreateVerbCall("fatal_cond")),
+                new ValueAst.Verb(CreateVerbCall("set", new ValueAst.Reference("x"), new ValueAst.Integer(1))));
+
+            var result = _context.ExecuteVerb(call);
+
+            Assert.True(result.IsFatal);
+            Assert.Equal(0L, _context.Variables.Get("x").AsInt().Value);
+        }
+
+        [Fact]
         public void While_Condition()
         {
             _context.Variables.Set("x", new ZohInt(0));
@@ -559,6 +635,27 @@ namespace Zoh.Tests.Verbs.Flow
                 context.Variables.Set("continue_probe", new ZohInt(n + 1));
                 return DriverResult.Complete.Ok(new ZohBool(n < 2));
             }
+        }
+
+        sealed class SuspendingCondDriver : IVerbDriver
+        {
+            public string Namespace => "test";
+            public string Name => "suspend_cond";
+
+            public DriverResult Execute(IExecutionContext context, VerbCallAst call) =>
+                new DriverResult.Suspend(new Continuation(
+                    new SleepRequest(100),
+                    _ => DriverResult.Complete.Ok(ZohBool.True)));
+        }
+
+        sealed class FatalCondDriver : IVerbDriver
+        {
+            public string Namespace => "test";
+            public string Name => "fatal_cond";
+
+            public DriverResult Execute(IExecutionContext context, VerbCallAst call) =>
+                DriverResult.Complete.Fatal(new Diagnostic(
+                    DiagnosticSeverity.Fatal, "test_fatal", "condition fatal", new TextPosition(0, 0, 0)));
         }
     }
 }

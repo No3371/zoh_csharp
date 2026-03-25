@@ -17,10 +17,10 @@ namespace Zoh.Runtime.Verbs.Flow
 
             foreach (var param in call.UnnamedParams)
             {
-                if (FlowUtils.ShouldBreak(call, context))
-                {
-                    break;
-                }
+                var breakResult = FlowUtils.EvaluateBreakIf(call, context);
+                if (breakResult is DriverResult.Suspend) return breakResult;
+                if (breakResult is { IsFatal: true }) return breakResult;
+                if (breakResult != null) break;
 
                 // Spec does not define continueif for sequence. Only breakif.
 

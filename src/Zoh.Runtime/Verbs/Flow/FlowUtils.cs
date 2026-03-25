@@ -7,26 +7,40 @@ namespace Zoh.Runtime.Verbs.Flow
 {
     public static class FlowUtils
     {
-        public static bool ShouldBreak(VerbCallAst call, IExecutionContext context)
+        /// <summary>
+        /// Returns null (no breakif param or condition falsy), DriverResult.Complete.Ok() (break),
+        /// DriverResult.Suspend (propagate), or fatal DriverResult (propagate).
+        /// </summary>
+        public static DriverResult? EvaluateBreakIf(VerbCallAst call, IExecutionContext context)
         {
-            if (call.NamedParams.TryGetValue("breakif", out var val))
-                return ResolveConditionValue(val, context).IsTruthy();
-            return false;
+            if (!call.NamedParams.TryGetValue("breakif", out var val))
+                return null;
+            return EvaluateCondition(val, context);
         }
 
-        public static bool ShouldContinue(VerbCallAst call, IExecutionContext context)
+        /// <summary>
+        /// Same contract as EvaluateBreakIf but for continueif.
+        /// </summary>
+        public static DriverResult? EvaluateContinueIf(VerbCallAst call, IExecutionContext context)
         {
-            if (call.NamedParams.TryGetValue("continueif", out var val))
-                return ResolveConditionValue(val, context).IsTruthy();
-            return false;
+            if (!call.NamedParams.TryGetValue("continueif", out var val))
+                return null;
+            return EvaluateCondition(val, context);
         }
 
-        private static ZohValue ResolveConditionValue(ValueAst val, IExecutionContext context)
+        private static DriverResult? EvaluateCondition(ValueAst val, IExecutionContext context)
         {
             var resolved = ValueResolver.Resolve(val, context);
             if (resolved is ZohVerb condVerb)
-                resolved = context.ExecuteVerb(condVerb.VerbValue, context).ValueOrNothing;
-            return resolved;
+            {
+                var result = context.ExecuteVerb(condVerb.VerbValue, context);
+                if (result is DriverResult.Suspend)
+                    return result;
+                if (result.IsFatal)
+                    return result;
+                resolved = result.ValueOrNothing;
+            }
+            return resolved.IsTruthy() ? DriverResult.Complete.Ok() : null;
         }
     }
 }
