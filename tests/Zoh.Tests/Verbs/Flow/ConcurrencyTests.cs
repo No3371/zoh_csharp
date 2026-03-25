@@ -10,6 +10,7 @@ using System.Collections.Immutable;
 using Zoh.Runtime.Lexing;
 using Zoh.Runtime.Storage;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Zoh.Tests.Verbs.Flow;
 
@@ -44,6 +45,23 @@ public class ConcurrencyTests
         stmts.Add(new StatementAst.VerbCall(new VerbCallAst(null, "noop", false, ImmutableArray<AttributeAst>.Empty, ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray<ValueAst>.Empty, new TextPosition(1, 1, 0))));
 
         return new CompiledStory(name, ImmutableDictionary<string, ZohValue>.Empty, stmts.ToImmutableArray(), labelMap.ToImmutableDictionary(), ImmutableDictionary<string, ImmutableArray<StatementAst.ContractParam>>.Empty);
+    }
+
+    private CompiledStory CreateStoryWithContract(string name, string checkpointName, params string[] requiredVars)
+    {
+        var labelMap = new Dictionary<string, int>();
+        var stmts = new List<StatementAst>();
+        var contractParams = requiredVars
+            .Select(v => new StatementAst.ContractParam(v, null, new TextPosition(1, 1, 0)))
+            .ToImmutableArray();
+        var contracts = ImmutableDictionary<string, ImmutableArray<StatementAst.ContractParam>>.Empty
+            .Add(checkpointName, contractParams);
+
+        labelMap[checkpointName] = 0;
+        stmts.Add(new StatementAst.Label(checkpointName, contractParams, new TextPosition(1, 1, 0)));
+        stmts.Add(new StatementAst.VerbCall(new VerbCallAst(null, "noop", false, ImmutableArray<AttributeAst>.Empty, ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray<ValueAst>.Empty, new TextPosition(1, 1, 0))));
+
+        return new CompiledStory(name, ImmutableDictionary<string, ZohValue>.Empty, stmts.ToImmutableArray(), labelMap.ToImmutableDictionary(), contracts);
     }
 
     [Fact]
@@ -215,6 +233,75 @@ public class ConcurrencyTests
 
         Assert.True(result.IsFatal);
         Assert.Contains(result.DiagnosticsOrEmpty, d => d.Code == "invalid_params");
+    }
+
+    [Fact]
+    public void Fork_TransfersSpecifiedVariablesToChild()
+    {
+        // Checkpoint "worker" requires variable "payload" in its contract
+        var story = CreateStoryWithContract("main", "worker", "payload");
+        var ctx = CreateContext(story);
+        ctx.Variables.Set("payload", new ZohStr("hello"));
+
+        var scheduled = new List<Context>();
+        ctx.ContextScheduler = (c) => scheduled.Add(c);
+
+        var driver = new ForkDriver();
+        // /fork "worker", *payload; — label first, then trailing reference
+        var call = new VerbCallAst("core.nav", "fork", false, ImmutableArray<AttributeAst>.Empty,
+            ImmutableDictionary<string, ValueAst>.Empty,
+            ImmutableArray.Create<ValueAst>(new ValueAst.String("worker"), new ValueAst.Reference("payload")),
+            new TextPosition(1, 1, 0));
+
+        var result = driver.Execute(ctx, call);
+
+        Assert.True(result.IsSuccess, result.DiagnosticsOrEmpty.Length > 0 ? result.DiagnosticsOrEmpty[0].Message : "");
+        Assert.Single(scheduled);
+        var child = scheduled[0];
+        Assert.Equal(new ZohStr("hello"), child.Variables.Get("payload"));
+        Assert.Equal(0, child.InstructionPointer);
+    }
+
+    [Fact]
+    public void Fork_WithoutTransfer_ContractViolationFails()
+    {
+        var story = CreateStoryWithContract("main", "worker", "payload");
+        var ctx = CreateContext(story);
+        // payload is NOT set in parent
+
+        ctx.ContextScheduler = (_) => { };
+        var driver = new ForkDriver();
+        var call = new VerbCallAst("core.nav", "fork", false, ImmutableArray<AttributeAst>.Empty,
+            ImmutableDictionary<string, ValueAst>.Empty,
+            ImmutableArray.Create<ValueAst>(new ValueAst.String("worker")),
+            new TextPosition(1, 1, 0));
+
+        var result = driver.Execute(ctx, call);
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains(result.DiagnosticsOrEmpty, d => d.Code == "checkpoint_violation");
+    }
+
+    [Fact]
+    public void Fork_NonReferenceTransferParam_ReturnsFatal()
+    {
+        var story = CreateStory("main", "worker");
+        var ctx = CreateContext(story);
+        ctx.ContextScheduler = (_) => { };
+        var driver = new ForkDriver();
+        // /fork "worker", *someref, "literal"; — "literal" is not a reference
+        var call = new VerbCallAst("core.nav", "fork", false, ImmutableArray<AttributeAst>.Empty,
+            ImmutableDictionary<string, ValueAst>.Empty,
+            ImmutableArray.Create<ValueAst>(
+                new ValueAst.String("worker"),
+                new ValueAst.Reference("someref"),
+                new ValueAst.String("not_a_ref")),
+            new TextPosition(1, 1, 0));
+
+        var result = driver.Execute(ctx, call);
+
+        Assert.True(result.IsFatal);
+        Assert.Contains(result.DiagnosticsOrEmpty, d => d.Code == "invalid_type");
     }
 }
 

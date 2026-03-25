@@ -1,12 +1,15 @@
 # Phase 5 (narrow): `/jump` and `/fork` variadic variable transfer
 
-> **Status:** **In Progress** — active work is **only** trailing `*var` transfer on **`/jump`** and **`/fork`**. `/call`, `/flag`, and `/wait` are **done** (see **Delivered earlier**).
-> **Reviewed:** 2026-03-26 — [2603261500-20260227-phase5-concurrency-context-signal-gaps-fix-plan-review.md](2603261500-20260227-phase5-concurrency-context-signal-gaps-fix-plan-review.md) (review requested plan trim; this document supersedes pre-trim body).
+> **Status:** **Complete** — trailing `*var` transfer implemented for **`/jump`** and **`/fork`**. All success criteria met.
+> **Completed:** 2026-03-26
+> **Walkthrough:** [2603261500-phase5-concurrency-context-signal-gaps-fix-walkthrough.md](2603261500-phase5-concurrency-context-signal-gaps-fix-walkthrough.md)
+> **Execution log:** [2603261500-phase5-concurrency-context-signal-gaps-fix-log.md](2603261500-phase5-concurrency-context-signal-gaps-fix-log.md)
+> **Reviewed:** 2026-03-26 — [2603261500-20260227-phase5-concurrency-context-signal-gaps-fix-plan-review.md](../2603261500-20260227-phase5-concurrency-context-signal-gaps-fix-plan-review.md) (review requested plan trim; this document supersedes pre-trim body).
 > **Reconciled:** 2026-03-26 — cross-checked `csharp/` tree + `CallDriver` / `JumpDriver` / `ForkDriver`.
 > **Created:** 2026-02-27
 > **Author:** Codex
-> **Source:** Gaps from [20260223-csharp-spec-audit-nav.md](20260223-csharp-spec-audit-nav.md) Phase 5
-> **Related Projex:** [20260223-csharp-spec-audit-nav.md](20260223-csharp-spec-audit-nav.md), [20260227-phase4-control-flow-gaps-fix-plan.md](closed/20260227-phase4-control-flow-gaps-fix-plan.md), [20260207-csharp-runtime-nav.md](20260207-csharp-runtime-nav.md) (Git evidence section)
+> **Source:** Gaps from [20260223-csharp-spec-audit-nav.md](../20260223-csharp-spec-audit-nav.md) Phase 5
+> **Related Projex:** [20260223-csharp-spec-audit-nav.md](../20260223-csharp-spec-audit-nav.md), [20260227-phase4-control-flow-gaps-fix-plan.md](20260227-phase4-control-flow-gaps-fix-plan.md), [20260207-csharp-runtime-nav.md](../20260207-csharp-runtime-nav.md) (Git evidence section)
 
 ---
 
@@ -38,12 +41,12 @@
 
 ### Success criteria
 
-- [ ] `/jump` accepts trailing `*var` references and applies them before contract validation at the target checkpoint.
-- [ ] `/fork` accepts trailing `*var` references and initializes the forked context with those values using the same scope semantics as `CallDriver` (read with `TryGetWithScope`, write with `Set` + that scope).
+- [x] `/jump` accepts trailing `*var` references and applies them before contract validation at the target checkpoint.
+- [x] `/fork` accepts trailing `*var` references and initializes the forked context with those values using the same scope semantics as `CallDriver` (read with `TryGetWithScope`, write with `Set` + that scope).
 - [x] `/call` trailing `*var` + `[inline]` — met in `CallDriver`.
 - [x] `/flag` — met (`FlagDriver`).
 - [x] `/wait timeout:` — met (`WaitDriver`).
-- [ ] New/updated tests for `/jump` and `/fork` transfer paths; full `dotnet test` passes.
+- [x] New/updated tests for `/jump` and `/fork` transfer paths; full `dotnet test` passes (725/725).
 
 ### Out of scope
 
@@ -88,7 +91,7 @@ Use the same loop for `/fork` (parent `ctx` → child `newCtx`). For `/jump`, ta
 ### Dependencies
 
 - **Requires:** None.
-- **Blocks:** Phase 5 closure in [20260223-csharp-spec-audit-nav.md](20260223-csharp-spec-audit-nav.md).
+- **Blocks:** Phase 5 closure in [20260223-csharp-spec-audit-nav.md](../20260223-csharp-spec-audit-nav.md).
 
 ### Constraints
 
@@ -155,8 +158,8 @@ Add negative cases: non-reference trailing arg → fatal; optional: cross-story 
 
 ### Automated
 
-- [ ] `dotnet test --filter "FullyQualifiedName~NavigationTests|FullyQualifiedName~ConcurrencyTests"`
-- [ ] `dotnet test`
+- [x] `dotnet test --filter "FullyQualifiedName~NavigationTests|FullyQualifiedName~ConcurrencyTests"` — 17/17 passed
+- [x] `dotnet test` — 725/725 passed
 
 ### Manual (optional)
 

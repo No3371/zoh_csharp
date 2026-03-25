@@ -9,6 +9,7 @@ using System.Collections.Immutable;
 using Zoh.Runtime.Lexing;
 using Zoh.Runtime.Storage;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Zoh.Tests.Verbs.Flow;
 
@@ -43,6 +44,23 @@ public class NavigationTests
         stmts.Add(new StatementAst.VerbCall(new VerbCallAst(null, "noop", false, ImmutableArray<AttributeAst>.Empty, ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray<ValueAst>.Empty, new TextPosition(1, 1, 0))));
 
         return new CompiledStory(name, ImmutableDictionary<string, ZohValue>.Empty, stmts.ToImmutableArray(), labelMap.ToImmutableDictionary(), ImmutableDictionary<string, ImmutableArray<StatementAst.ContractParam>>.Empty);
+    }
+
+    private CompiledStory CreateStoryWithContract(string name, string checkpointName, params string[] requiredVars)
+    {
+        var labelMap = new Dictionary<string, int>();
+        var stmts = new List<StatementAst>();
+        var contractParams = requiredVars
+            .Select(v => new StatementAst.ContractParam(v, null, new TextPosition(1, 1, 0)))
+            .ToImmutableArray();
+        var contracts = ImmutableDictionary<string, ImmutableArray<StatementAst.ContractParam>>.Empty
+            .Add(checkpointName, contractParams);
+
+        labelMap[checkpointName] = 0;
+        stmts.Add(new StatementAst.Label(checkpointName, contractParams, new TextPosition(1, 1, 0)));
+        stmts.Add(new StatementAst.VerbCall(new VerbCallAst(null, "noop", false, ImmutableArray<AttributeAst>.Empty, ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray<ValueAst>.Empty, new TextPosition(1, 1, 0))));
+
+        return new CompiledStory(name, ImmutableDictionary<string, ZohValue>.Empty, stmts.ToImmutableArray(), labelMap.ToImmutableDictionary(), contracts);
     }
 
     [Fact]
@@ -96,5 +114,67 @@ public class NavigationTests
 
         Assert.False(result.IsSuccess);
         Assert.Equal("invalid_checkpoint", result.DiagnosticsOrEmpty[0].Code); // JumpDriver uses "invalid_checkpoint"
+    }
+
+    [Fact]
+    public void Jump_TransfersVariablesToTargetCheckpoint()
+    {
+        // Checkpoint "entry" requires variable "x" in its contract
+        var story = CreateStoryWithContract("test", "entry", "x");
+        var ctx = CreateContext(story);
+        ctx.Variables.Set("x", new ZohInt(99));
+
+        var driver = new JumpDriver();
+        // /jump "entry", *x; — label is first string, *x is trailing reference
+        var call = new VerbCallAst("core.nav", "jump", false, ImmutableArray<AttributeAst>.Empty,
+            ImmutableDictionary<string, ValueAst>.Empty,
+            ImmutableArray.Create<ValueAst>(new ValueAst.String("entry"), new ValueAst.Reference("x")),
+            new TextPosition(1, 1, 0));
+
+        var result = driver.Execute(ctx, call);
+
+        Assert.True(result.IsSuccess, result.DiagnosticsOrEmpty.Length > 0 ? result.DiagnosticsOrEmpty[0].Message : "");
+        Assert.Equal(0, ctx.InstructionPointer);
+        Assert.Equal(new ZohInt(99), ctx.Variables.Get("x"));
+    }
+
+    [Fact]
+    public void Jump_WithoutTransfer_ContractViolationFails()
+    {
+        // Same story but x is never set — contract should fail without transfer
+        var story = CreateStoryWithContract("test", "entry", "x");
+        var ctx = CreateContext(story);
+
+        var driver = new JumpDriver();
+        var call = new VerbCallAst("core.nav", "jump", false, ImmutableArray<AttributeAst>.Empty,
+            ImmutableDictionary<string, ValueAst>.Empty,
+            ImmutableArray.Create<ValueAst>(new ValueAst.String("entry")),
+            new TextPosition(1, 1, 0));
+
+        var result = driver.Execute(ctx, call);
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains(result.DiagnosticsOrEmpty, d => d.Code == "checkpoint_violation");
+    }
+
+    [Fact]
+    public void Jump_NonReferenceTransferParam_ReturnsFatal()
+    {
+        var story = CreateStory("test", "target");
+        var ctx = CreateContext(story);
+        var driver = new JumpDriver();
+        // /jump "target", *someref, "bad"; — "bad" is a string literal, not a reference
+        var call = new VerbCallAst("core.nav", "jump", false, ImmutableArray<AttributeAst>.Empty,
+            ImmutableDictionary<string, ValueAst>.Empty,
+            ImmutableArray.Create<ValueAst>(
+                new ValueAst.String("target"),
+                new ValueAst.Reference("someref"),
+                new ValueAst.String("bad")),
+            new TextPosition(1, 1, 0));
+
+        var result = driver.Execute(ctx, call);
+
+        Assert.True(result.IsFatal);
+        Assert.Contains(result.DiagnosticsOrEmpty, d => d.Code == "invalid_type");
     }
 }
