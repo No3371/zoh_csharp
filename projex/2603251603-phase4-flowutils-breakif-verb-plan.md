@@ -1,10 +1,11 @@
 # Phase 4: `breakif` / `continueif` Verb Conditions
 
-> **Status:** Ready
-> **Created:** 2026-03-25
-> **Author:** Agent (split from `20260227-phase4-control-flow-gaps-fix-plan.md`)
-> **Source:** Split of `20260227-phase4-control-flow-gaps-fix-plan.md` Step 4 + matching tests
-> **Related Projex:** `20260227-phase4-control-flow-gaps-fix-plan.md`, `2603251430-20260227-phase4-control-flow-gaps-fix-plan-review.md`
+> **Status:** Complete  
+> **Created:** 2026-03-25  
+> **Author:** Agent (split from `20260227-phase4-control-flow-gaps-fix-plan.md`)  
+> **Source:** Split of `20260227-phase4-control-flow-gaps-fix-plan.md` Step 4 + matching tests  
+> **Related Projex:** `20260227-phase4-control-flow-gaps-fix-plan.md`, `2603251430-20260227-phase4-control-flow-gaps-fix-plan-review.md`  
+> **Patch (closed):** `2603251825-phase4-flowutils-breakif-verb-patch.md`  
 > **Worktree:** No
 
 ---
@@ -26,10 +27,10 @@ Resolved `ZohVerb` in `breakif:` / `continueif:` is truthy without execution; sp
 
 ### Success Criteria
 
-- [ ] After resolve, if `ZohVerb`, execute and use `.Value` (or consistent pattern with other drivers) for `IsTruthy()`.
-- [ ] Same logic for `ShouldBreak` and `ShouldContinue`.
-- [ ] New test(s): e.g. `Loop_BreakIfVerb_UsesReturnedBoolean` and optional `continueif` mirror.
-- [ ] Full `dotnet test` passes.
+- [x] After resolve, if `ZohVerb`, execute and use `ValueOrNothing` (same idea as plan’s `.Value`) for `IsTruthy()`. `[PATCHED]` — see `2603251825-phase4-flowutils-breakif-verb-patch.md`
+- [x] Same logic for `ShouldBreak` and `ShouldContinue`.
+- [x] New test(s): `Loop_BreakIfVerb_UsesReturnedBoolean`, `Foreach_ContinueIfVerb_UsesReturnedBoolean`.
+- [x] Full `dotnet test` passes.
 
 ### Out of Scope
 
@@ -78,8 +79,8 @@ Apply in both `ShouldBreak` and `ShouldContinue`.
 
 ## Verification Plan
 
-- [ ] `dotnet test --filter "FullyQualifiedName~FlowTests"`
-- [ ] `dotnet test`
+- [x] `dotnet test --filter "FullyQualifiedName~FlowTests"`
+- [x] `dotnet test`
 
 ---
 
