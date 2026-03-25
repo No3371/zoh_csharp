@@ -94,16 +94,4 @@ This index covers closed C# runtime projex from late February through late March
 - Most work follows **plan → log → walkthrough** (or **plan → patch**) with rising test counts recorded in later documents.
 - **Phase 4** control-flow items are split across `/if`, `/switch`, `/foreach`, `breakif`/`continueif`, `/do`, sequence, and suspend/fatal propagation; **Phase 5** closes with `/jump` and `/fork` variable transfer.
 - Several logs note **environment or restore issues** (NU1301, missing `dotnet`) and still record intended or partial verification—full detail remains in git history for those files.
-- **`20260226-csharp-archive.md`** was not merged into this index (per archive workflow: existing `*-archive.md` files are not processed) and should remain alongside this document until you supersede or consolidate it manually.
-
----
-
-## Next step (your confirmation)
-
-Per **archive-projex**: removal of the 70 source files and git commits happen only after you explicitly ask to proceed. Reply **proceed** (or similar) to:
-
-1. Commit `2603261730-csharp-closed-archive.md`
-2. `git rm` each of the 70 archived `.md` files (listed in the Index above)
-3. Commit the deletions
-
-Until then, the new archive file is present on disk next to the originals and **`20260226-csharp-archive.md`**.
+- **`20260226-csharp-archive.md`** was not merged into this index (per archive workflow: existing `*-archive.md` files are not processed) and remains alongside this document until superseded or consolidated manually.
