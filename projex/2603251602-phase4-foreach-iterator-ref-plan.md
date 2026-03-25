@@ -5,7 +5,7 @@
 > **Author:** Agent (split from `20260227-phase4-control-flow-gaps-fix-plan.md`)
 > **Source:** Split of `20260227-phase4-control-flow-gaps-fix-plan.md` Step 3 + matching tests
 > **Related Projex:** `20260227-phase4-control-flow-gaps-fix-plan.md`, `2603251430-20260227-phase4-control-flow-gaps-fix-plan-review.md`
-> **Worktree:** No
+> **Worktree:** Yes
 
 ---
 
