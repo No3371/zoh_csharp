@@ -1,6 +1,7 @@
 using Zoh.Runtime.Execution;
 using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Types;
+using Zoh.Runtime.Verbs;
 using Zoh.Tests.Execution;
 using Zoh.Runtime.Verbs.Flow;
 using System.Collections.Immutable;
@@ -47,5 +48,28 @@ public class ControlFlowVerbsTests
         Assert.True(executed);
         Assert.True(result.IsSuccess);
         Assert.Equal(new ZohInt(42), result.ValueOrNothing);
+    }
+
+    [Fact]
+    public void Do_ExecutesVerbReturnedByFirstExecution()
+    {
+        var innerCall = new VerbCallAst("core", "inner", false, [], ImmutableDictionary<string, ValueAst>.Empty, [], new Zoh.Runtime.Lexing.TextPosition(1, 1, 0));
+        var hop = 0;
+        _context.VerbExecutor = (verbAst, _) =>
+        {
+            hop++;
+            if (hop == 1)
+                return DriverResult.Complete.Ok(ZohVerb.FromAst(innerCall));
+            return DriverResult.Complete.Ok(new ZohInt(99));
+        };
+
+        var outerVerbAst = new VerbCallAst("core", "outer", false, [], ImmutableDictionary<string, ValueAst>.Empty, [], new Zoh.Runtime.Lexing.TextPosition(1, 1, 0));
+        _context.Variables.Set("chainVerb", ZohVerb.FromAst(outerVerbAst));
+
+        var result = _do.Execute(_context, MakeCall(new ValueAst.Reference("chainVerb")));
+
+        Assert.Equal(2, hop);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(new ZohInt(99), result.ValueOrNothing);
     }
 }

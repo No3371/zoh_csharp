@@ -2,6 +2,7 @@ using Zoh.Runtime.Execution;
 using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Types;
 using Zoh.Runtime.Diagnostics;
+using Zoh.Runtime.Verbs;
 
 namespace Zoh.Runtime.Verbs.Flow;
 
@@ -39,8 +40,14 @@ public class DoDriver : IVerbDriver
         // We need a ZohValue that holds a verb.
         if (val is ZohVerb v)
         {
-            // Execute the verb
-            return context.ExecuteVerb(v.VerbValue, context);
+            var first = context.ExecuteVerb(v.VerbValue, context);
+            if (first is DriverResult.Suspend)
+                return first;
+            if (first.IsFatal)
+                return first;
+            if (first.ValueOrNothing is ZohVerb returnedVerb)
+                return context.ExecuteVerb(returnedVerb.VerbValue, context);
+            return first;
         }
 
         return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Error, "invalid_type", $"Expected verb, got {val.Type}", verb.Start));
