@@ -21,13 +21,13 @@ namespace Zoh.Runtime.Verbs.Flow
             }
 
             var collectionVal = ValueResolver.Resolve(call.UnnamedParams[0], context);
-            var varNameVal = ValueResolver.Resolve(call.UnnamedParams[1], context);
 
-            if (varNameVal.Type != ZohValueType.String)
+            if (call.UnnamedParams[1] is not ValueAst.Reference iteratorRef)
             {
-                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Variable name must be a string.", call.Start));
+                return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "invalid_type", "Iterator must be a reference (*name).", call.Start));
             }
-            var varName = varNameVal.AsString().Value;
+
+            var varName = iteratorRef.Name;
             context.Variables.Drop(varName);
 
             var verbVal = ValueResolver.Resolve(call.UnnamedParams[2], context);

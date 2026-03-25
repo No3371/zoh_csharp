@@ -1,6 +1,8 @@
 # Phase 4: `/foreach` Iterator Reference
 
-> **Status:** In Progress
+> **Status:** Complete
+> **Completed:** 2026-03-25
+> **Walkthrough:** `2603251602-phase4-foreach-iterator-ref-walkthrough.md`
 > **Created:** 2026-03-25
 > **Author:** Agent (split from `20260227-phase4-control-flow-gaps-fix-plan.md`)
 > **Source:** Split of `20260227-phase4-control-flow-gaps-fix-plan.md` Step 3 + matching tests
@@ -26,11 +28,11 @@ Treat the second parameter as `ValueAst.Reference` and bind iterator name from t
 
 ### Success Criteria
 
-- [ ] Second param must be `ValueAst.Reference`; use `iteratorRef.Name` as bound variable name.
-- [ ] Invalid second param → fatal with clear diagnostic (e.g. `invalid_type` / message per existing style).
-- [ ] `/foreach *list, *it, /verb;;` works without `Variable name must be a string`.
-- [ ] Map iteration and break/continue behavior unchanged.
-- [ ] Full `dotnet test` passes.
+- [x] Second param must be `ValueAst.Reference`; use `iteratorRef.Name` as bound variable name.
+- [x] Invalid second param → fatal with clear diagnostic (e.g. `invalid_type` / message per existing style).
+- [x] `/foreach *list, *it, /verb;;` works without `Variable name must be a string`.
+- [x] Map iteration and break/continue behavior unchanged.
+- [x] Full `dotnet test` passes.
 
 ### Out of Scope
 
@@ -76,8 +78,8 @@ var varName = iteratorRef.Name;
 
 ## Verification Plan
 
-- [ ] `dotnet test --filter "FullyQualifiedName~Foreach"`
-- [ ] `dotnet test`
+- [x] `dotnet test --filter "FullyQualifiedName~Foreach"`
+- [x] `dotnet test`
 
 ---
 

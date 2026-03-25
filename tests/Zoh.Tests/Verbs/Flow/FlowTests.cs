@@ -316,10 +316,10 @@ namespace Zoh.Tests.Verbs.Flow
             var list = new ZohList(ImmutableArray.Create<ZohValue>(new ZohInt(1), new ZohInt(2), new ZohInt(3)));
             _context.Variables.Set("mylist", list);
 
-            // /foreach mylist, "item", $/increase sum, item
+            // /foreach *mylist, *item, $/increase *sum, *item
             var call = CreateVerbCall("foreach",
                 new ValueAst.Reference("mylist"),
-                new ValueAst.String("item"),
+                new ValueAst.Reference("item"),
                 new ValueAst.Verb(
                     CreateVerbCall("increase", new ValueAst.Reference("sum"), new ValueAst.Reference("item"))
                 )
@@ -328,6 +328,27 @@ namespace Zoh.Tests.Verbs.Flow
             _context.ExecuteVerb(call);
 
             Assert.Equal(6L, _context.Variables.Get("sum").AsInt().Value);
+        }
+
+        [Fact]
+        public void Foreach_AcceptsReferenceIterator()
+        {
+            _context.Variables.Set("acc", new ZohInt(0));
+            var list = new ZohList(ImmutableArray.Create<ZohValue>(new ZohInt(10), new ZohInt(20)));
+            _context.Variables.Set("xs", list);
+
+            // /foreach *xs, *it, $/increase acc, it
+            var call = CreateVerbCall("foreach",
+                new ValueAst.Reference("xs"),
+                new ValueAst.Reference("it"),
+                new ValueAst.Verb(
+                    CreateVerbCall("increase", new ValueAst.Reference("acc"), new ValueAst.Reference("it"))
+                )
+            );
+
+            _context.ExecuteVerb(call);
+
+            Assert.Equal(30L, _context.Variables.Get("acc").AsInt().Value);
         }
 
         [Fact]

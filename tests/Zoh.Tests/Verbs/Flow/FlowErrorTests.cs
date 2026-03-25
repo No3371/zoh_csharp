@@ -23,7 +23,8 @@ namespace Zoh.Tests.Verbs.Flow
             _context.RegisterDriver("loop", new LoopDriver());
             _context.RegisterDriver("while", new WhileDriver());
             _context.RegisterDriver("sequence", new SequenceDriver());
-            
+            _context.RegisterDriver("foreach", new ForeachDriver());
+
             _context.RegisterDriver("fatal_verb", new FatalDriver());
             _context.RegisterDriver("record", new RecordDriver());
             _context.Variables.Set("record_count", new ZohInt(0));
@@ -213,6 +214,21 @@ namespace Zoh.Tests.Verbs.Flow
             _context.Variables.Set("cond", new ZohBool(true));
             var result = _context.ExecuteVerb(call);
             Assert.True(result.IsFatal);
+        }
+
+        // --- Foreach Tests ---
+        [Fact]
+        public void Foreach_NonReferenceIterator_ReturnsFatal()
+        {
+            var list = new ZohList(ImmutableArray.Create<ZohValue>(new ZohInt(1)));
+            _context.Variables.Set("mylist", list);
+            var call = CreateVerbCall("foreach",
+                new ValueAst.Reference("mylist"),
+                new ValueAst.String("item"),
+                new ValueAst.Verb(CreateVerbCall("record")));
+            var result = _context.ExecuteVerb(call);
+            Assert.True(result.IsFatal);
+            Assert.Contains(result.DiagnosticsOrEmpty, d => d.Code == "invalid_type");
         }
 
         // --- Sequence Tests ---
