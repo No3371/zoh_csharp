@@ -1,6 +1,6 @@
 # Phase 4: `/switch` Verb Case Evaluation
 
-> **Status:** Ready
+> **Status:** In Progress
 > **Created:** 2026-03-25
 > **Author:** Agent (split from `20260227-phase4-control-flow-gaps-fix-plan.md`)
 > **Source:** Split of `20260227-phase4-control-flow-gaps-fix-plan.md` Step 2 + matching tests
