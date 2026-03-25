@@ -1,12 +1,13 @@
 # Fix Phase 4 Control-Flow Audit Gaps (`/if`, `/switch`, `/foreach`, `breakif`, `/do`)
 
-> **Status:** Split — use child plans below for execution (this file remains the umbrella narrative + acceptance checklist)
+> **Status:** Partial — **4/5** child plans complete; **`2603251602-phase4-foreach-iterator-ref-plan.md`** still open (see Progress).
 > **Reviewed:** 2026-03-25 — `2603251430-20260227-phase4-control-flow-gaps-fix-plan-review.md`
 > **Review outcome:** Plan reconciled 2026-03-25 — objectives trimmed to remaining gaps (see review).
 > **Created:** 2026-02-27
 > **Author:** Codex
 > **Source:** Direct request — gaps identified in [20260223-csharp-spec-audit-nav.md](20260223-csharp-spec-audit-nav.md) Phase 4
 > **Related Projex:** [20260223-csharp-spec-audit-nav.md](20260223-csharp-spec-audit-nav.md)
+> **Follow-up memos:** `2603252100-phase4-sequence-breakif-verb-test-gap-memo.md`, `2603252101-phase4-flowutils-condition-suspend-fatal-memo.md`
 
 ---
 
@@ -16,27 +17,29 @@ Work is divided into **five independently executable plans** (same `csharp/` sco
 
 | Child plan | Covers |
 |------------|--------|
-| `2603251600-phase4-if-verb-subject-else-plan.md` | `/if` verb subject + named `else` |
-| `2603251601-phase4-switch-verb-case-plan.md` | `/switch` verb case operands |
-| `2603251602-phase4-foreach-iterator-ref-plan.md` | `/foreach` iterator as reference |
-| `2603251603-phase4-flowutils-breakif-verb-plan.md` | `breakif` / `continueif` verb conditions |
-| `2603251604-phase4-do-returned-verb-plan.md` | `/do` second hop (returned verb) |
+| `2603251600-phase4-if-verb-subject-else-plan.md` | `/if` verb subject + named `else` — **Complete** (walkthrough) |
+| `2603251601-phase4-switch-verb-case-plan.md` | `/switch` verb case operands — **Complete** (closed + walkthrough) |
+| `2603251602-phase4-foreach-iterator-ref-plan.md` | `/foreach` iterator as reference — **Open** |
+| `2603251603-phase4-flowutils-breakif-verb-plan.md` | `breakif` / `continueif` verb conditions — **Complete** (patch `2603251825-phase4-flowutils-breakif-verb-patch.md`) |
+| `2603251604-phase4-do-returned-verb-plan.md` | `/do` second hop (returned verb) — **Complete** (patch `2603251810-phase4-do-returned-verb-patch.md`) |
 
-**Closure:** Phase 4 audit item is done when all five child plans are executed and the **Success Criteria** in this umbrella still hold (checklist below).
+**Progress (2026-03-25):** Done — `2603251600` (walkthrough), `2603251601` (closed + walkthrough), `2603251603` (patch), `2603251604` (patch). Open — `2603251602` `/foreach` iterator reference. Optional follow-ups: sequence-named test for verb `breakif` (`2603252100-…-memo.md`); suspend/fatal propagation for verb conditions in `FlowUtils` vs `IfDriver` (`2603252101-…-memo.md`).
+
+**Closure:** Umbrella + audit nav Phase 4 item close when **`2603251602`** lands and the **Success Criteria** below are satisfied (checklist).
 
 ---
 
 ## Summary
 
-Phase 4 control-flow work that **remains** after partial `/if` work in-tree:
+Original Phase 4 control-flow gaps vs spec; **most are fixed** in child executions (2026-03-25).
 
-1. **`IfDriver`:** Named `is` and default boolean/nothing guard are already implemented; still missing **verb subject execution** (resolve → if `ZohVerb`, execute and use return value **before** type check and comparison, per `spec/2_verbs.md`). Still missing **named `else`** (positional third argument only today).
-2. **`SwitchDriver`:** Does not execute verb-valued **case** operands before comparison (verb **subject** already executed).
-3. **`ForeachDriver`:** Resolves iterator via `ValueResolver` and expects a string; must require `ValueAst.Reference` / iterator name.
-4. **`FlowUtils`:** `breakif` / `continueif` do not execute `/verb` conditions before truthiness.
-5. **`DoDriver`:** Executes the first verb only; does not execute a verb **returned** by that run (`spec/2_verbs.md` `/do /verb_returning;;`).
+1. **`IfDriver`:** **Done** — verb subject + named `else` (`2603251600-phase4-if-verb-subject-else-plan.md`).
+2. **`SwitchDriver`:** **Done** — verb-valued case operands (`2603251601-phase4-switch-verb-case-plan.md`, closed).
+3. **`ForeachDriver`:** **Still open** — iterator must be `ValueAst.Reference` (`2603251602-phase4-foreach-iterator-ref-plan.md`).
+4. **`FlowUtils`:** **Done** — `breakif` / `continueif` execute verb conditions (`2603251603` + patch `2603251825`); see memo `2603252101` for suspend/fatal propagation nuance.
+5. **`DoDriver`:** **Done** — single follow-up hop when first result is `ZohVerb` (`2603251604` + patch `2603251810`).
 
-This plan aligns the **remaining** behavior with `spec/2_verbs.md` and `impl/07_control_flow.md`, with regression tests for each item above.
+Optional test/doc parity: verb `breakif` on **`/sequence`** — memo `2603252100`.
 
 **Scope:** Control-flow/runtime driver code and directly related verb tests in `csharp/src/Zoh.Runtime` and `csharp/tests/Zoh.Tests`.
 **Estimated Changes:** Same five runtime touchpoints + extensions to `FlowTests.cs` and `ControlFlowVerbsTests.cs` (optional small extra test file).
@@ -47,23 +50,23 @@ This plan aligns the **remaining** behavior with `spec/2_verbs.md` and `impl/07_
 
 ### Problem / Gap / Need
 
-Remaining spec deviations:
+**Originally:** spec deviations listed in the five bullets below. **As of 2026-03-25,** items 1–2 and 4–5 are addressed in closed child work; item 3 (`/foreach`) remains.
 
-- `/if` uses a **verb subject** incorrectly: `ValueAst.Verb` resolves to `ZohVerb` and the default `is:true` path can fatal before the subject verb runs (`/if /bool_returning;, /verb;;`). Named **`else:`** is not read from `NamedParams`.
-- `/switch` case matching is wrong when **case** values are verbs (subject side already executes verbs).
-- `/foreach` rejects valid `*it`-style iterators because the name is resolved to a value.
-- `breakif:` / `continueif:` treat a `ZohVerb` condition as truthy without executing it.
-- `/do` does not run the verb returned by the first execution.
+- `/if` verb subject + named `else` — **fixed** (`2603251600`).
+- `/switch` verb **case** operands — **fixed** (`2603251601`).
+- `/foreach` iterator reference — **open** (`2603251602`).
+- `breakif:` / `continueif:` verb execution — **fixed** (`2603251603`); suspend/fatal vs `IfDriver` tracked in `2603252101-phase4-flowutils-condition-suspend-fatal-memo.md`.
+- `/do` returned verb — **fixed** (`2603251604`).
 
 ### Success Criteria
-- [ ] `/if` executes a verb **subject** first; then default `is:true` applies to the **result** and enforces boolean/nothing with fatal `invalid_type` otherwise; comparison uses named `is` when present (existing behavior preserved).
-- [ ] `/if` supports named `else:`; positional third argument remains supported as fallback when named `else` is absent.
-- [ ] `/if *x, is: "a", /then;, else: /else;;` branches correctly using named `else` (named `is` already works).
-- [ ] `/switch` executes verb-valued **case** operands before equality comparison.
-- [ ] `/foreach *list, *it, /verb;;` accepts a reference iterator without `Variable name must be a string` fatal.
-- [ ] `breakif` and `continueif` execute `/verb` conditions and use the returned value for truthiness.
-- [ ] `/do /verb_returning;;` runs the returned verb and surfaces the second execution’s result.
-- [ ] New regression tests cover the above; full `dotnet test` passes.
+- [x] `/if` executes a verb **subject** first; then default `is:true` applies to the **result** and enforces boolean/nothing with fatal `invalid_type` otherwise; comparison uses named `is` when present (existing behavior preserved). (`2603251600`)
+- [x] `/if` supports named `else:`; positional third argument remains supported as fallback when named `else` is absent. (`2603251600`)
+- [x] `/if *x, is: "a", /then;, else: /else;;` branches correctly using named `else` (named `is` already works). (`2603251600`)
+- [x] `/switch` executes verb-valued **case** operands before equality comparison. (`2603251601`)
+- [ ] `/foreach *list, *it, /verb;;` accepts a reference iterator without `Variable name must be a string` fatal. (`2603251602` — open)
+- [x] `breakif` and `continueif` execute `/verb` conditions and use the returned value for truthiness. (`2603251603` / `2603251825`)
+- [x] `/do /verb_returning;;` runs the returned verb and surfaces the second execution’s result. (`2603251604` / `2603251810`)
+- [ ] New regression tests cover **all** rows above including foreach; full `dotnet test` passes (pending `2603251602`).
 
 ### Out of Scope
 - Any Phase 5 (concurrency/signals/context) behavior.
@@ -76,35 +79,27 @@ Remaining spec deviations:
 
 ### Current State
 
-- `csharp/src/Zoh.Runtime/Verbs/Flow/IfDriver.cs`
-  - Reads named `is`; default `is:true` path requires boolean/nothing on the **resolved** subject (and supports type-keyword `is` strings).
-  - Does **not** execute a verb **subject** before that check (`ZohVerb` from `ValueAst.Verb` is wrong phase vs spec).
-  - Does **not** read named `else`; else branch uses positional third unnamed param only.
+- `csharp/src/Zoh.Runtime/Verbs/Flow/IfDriver.cs` — **Updated** — verb subject executed before default boolean/nothing guard; named `else` + positional fallback (`2603251600`).
 
-- `csharp/src/Zoh.Runtime/Verbs/Flow/SwitchDriver.cs`
-  - Executes verb-valued `subject`.
-  - Does **not** execute verb-valued `case` operands.
+- `csharp/src/Zoh.Runtime/Verbs/Flow/SwitchDriver.cs` — **Updated** — verb-valued case operands executed before comparison (`2603251601`).
 
-- `csharp/src/Zoh.Runtime/Verbs/Flow/ForeachDriver.cs`
-  - Resolves iterator via `ValueResolver.Resolve(...)` and expects string — breaks `*it`.
+- `csharp/src/Zoh.Runtime/Verbs/Flow/ForeachDriver.cs` — **Still pre-fix in plan terms** — iterator handling per `2603251602` (in progress / not yet merged to this narrative’s “done” set).
 
-- `csharp/src/Zoh.Runtime/Verbs/Flow/FlowUtils.cs`
-  - `ShouldBreak` / `ShouldContinue`: resolve only; `ZohVerb` is truthy without execution.
+- `csharp/src/Zoh.Runtime/Verbs/Flow/FlowUtils.cs` — **Updated** — verb conditions for `breakif` / `continueif` executed; return value used for truthiness (`2603251825`).
 
-- `csharp/src/Zoh.Runtime/Verbs/Flow/DoDriver.cs`
-  - Executes first argument when it resolves to `ZohVerb`; does not execute a verb **returned** by that call.
+- `csharp/src/Zoh.Runtime/Verbs/Flow/DoDriver.cs` — **Updated** — optional second hop when first result value is `ZohVerb` (`2603251810`).
 
 ### Key Files
 
-| File | Purpose | Changes Needed |
-|------|---------|----------------|
-| `csharp/src/Zoh.Runtime/Verbs/Flow/IfDriver.cs` | `/if` | Execute verb subject before default type guard + compare; add named `else` (+ positional fallback) |
-| `csharp/src/Zoh.Runtime/Verbs/Flow/SwitchDriver.cs` | `/switch` | Execute verb-valued **cases** before comparison |
-| `csharp/src/Zoh.Runtime/Verbs/Flow/ForeachDriver.cs` | `/foreach` | Iterator from `ValueAst.Reference` name, not resolved string |
-| `csharp/src/Zoh.Runtime/Verbs/Flow/FlowUtils.cs` | `breakif` / `continueif` | Execute verb conditions before truthiness |
-| `csharp/src/Zoh.Runtime/Verbs/Flow/DoDriver.cs` | `/do` | Second `ExecuteVerb` when first result is `ZohVerb` |
-| `csharp/tests/Zoh.Tests/Verbs/Flow/FlowTests.cs` | Flow tests | Regressions: `/if` verb subject + named `else`, foreach ref, switch verb-case, breakif/continueif verb |
-| `csharp/tests/Zoh.Tests/Verbs/Core/ControlFlowVerbsTests.cs` | `/do` tests | Regression: returned-verb chain |
+| File | Purpose | Changes |
+|------|---------|---------|
+| `csharp/src/Zoh.Runtime/Verbs/Flow/IfDriver.cs` | `/if` | **Done** — verb subject + named `else` |
+| `csharp/src/Zoh.Runtime/Verbs/Flow/SwitchDriver.cs` | `/switch` | **Done** — verb case operands |
+| `csharp/src/Zoh.Runtime/Verbs/Flow/ForeachDriver.cs` | `/foreach` | **Open** — `ValueAst.Reference` iterator (`2603251602`) |
+| `csharp/src/Zoh.Runtime/Verbs/Flow/FlowUtils.cs` | `breakif` / `continueif` | **Done** |
+| `csharp/src/Zoh.Runtime/Verbs/Flow/DoDriver.cs` | `/do` | **Done** — second hop |
+| `csharp/tests/Zoh.Tests/Verbs/Flow/FlowTests.cs` | Flow tests | **Mostly done**; optional: sequence + verb `breakif` (`2603252100`) |
+| `csharp/tests/Zoh.Tests/Verbs/Core/ControlFlowVerbsTests.cs` | `/do` tests | **Done** — returned-verb chain |
 
 ### Dependencies
 - **Requires:** None.
@@ -300,27 +295,27 @@ Use existing `TestExecutionContext` patterns and helper drivers already present 
 ## Verification Plan
 
 ### Automated Checks
-- [ ] `dotnet test --filter "FullyQualifiedName~FlowTests|FullyQualifiedName~ControlFlowVerbsTests"`
-- [ ] `dotnet test`
+- [x] `dotnet test --filter "FullyQualifiedName~FlowTests|FullyQualifiedName~ControlFlowVerbsTests"` (after completed child merges)
+- [x] `dotnet test` (same; re-run after `2603251602` lands)
 
 ### Manual Verification
-- [ ] `/if` with verb subject and with named `else:` matches spec examples.
-- [ ] `/switch` verb **case** matches on executed return value.
+- [x] `/if` with verb subject and with named `else:` matches spec examples.
+- [x] `/switch` verb **case** matches on executed return value.
 - [ ] `/foreach *list, *it, ...` iterator binding works.
-- [ ] `breakif:` / `continueif:` with `/verb` depend on executed return value.
-- [ ] `/do` second hop when first run returns a verb.
+- [x] `breakif:` / `continueif:` with `/verb` depend on executed return value.
+- [x] `/do` second hop when first run returns a verb.
 
 ### Acceptance Criteria Validation
 
 | Criterion | How to Verify | Expected Result |
 |-----------|---------------|-----------------|
-| `/if` verb subject + named `else` | New tests | Spec order: evaluate subject verb, then branch |
-| `/if` default typing guard | Test with non-bool evaluated subject, `is` omitted | Fatal `invalid_type` |
-| `/switch` verb case eval | New switch test | Match via executed case value |
-| `/foreach` reference iterator | New foreach test | Iterates; sets `*it` |
-| `breakif` / `continueif` verbs | New test(s) | Truthiness from return value, not `ZohVerb` object |
-| `/do` returned verb | New `/do` test | Second execution result |
-| No regressions | Full test run | 0 failures |
+| `/if` verb subject + named `else` | New tests | **Met** (`2603251600`) |
+| `/if` default typing guard | Test with non-bool evaluated subject, `is` omitted | **Met** |
+| `/switch` verb case eval | New switch test | **Met** (`2603251601`) |
+| `/foreach` reference iterator | New foreach test | **Pending** (`2603251602`) |
+| `breakif` / `continueif` verbs | New test(s) | **Met** (`2603251603`); sequence-named test optional (`2603252100`) |
+| `/do` returned verb | New `/do` test | **Met** (`2603251604`) |
+| No regressions | Full test run | **Met** after each merge; final pass when foreach lands |
 
 ---
 
