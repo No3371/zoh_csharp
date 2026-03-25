@@ -7,7 +7,7 @@ namespace Zoh.Runtime.Verbs.Store;
 
 public class PurgeDriver : IVerbDriver
 {
-    public string Namespace => "store";
+    public string Namespace => "core.store";
     public string Name => "purge";
 
     public DriverResult Execute(IExecutionContext context, VerbCallAst verb)

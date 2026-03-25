@@ -5,7 +5,7 @@ using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Types;
 using Zoh.Runtime.Variables;
 using Zoh.Runtime.Verbs;
-using Zoh.Runtime.Verbs.Core;
+using Zoh.Runtime.Verbs.Collection;
 using Zoh.Runtime.Helpers;
 using Zoh.Runtime.Storage;
 using Zoh.Runtime.Lexing;
@@ -29,7 +29,7 @@ namespace Zoh.Tests.Verbs
         private VerbCallAst MakeVerbCall(string name, params ValueAst[] args)
         {
             return new VerbCallAst(
-                "core", name, false, [],
+                null, name, false, [],
                 ImmutableDictionary<string, ValueAst>.Empty,
                 [.. args],
                 Ps());

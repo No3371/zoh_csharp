@@ -3,7 +3,7 @@ using Xunit;
 using Zoh.Runtime.Lexing;
 using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Types;
-using Zoh.Runtime.Verbs.Core;
+using Zoh.Runtime.Verbs.Var;
 using Zoh.Tests.Execution;
 
 namespace Zoh.Tests.Verbs.Core;
@@ -13,7 +13,7 @@ public class FlagDriverTests
     private static VerbCallAst MakeCall(ImmutableArray<AttributeAst> attrs, params ValueAst[] args)
     {
         return new VerbCallAst(
-            "core",
+            "core.var",
             "flag",
             false,
             attrs,

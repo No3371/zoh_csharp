@@ -5,7 +5,7 @@ using Zoh.Runtime.Lexing;
 using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Types;
 using Zoh.Runtime.Variables;
-using Zoh.Runtime.Verbs.Core;
+using Zoh.Runtime.Verbs.Var;
 using Zoh.Tests.Execution;
 
 namespace Zoh.Tests.Runtime;
@@ -24,7 +24,7 @@ public class SetVerbSpecTests
     private VerbCallAst MakeSetCall(ValueAst target, ValueAst value, params AttributeAst[] attributes)
     {
         return new VerbCallAst(
-            "core", "set", false, [.. attributes],
+            "core.var", "set", false, [.. attributes],
             ImmutableDictionary<string, ValueAst>.Empty,
             [target, value],
             new TextPosition(1, 1, 0));
@@ -106,7 +106,7 @@ public class SetVerbSpecTests
         var target = new ValueAst.Reference("reqVar");
         // Create call with only 1 param (target)
         var callFail = new VerbCallAst(
-            "core", "set", false, [MakeAttr("required")],
+            "core.var", "set", false, [MakeAttr("required")],
             ImmutableDictionary<string, ValueAst>.Empty,
             [target],
             new TextPosition(1, 1, 0));

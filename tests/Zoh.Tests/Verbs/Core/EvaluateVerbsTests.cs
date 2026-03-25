@@ -2,7 +2,7 @@ using Zoh.Runtime.Execution;
 using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Types;
 using Zoh.Tests.Execution;
-using Zoh.Runtime.Verbs.Core;
+using Zoh.Runtime.Verbs.Eval;
 using System.Collections.Immutable;
 using Xunit;
 
@@ -16,7 +16,7 @@ public class EvaluateVerbsTests
     private VerbCallAst MakeEvalCall(ValueAst expr)
     {
         return new VerbCallAst(
-           "core", "evaluate", false, [],
+           "core.eval", "evaluate", false, [],
            ImmutableDictionary<string, ValueAst>.Empty,
            [expr],
            new Zoh.Runtime.Lexing.TextPosition(1, 1, 0));

@@ -90,7 +90,7 @@ version: 1
 
         var stmt = Assert.IsType<StatementAst.VerbCall>(result.Story!.Statements[0]);
         Assert.Equal("set", stmt.Call.Name);
-        Assert.Equal("core", stmt.Call.Namespace);
+        Assert.Equal("core.var", stmt.Call.Namespace);
         Assert.Equal(2, stmt.Call.UnnamedParams.Length);
     }
 

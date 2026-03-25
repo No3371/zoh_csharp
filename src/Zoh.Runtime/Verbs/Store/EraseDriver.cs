@@ -8,7 +8,7 @@ namespace Zoh.Runtime.Verbs.Store;
 
 public class EraseDriver : IVerbDriver
 {
-    public string Namespace => "store";
+    public string Namespace => "core.store";
     public string Name => "erase";
 
     public DriverResult Execute(IExecutionContext context, VerbCallAst verb)

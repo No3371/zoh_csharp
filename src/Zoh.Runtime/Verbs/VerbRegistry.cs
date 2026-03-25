@@ -1,5 +1,16 @@
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using Zoh.Runtime.Verbs.Channel;
+using Zoh.Runtime.Verbs.Collection;
+using Zoh.Runtime.Verbs.Debug;
+using Zoh.Runtime.Verbs.Error;
+using Zoh.Runtime.Verbs.Eval;
+using Zoh.Runtime.Verbs.Flow;
+using Zoh.Runtime.Verbs.Math;
+using Zoh.Runtime.Verbs.Nav;
+using Zoh.Runtime.Verbs.Signal;
+using Zoh.Runtime.Verbs.Store;
+using Zoh.Runtime.Verbs.Var;
 
 namespace Zoh.Runtime.Verbs;
 
@@ -124,37 +135,37 @@ public class VerbRegistry
 
     public void RegisterCoreVerbs()
     {
-        Register(new Core.SetDriver());
-        Register(new Core.FlagDriver());
-        Register(new Core.GetDriver());
-        Register(new Core.DropDriver());
-        Register(new Core.CaptureDriver());
-        Register(new Core.TypeDriver());
-        Register(new Core.AssertDriver());
+        Register(new Var.SetDriver());
+        Register(new Var.FlagDriver());
+        Register(new Var.GetDriver());
+        Register(new Var.DropDriver());
+        Register(new Var.CaptureDriver());
+        Register(new Var.TypeDriver());
+        Register(new Debug.AssertDriver());
 
-        Register(new Core.IncreaseDriver());
-        Register(new Core.DecreaseDriver());
+        Register(new Math.IncreaseDriver());
+        Register(new Math.DecreaseDriver());
 
-        Register(new Core.InterpolateDriver());
+        Register(new Eval.InterpolateDriver());
 
-        var debug = new Core.DebugDriver();
+        var debug = new Debug.DebugDriver();
         Register("info", debug);
         Register("warning", debug);
         Register("error", debug);
         Register("fatal", debug);
 
-        Register(new Core.HasDriver());
-        Register(new Core.AnyDriver());
-        Register(new Core.FirstDriver());
-        Register(new Core.AppendDriver());
+        Register(new Collection.HasDriver());
+        Register(new Collection.AnyDriver());
+        Register(new Collection.FirstDriver());
+        Register(new Collection.AppendDriver());
 
-        var roll = new Core.RollDriver();
+        var roll = new Math.RollDriver();
         Register(roll);
         Register("wroll", roll);
         Register("rand", roll);
 
-        Register(new Core.ParseDriver());
-        Register(new Core.DeferDriver());
+        Register(new Var.ParseDriver());
+        Register(new Error.DeferDriver());
 
         Register(new Store.WriteDriver());
         Register(new Store.ReadDriver());
@@ -167,22 +178,22 @@ public class VerbRegistry
         Register(new CloseVerbDriver());
 
         // Flow Verbs
-        Register(new Flow.IfDriver());
-        Register(new Flow.LoopDriver());
-        Register(new Flow.WhileDriver());
-        Register(new Flow.ForeachDriver());
-        Register(new Flow.SwitchDriver());
-        Register(new Flow.SequenceDriver());
+        Register(new IfDriver());
+        Register(new LoopDriver());
+        Register(new WhileDriver());
+        Register(new ForeachDriver());
+        Register(new SwitchDriver());
+        Register(new SequenceDriver());
 
-        Register(new Flow.JumpDriver());
-        Register(new Flow.ForkDriver());
-        Register(new Flow.CallDriver());
-        Register(new Flow.ExitDriver());
-        Register(new Flow.SleepDriver());
+        Register(new Nav.JumpDriver());
+        Register(new Nav.ForkDriver());
+        Register(new Nav.CallDriver());
+        Register(new ExitDriver());
+        Register(new Signal.SleepDriver());
 
         // Signal Verbs
-        Register(new Signals.WaitDriver());
-        Register(new Signals.SignalDriver());
+        Register(new Signal.WaitDriver());
+        Register(new Signal.SignalDriver());
 
         // Presentation Verbs
         Register(new Standard.Presentation.ConverseDriver());

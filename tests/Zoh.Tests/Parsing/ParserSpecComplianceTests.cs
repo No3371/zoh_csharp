@@ -100,7 +100,7 @@ version: 1.0
 
         var call = ((StatementAst.VerbCall)result.Story!.Statements[0]).Call;
         Assert.Equal("set", call.Name);
-        Assert.Equal("core", call.Namespace);
+        Assert.Equal("core.var", call.Namespace);
         Assert.Equal(2, call.UnnamedParams.Length);
 
         // Param 0: Reference OR String? Logic in Parser converts `*name` to Reference or String?
@@ -129,6 +129,7 @@ version: 1.0
 
         var call = ((StatementAst.VerbCall)result.Story!.Statements[0]).Call;
         Assert.Equal("get", call.Name);
+        Assert.Equal("core.var", call.Namespace);
 
         var p0 = call.UnnamedParams[0];
         Assert.IsType<ValueAst.Reference>(p0);
@@ -145,6 +146,7 @@ version: 1.0
 
         var call = ((StatementAst.VerbCall)result.Story!.Statements[0]).Call;
         Assert.Equal("interpolate", call.Name);
+        Assert.Equal("core.eval", call.Namespace);
 
         var p0 = call.UnnamedParams[0];
         Assert.IsType<ValueAst.String>(p0);
@@ -161,6 +163,7 @@ version: 1.0
 
         var call = ((StatementAst.VerbCall)result.Story!.Statements[0]).Call;
         Assert.Equal("evaluate", call.Name);
+        Assert.Equal("core.eval", call.Namespace);
 
         var p0 = call.UnnamedParams[0];
         var expr = Assert.IsType<ValueAst.Expression>(p0);

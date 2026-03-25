@@ -2,7 +2,7 @@ using Zoh.Runtime.Execution;
 using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Types;
 using Zoh.Tests.Execution;
-using Zoh.Runtime.Verbs.Core;
+using Zoh.Runtime.Verbs.Collection;
 using System.Collections.Immutable;
 using Xunit;
 
@@ -18,7 +18,7 @@ public class CollectionVerbsTests
     private VerbCallAst MakeCall(string name, params ValueAst[] args)
     {
         return new VerbCallAst(
-           "core", name, false, [],
+           "core.collection", name, false, [],
            ImmutableDictionary<string, ValueAst>.Empty,
            [.. args],
            new Zoh.Runtime.Lexing.TextPosition(1, 1, 0));

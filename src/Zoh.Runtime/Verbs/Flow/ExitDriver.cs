@@ -6,7 +6,7 @@ namespace Zoh.Runtime.Verbs.Flow;
 
 public class ExitDriver : IVerbDriver
 {
-    public string Namespace => "core";
+    public string Namespace => "core.flow";
     public string Name => "exit";
 
     public DriverResult Execute(IExecutionContext context, VerbCallAst call)

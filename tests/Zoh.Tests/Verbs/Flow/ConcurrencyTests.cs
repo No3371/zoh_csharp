@@ -2,6 +2,7 @@ using Xunit;
 using Zoh.Runtime.Execution;
 using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Verbs.Flow;
+using Zoh.Runtime.Verbs.Nav;
 using Zoh.Runtime.Verbs; // Added
 using Zoh.Runtime.Types;
 using Zoh.Runtime.Variables;
@@ -55,7 +56,7 @@ public class ConcurrencyTests
         ctx.ContextScheduler = (c) => scheduled.Add(c);
 
         var driver = new ForkDriver();
-        var call = new VerbCallAst("core", "fork", false, ImmutableArray<AttributeAst>.Empty, ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray.Create<ValueAst>(new ValueAst.String("thread")), new TextPosition(1, 1, 0));
+        var call = new VerbCallAst("core.nav", "fork", false, ImmutableArray<AttributeAst>.Empty, ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray.Create<ValueAst>(new ValueAst.String("thread")), new TextPosition(1, 1, 0));
 
         var result = driver.Execute(ctx, call);
 
@@ -78,7 +79,7 @@ public class ConcurrencyTests
         var driver = new ForkDriver();
         // /fork [clone] "thread"
         var attrs = ImmutableArray.Create(new AttributeAst("clone", null, new TextPosition(1, 1, 0)));
-        var call = new VerbCallAst("core", "fork", false, attrs, ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray.Create<ValueAst>(new ValueAst.String("thread")), new TextPosition(1, 1, 0));
+        var call = new VerbCallAst("core.nav", "fork", false, attrs, ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray.Create<ValueAst>(new ValueAst.String("thread")), new TextPosition(1, 1, 0));
 
         var result = driver.Execute(ctx, call);
 
@@ -97,7 +98,7 @@ public class ConcurrencyTests
         ctx.ContextScheduler = (c) => scheduled.Add(c);
 
         var driver = new CallDriver();
-        var call = new VerbCallAst("core", "call", false, ImmutableArray<AttributeAst>.Empty, ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray.Create<ValueAst>(new ValueAst.String("subroutine")), new TextPosition(1, 1, 0));
+        var call = new VerbCallAst("core.nav", "call", false, ImmutableArray<AttributeAst>.Empty, ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray.Create<ValueAst>(new ValueAst.String("subroutine")), new TextPosition(1, 1, 0));
 
         var result = driver.Execute(ctx, call);
 
@@ -123,7 +124,7 @@ public class ConcurrencyTests
         var driver = new CallDriver();
         var attrs = ImmutableArray.Create(new AttributeAst("inline", null, new TextPosition(1, 1, 0)));
         // /call [inline] "sub", *in_out;
-        var call = new VerbCallAst("core", "call", false, attrs,
+        var call = new VerbCallAst("core.nav", "call", false, attrs,
             ImmutableDictionary<string, ValueAst>.Empty,
             ImmutableArray.Create<ValueAst>(new ValueAst.String("sub"), new ValueAst.Reference("in_out")),
             new TextPosition(1, 1, 0));
@@ -153,7 +154,7 @@ public class ConcurrencyTests
         var ctx = CreateContext(story);
 
         var driver = new ExitDriver();
-        var call = new VerbCallAst("core", "exit", false, ImmutableArray<AttributeAst>.Empty, ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray<ValueAst>.Empty, new TextPosition(1, 1, 0));
+        var call = new VerbCallAst("core.flow", "exit", false, ImmutableArray<AttributeAst>.Empty, ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray<ValueAst>.Empty, new TextPosition(1, 1, 0));
 
         var result = driver.Execute(ctx, call);
 
@@ -169,7 +170,7 @@ public class ConcurrencyTests
         var story = CreateStory("main", "somewhere");
         var ctx = CreateContext(story);
         var driver = new JumpDriver();
-        var call = new VerbCallAst("core", "jump", false, ImmutableArray<AttributeAst>.Empty,
+        var call = new VerbCallAst("core.nav", "jump", false, ImmutableArray<AttributeAst>.Empty,
             ImmutableDictionary<string, ValueAst>.Empty,
             ImmutableArray<ValueAst>.Empty,
             new TextPosition(1, 1, 0));
@@ -187,7 +188,7 @@ public class ConcurrencyTests
         var ctx = CreateContext(story);
         ctx.ContextScheduler = (_) => { };
         var driver = new ForkDriver();
-        var call = new VerbCallAst("core", "fork", false, ImmutableArray<AttributeAst>.Empty,
+        var call = new VerbCallAst("core.nav", "fork", false, ImmutableArray<AttributeAst>.Empty,
             ImmutableDictionary<string, ValueAst>.Empty,
             ImmutableArray<ValueAst>.Empty,
             new TextPosition(1, 1, 0));
@@ -205,7 +206,7 @@ public class ConcurrencyTests
         var ctx = CreateContext(story);
         ctx.ContextScheduler = (_) => { };
         var driver = new CallDriver();
-        var call = new VerbCallAst("core", "call", false, ImmutableArray<AttributeAst>.Empty,
+        var call = new VerbCallAst("core.nav", "call", false, ImmutableArray<AttributeAst>.Empty,
             ImmutableDictionary<string, ValueAst>.Empty,
             ImmutableArray<ValueAst>.Empty,
             new TextPosition(1, 1, 0));

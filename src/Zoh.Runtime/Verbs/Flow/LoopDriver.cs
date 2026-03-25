@@ -8,7 +8,7 @@ namespace Zoh.Runtime.Verbs.Flow
 {
     public class LoopDriver : IVerbDriver
     {
-        public string Namespace => "core";
+        public string Namespace => "core.flow";
         public string Name => "loop";
 
         public DriverResult Execute(IExecutionContext context, VerbCallAst call)

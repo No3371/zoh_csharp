@@ -1,7 +1,7 @@
 using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Types;
 using Zoh.Tests.Execution;
-using Zoh.Runtime.Verbs.Core;
+using Zoh.Runtime.Verbs.Debug;
 using System.Collections.Immutable;
 using Xunit;
 using Zoh.Runtime.Diagnostics;
@@ -26,7 +26,7 @@ public class AssertDriverTests
         }
 
         return new VerbCallAst(
-           "core", "assert", false, [],
+           "core.debug", "assert", false, [],
            namedParams,
            unnamedParams.ToImmutableArray(),
            new Zoh.Runtime.Lexing.TextPosition(1, 1, 0));

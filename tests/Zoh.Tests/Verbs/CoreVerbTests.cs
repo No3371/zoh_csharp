@@ -3,8 +3,11 @@ using Zoh.Runtime.Execution;
 using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Types;
 using Zoh.Runtime.Variables;
-using Zoh.Runtime.Verbs.Core;
 using Zoh.Runtime.Verbs;
+using Zoh.Runtime.Verbs.Collection;
+using Zoh.Runtime.Verbs.Debug;
+using Zoh.Runtime.Verbs.Math;
+using Zoh.Runtime.Verbs.Var;
 using System.Collections.Immutable;
 using Xunit;
 using Zoh.Tests.Execution;
@@ -39,7 +42,7 @@ public class CoreVerbTests
     private VerbCallAst MakeVerbCall(string name, params ValueAst[] args)
     {
         return new VerbCallAst(
-            "core", name, false, [],
+            null, name, false, [],
             ImmutableDictionary<string, ValueAst>.Empty,
             [.. args],
             new Zoh.Runtime.Lexing.TextPosition(1, 1, 0));
@@ -48,7 +51,7 @@ public class CoreVerbTests
     private VerbCallAst MakeVerbCallWithAttrs(string name, AttributeAst[] attrs, params ValueAst[] unnamedParams)
     {
         return new VerbCallAst(
-            "core", name, false, [.. attrs],
+            null, name, false, [.. attrs],
             ImmutableDictionary<string, ValueAst>.Empty,
             [.. unnamedParams],
             new Zoh.Runtime.Lexing.TextPosition(1, 1, 0));
@@ -600,7 +603,7 @@ public class CoreVerbTests
         var call = MakeVerbCall("rand", new ValueAst.Integer(1), new ValueAst.Integer(10));
         // Manually set verb name to "rand"
         var randCall = new VerbCallAst(
-            "core", "rand", false, [],
+            "core.math", "rand", false, [],
             ImmutableDictionary<string, ValueAst>.Empty,
             [new ValueAst.Integer(1), new ValueAst.Integer(10)],
             new Zoh.Runtime.Lexing.TextPosition(1, 1, 0));
@@ -668,7 +671,7 @@ public class CoreVerbTests
     {
         // /info "test message"
         var call = new VerbCallAst(
-            "core", "info", false, [],
+            "core.debug", "info", false, [],
             ImmutableDictionary<string, ValueAst>.Empty,
             [new ValueAst.String("test message")],
             new Zoh.Runtime.Lexing.TextPosition(1, 1, 0));
@@ -685,7 +688,7 @@ public class CoreVerbTests
     {
         // /error "error message"
         var call = new VerbCallAst(
-            "core", "error", false, [],
+            "core.debug", "error", false, [],
             ImmutableDictionary<string, ValueAst>.Empty,
             [new ValueAst.String("error message")],
             new Zoh.Runtime.Lexing.TextPosition(1, 1, 0));
@@ -753,7 +756,7 @@ public class CoreVerbTests
         var namedParams = ImmutableDictionary<string, ValueAst>.Empty.Add("breakif", breakExpr);
 
         var call = new VerbCallAst(
-            "core", "sequence", false, [],
+            "core.flow", "sequence", false, [],
             namedParams,
             [new ValueAst.Verb(inc), new ValueAst.Verb(inc), new ValueAst.Verb(inc)],
             new TextPosition(1, 1, 0));

@@ -1,6 +1,5 @@
 using Xunit;
 using Zoh.Runtime.Verbs;
-using Zoh.Runtime.Verbs.Core;
 
 namespace Zoh.Tests.Verbs;
 
@@ -12,45 +11,40 @@ public class VerbSpecComplianceTests
         var registry = new VerbRegistry();
         registry.RegisterCoreVerbs();
 
-        // Verify Set, Get, Drop, Capture, Type, Increase, Decrease
-        Assert.NotNull(registry.GetDriver("core", "set"));
-        Assert.NotNull(registry.GetDriver("core", "get"));
-        Assert.NotNull(registry.GetDriver("core", "drop"));
-        Assert.NotNull(registry.GetDriver("core", "capture"));
-        Assert.NotNull(registry.GetDriver("core", "type"));
-        Assert.NotNull(registry.GetDriver("core", "increase"));
-        Assert.NotNull(registry.GetDriver("core", "decrease"));
+        // Suffix resolution: short names still resolve after core.{group}.{name} alignment.
+        Assert.NotNull(registry.GetDriver(null, "set"));
+        Assert.NotNull(registry.GetDriver(null, "get"));
+        Assert.NotNull(registry.GetDriver(null, "drop"));
+        Assert.NotNull(registry.GetDriver(null, "capture"));
+        Assert.NotNull(registry.GetDriver(null, "type"));
+        Assert.NotNull(registry.GetDriver(null, "increase"));
+        Assert.NotNull(registry.GetDriver(null, "decrease"));
 
-        // Verify Interpolate
-        Assert.NotNull(registry.GetDriver("core", "interpolate"));
+        Assert.NotNull(registry.GetDriver(null, "interpolate"));
 
-        // Verify Debug Verbs
-        Assert.NotNull(registry.GetDriver("core", "info"));
-        Assert.NotNull(registry.GetDriver("core", "warning"));
-        Assert.NotNull(registry.GetDriver("core", "error"));
-        Assert.NotNull(registry.GetDriver("core", "fatal"));
+        Assert.NotNull(registry.GetDriver(null, "info"));
+        Assert.NotNull(registry.GetDriver(null, "warning"));
+        Assert.NotNull(registry.GetDriver(null, "error"));
+        Assert.NotNull(registry.GetDriver(null, "fatal"));
 
-        // Assert shared instance if desired, or just existence.
-        Assert.Same(registry.GetDriver("core", "info"), registry.GetDriver("core", "error"));
+        Assert.Same(registry.GetDriver(null, "info"), registry.GetDriver(null, "error"));
     }
 
     [Fact]
     public void Missing_Core_Verbs_Check()
     {
-        // This test serves as a TODO list. Uncomment as implemented.
         var registry = new VerbRegistry();
         registry.RegisterCoreVerbs();
 
-        Assert.NotNull(registry.GetDriver("core", "parse"));
-        // Assert.NotNull(registry.GetDriver("core", "defer"));
+        Assert.NotNull(registry.GetDriver(null, "parse"));
 
-        Assert.NotNull(registry.GetDriver("core", "has"));
-        Assert.NotNull(registry.GetDriver("core", "any"));
-        Assert.NotNull(registry.GetDriver("core", "first"));
-        Assert.NotNull(registry.GetDriver("core", "append"));
+        Assert.NotNull(registry.GetDriver(null, "has"));
+        Assert.NotNull(registry.GetDriver(null, "any"));
+        Assert.NotNull(registry.GetDriver(null, "first"));
+        Assert.NotNull(registry.GetDriver(null, "append"));
 
-        Assert.NotNull(registry.GetDriver("core", "roll"));
-        Assert.NotNull(registry.GetDriver("core", "wroll"));
-        Assert.NotNull(registry.GetDriver("core", "rand"));
+        Assert.NotNull(registry.GetDriver(null, "roll"));
+        Assert.NotNull(registry.GetDriver(null, "wroll"));
+        Assert.NotNull(registry.GetDriver(null, "rand"));
     }
 }

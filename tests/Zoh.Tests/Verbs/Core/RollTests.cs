@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Types;
-using Zoh.Runtime.Verbs.Core;
+using Zoh.Runtime.Verbs.Math;
 using Zoh.Tests.Execution;
 using Xunit;
 
@@ -15,7 +15,7 @@ public class RollTests
     private static VerbCallAst MakeWRollCall(params ValueAst[] args)
     {
         return new VerbCallAst(
-            "core",
+            "core.math",
             "wroll",
             false,
             [],

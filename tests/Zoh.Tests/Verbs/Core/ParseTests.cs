@@ -2,7 +2,7 @@ using Zoh.Runtime.Execution;
 using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Types;
 using Zoh.Tests.Execution;
-using Zoh.Runtime.Verbs.Core;
+using Zoh.Runtime.Verbs.Var;
 using System.Collections.Immutable;
 using Xunit;
 
@@ -22,7 +22,7 @@ public class ParseTests
         }
 
         return new VerbCallAst(
-           "core", "parse", false, [],
+           "core.var", "parse", false, [],
            ImmutableDictionary<string, ValueAst>.Empty,
            unnamedParams.ToImmutableArray(),
            new Zoh.Runtime.Lexing.TextPosition(1, 1, 0));

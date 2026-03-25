@@ -3,7 +3,8 @@ using Xunit;
 using Zoh.Runtime.Execution;
 using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Types;
-using Zoh.Runtime.Verbs.Core;
+using Zoh.Runtime.Verbs.Collection;
+using Zoh.Runtime.Verbs.Var;
 using Zoh.Tests.Execution;
 
 namespace Zoh.Tests.Runtime;
@@ -84,7 +85,7 @@ public class MapStringKeyTests
 
         // /has *map 42
         var call = new VerbCallAst(
-            "core", "has", false, [],
+            "core.collection", "has", false, [],
             ImmutableDictionary<string, ValueAst>.Empty,
             [new ValueAst.Reference("map"), new ValueAst.Integer(42)],
             new Zoh.Runtime.Lexing.TextPosition(1, 1, 0)
@@ -103,7 +104,7 @@ public class MapStringKeyTests
 
         // /remove *map 42
         var call = new VerbCallAst(
-            "core", "remove", false, [],
+            "core.collection", "remove", false, [],
             ImmutableDictionary<string, ValueAst>.Empty,
             [new ValueAst.Reference("map"), new ValueAst.Integer(42)],
             new Zoh.Runtime.Lexing.TextPosition(1, 1, 0)

@@ -2,6 +2,7 @@ using Xunit;
 using Zoh.Runtime.Execution;
 using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Verbs.Flow;
+using Zoh.Runtime.Verbs.Nav;
 using Zoh.Runtime.Types;
 using Zoh.Runtime.Variables;
 using System.Collections.Immutable;
@@ -52,7 +53,7 @@ public class NavigationTests
         var ctx = CreateContext(story);
 
         var driver = new JumpDriver();
-        var call = new VerbCallAst("core", "jump", false, ImmutableArray<AttributeAst>.Empty, ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray.Create<ValueAst>(new ValueAst.String("target")), new TextPosition(1, 1, 0));
+        var call = new VerbCallAst("core.nav", "jump", false, ImmutableArray<AttributeAst>.Empty, ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray.Create<ValueAst>(new ValueAst.String("target")), new TextPosition(1, 1, 0));
 
         var result = driver.Execute(ctx, call);
 
@@ -73,7 +74,7 @@ public class NavigationTests
 
         var driver = new JumpDriver();
         // /jump "s2", "entry"
-        var call = new VerbCallAst("core", "jump", false, ImmutableArray<AttributeAst>.Empty, ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray.Create<ValueAst>(new ValueAst.String("s2"), new ValueAst.String("entry")), new TextPosition(1, 1, 0));
+        var call = new VerbCallAst("core.nav", "jump", false, ImmutableArray<AttributeAst>.Empty, ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray.Create<ValueAst>(new ValueAst.String("s2"), new ValueAst.String("entry")), new TextPosition(1, 1, 0));
 
         var result = driver.Execute(ctx, call);
 
@@ -89,7 +90,7 @@ public class NavigationTests
         var ctx = CreateContext(story);
         var driver = new JumpDriver();
 
-        var call = new VerbCallAst("core", "jump", false, ImmutableArray<AttributeAst>.Empty, ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray.Create<ValueAst>(new ValueAst.String("missing")), new TextPosition(1, 1, 0));
+        var call = new VerbCallAst("core.nav", "jump", false, ImmutableArray<AttributeAst>.Empty, ImmutableDictionary<string, ValueAst>.Empty, ImmutableArray.Create<ValueAst>(new ValueAst.String("missing")), new TextPosition(1, 1, 0));
 
         var result = driver.Execute(ctx, call);
 

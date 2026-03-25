@@ -12,11 +12,11 @@ public class NestedAccessTests
     private TestExecutionContext _context = new();
     private Dictionary<string, Zoh.Runtime.Verbs.IVerbDriver> _drivers = new()
     {
-        { "set", new Zoh.Runtime.Verbs.Core.SetDriver() },
-        { "get", new Zoh.Runtime.Verbs.Core.GetDriver() },
-        { "drop", new Zoh.Runtime.Verbs.Core.DropDriver() },
-        { "capture", new Zoh.Runtime.Verbs.Core.CaptureDriver() },
-        { "increase", new Zoh.Runtime.Verbs.Core.IncreaseDriver() }
+        { "set", new Zoh.Runtime.Verbs.Var.SetDriver() },
+        { "get", new Zoh.Runtime.Verbs.Var.GetDriver() },
+        { "drop", new Zoh.Runtime.Verbs.Var.DropDriver() },
+        { "capture", new Zoh.Runtime.Verbs.Var.CaptureDriver() },
+        { "increase", new Zoh.Runtime.Verbs.Math.IncreaseDriver() }
     };
 
     private void Execute(string script)

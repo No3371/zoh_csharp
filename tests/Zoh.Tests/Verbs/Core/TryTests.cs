@@ -4,7 +4,7 @@ using Xunit;
 using Zoh.Runtime.Execution;
 using Zoh.Runtime.Types;
 using Zoh.Runtime.Verbs;
-using Zoh.Runtime.Verbs.Core;
+using Zoh.Runtime.Verbs.Error;
 using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Diagnostics;
 using Zoh.Runtime.Lexing;

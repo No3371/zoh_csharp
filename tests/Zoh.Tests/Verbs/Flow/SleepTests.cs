@@ -2,7 +2,7 @@ using Xunit;
 using Zoh.Runtime.Execution;
 using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Verbs.Flow;
-using Zoh.Runtime.Verbs.Signals;
+using Zoh.Runtime.Verbs.Signal;
 using Zoh.Runtime.Verbs;
 using Zoh.Runtime.Types;
 using Zoh.Runtime.Variables;

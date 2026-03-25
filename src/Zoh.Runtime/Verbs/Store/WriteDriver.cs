@@ -9,7 +9,7 @@ namespace Zoh.Runtime.Verbs.Store;
 
 public class WriteDriver : IVerbDriver
 {
-    public string Namespace => "store";
+    public string Namespace => "core.store";
     public string Name => "write";
 
     public DriverResult Execute(IExecutionContext context, VerbCallAst verb)

@@ -8,6 +8,7 @@ using Zoh.Runtime.Storage;
 using Zoh.Runtime.Types;
 using Zoh.Runtime.Variables;
 using Zoh.Runtime.Verbs.Flow;
+using Zoh.Runtime.Verbs.Nav;
 
 namespace Zoh.Tests.Verbs.Flow;
 
@@ -37,7 +38,7 @@ public class ForkDriverFlagTests
 
         var driver = new ForkDriver();
         var call = new VerbCallAst(
-            "core",
+            "core.nav",
             "fork",
             false,
             [],

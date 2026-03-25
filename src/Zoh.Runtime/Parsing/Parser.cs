@@ -523,7 +523,7 @@ public sealed class Parser
         if (value is not null) unnamed.Add(value);
 
         return new StatementAst.VerbCall(new VerbCallAst(
-            "core", "set", false, attrs,
+            "core.var", "set", false, attrs,
             ImmutableDictionary<string, ValueAst>.Empty,
             unnamed.ToImmutable(), pos));
     }
@@ -540,7 +540,7 @@ public sealed class Parser
         Consume(TokenType.Semicolon, "Expected ';'");
 
         return new StatementAst.VerbCall(new VerbCallAst(
-            "core", "get", false, [],
+            "core.var", "get", false, [],
             ImmutableDictionary<string, ValueAst>.Empty,
             [refNode], pos));
     }
@@ -564,7 +564,7 @@ public sealed class Parser
         var val = ParseReference();
 
         var stmt = new StatementAst.VerbCall(new VerbCallAst(
-            "core", "capture", false, [],
+            "core.var", "capture", false, [],
             ImmutableDictionary<string, ValueAst>.Empty,
             [val],
             pos));
@@ -608,7 +608,7 @@ public sealed class Parser
         Consume(TokenType.Semicolon, "Expected ';'");
 
         return new ValueAst.Verb(new VerbCallAst(
-            "core", "capture", false, [],
+            "core.var", "capture", false, [],
             ImmutableDictionary<string, ValueAst>.Empty,
             [refVal],
             pos));
@@ -654,7 +654,7 @@ public sealed class Parser
         Consume(TokenType.Semicolon, "Expected ';'");
 
         return new StatementAst.VerbCall(new VerbCallAst(
-            "core", "jump", false, [],
+            "core.nav", "jump", false, [],
             ImmutableDictionary<string, ValueAst>.Empty,
             unnamed.ToImmutable(), pos));
     }
@@ -698,7 +698,7 @@ public sealed class Parser
         Consume(TokenType.Semicolon, "Expected ';'");
 
         return new StatementAst.VerbCall(new VerbCallAst(
-            "core", "fork", false, attrs,
+            "core.nav", "fork", false, attrs,
             ImmutableDictionary<string, ValueAst>.Empty,
             unnamed.ToImmutable(), pos));
     }
@@ -750,7 +750,7 @@ public sealed class Parser
         }
 
         return new StatementAst.VerbCall(new VerbCallAst(
-            "core", "call", false, attrs,
+            "core.nav", "call", false, attrs,
             ImmutableDictionary<string, ValueAst>.Empty,
             unnamed.ToImmutable(), pos));
     }
@@ -771,7 +771,7 @@ public sealed class Parser
         Consume(TokenType.Semicolon, "Expected ';'");
 
         return new StatementAst.VerbCall(new VerbCallAst(
-            "core", "evaluate", false, [],
+            "core.eval", "evaluate", false, [],
             ImmutableDictionary<string, ValueAst>.Empty,
             [new ValueAst.Expression((string)exprToken.Value!, exprToken.Start)], pos));
     }
@@ -790,7 +790,7 @@ public sealed class Parser
         Consume(TokenType.Semicolon, "Expected ';'");
 
         return new StatementAst.VerbCall(new VerbCallAst(
-            "core", "interpolate", false, [],
+            "core.eval", "interpolate", false, [],
             ImmutableDictionary<string, ValueAst>.Empty,
             [new ValueAst.String((string)strToken.Value!)], pos));
     }
