@@ -227,6 +227,42 @@ namespace Zoh.Tests.Verbs.Flow
         }
 
         [Fact]
+        public void Loop_BreakIfVerb_UsesReturnedBoolean()
+        {
+            _context.RegisterDriver("breakif_always_false", new BreakIfAlwaysFalseDriver());
+            _context.Variables.Set("count", new ZohInt(0));
+
+            var loopCall = CreateVerbCall("loop",
+                new ValueAst.Integer(5),
+                new ValueAst.Verb(CreateVerbCall("increase", new ValueAst.Reference("count"))));
+            loopCall = AddNamedParam(loopCall, "breakif", new ValueAst.Verb(CreateVerbCall("breakif_always_false")));
+
+            _context.ExecuteVerb(loopCall);
+
+            Assert.Equal(5L, _context.Variables.Get("count").AsInt().Value);
+        }
+
+        [Fact]
+        public void Foreach_ContinueIfVerb_UsesReturnedBoolean()
+        {
+            _context.RegisterDriver("continueif_two_then_false", new ContinueIfTwoThenFalseDriver());
+            _context.Variables.Set("sum", new ZohInt(0));
+            _context.Variables.Set("continue_probe", new ZohInt(0));
+            var list = new ZohList(ImmutableArray.Create<ZohValue>(new ZohInt(10), new ZohInt(20), new ZohInt(30)));
+            _context.Variables.Set("items", list);
+
+            var call = CreateVerbCall("foreach",
+                new ValueAst.Reference("items"),
+                new ValueAst.Reference("item"),
+                new ValueAst.Verb(CreateVerbCall("increase", new ValueAst.Reference("sum"), new ValueAst.Reference("item"))));
+            call = AddNamedParam(call, "continueif", new ValueAst.Verb(CreateVerbCall("continueif_two_then_false")));
+
+            _context.ExecuteVerb(call);
+
+            Assert.Equal(30L, _context.Variables.Get("sum").AsInt().Value);
+        }
+
+        [Fact]
         public void Loop_BreakIf()
         {
             _context.Variables.Set("count", new ZohInt(0));
@@ -478,6 +514,34 @@ namespace Zoh.Tests.Verbs.Flow
 
             public DriverResult Execute(IExecutionContext context, VerbCallAst call)
                 => DriverResult.Complete.Ok(new ZohStr(_value));
+        }
+
+        /// <summary>
+        /// If breakif treated the verb value as truthy without running it, the loop would exit immediately.
+        /// </summary>
+        sealed class BreakIfAlwaysFalseDriver : IVerbDriver
+        {
+            public string Namespace => "test";
+            public string Name => "breakif_always_false";
+
+            public DriverResult Execute(IExecutionContext context, VerbCallAst call)
+                => DriverResult.Complete.Ok(ZohBool.False);
+        }
+
+        /// <summary>
+        /// Returns true for the first two invocations (continue), then false so the body runs on the third item.
+        /// </summary>
+        sealed class ContinueIfTwoThenFalseDriver : IVerbDriver
+        {
+            public string Namespace => "test";
+            public string Name => "continueif_two_then_false";
+
+            public DriverResult Execute(IExecutionContext context, VerbCallAst call)
+            {
+                var n = context.Variables.Get("continue_probe").AsInt().Value;
+                context.Variables.Set("continue_probe", new ZohInt(n + 1));
+                return DriverResult.Complete.Ok(new ZohBool(n < 2));
+            }
         }
     }
 }
