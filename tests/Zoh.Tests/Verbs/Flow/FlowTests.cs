@@ -10,6 +10,7 @@ using Zoh.Runtime.Verbs.Var;
 using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Lexing;
 using Zoh.Runtime.Variables;
+using Zoh.Runtime.Diagnostics;
 using Zoh.Tests.Execution;
 
 namespace Zoh.Tests.Verbs.Flow
@@ -71,6 +72,58 @@ namespace Zoh.Tests.Verbs.Flow
             Assert.True(result.IsSuccess, string.Join(", ", result.DiagnosticsOrEmpty));
 
             Assert.Equal(5L, _context.Variables.Get("x").AsInt().Value);
+        }
+
+        [Fact]
+        public void If_VerbSubjectRunsBeforeThenBranch()
+        {
+            _context.RegisterDriver("if_order_subject", new IfOrderSubjectDriver());
+            _context.RegisterDriver("if_order_then", new IfOrderThenDriver());
+            _context.Variables.Set("order", new ZohInt(0));
+            _context.Variables.Set("x", new ZohInt(0));
+
+            var subjectVerb = CreateVerbCall("if_order_subject");
+            var thenVerb = CreateVerbCall("if_order_then");
+            var call = CreateVerbCall("if",
+                new ValueAst.Verb(subjectVerb),
+                new ValueAst.Verb(thenVerb));
+
+            var result = _context.ExecuteVerb(call);
+            Assert.True(result.IsSuccess, string.Join(", ", result.DiagnosticsOrEmpty));
+            Assert.Equal(1L, _context.Variables.Get("x").AsInt().Value);
+        }
+
+        [Fact]
+        public void If_UsesNamedElse()
+        {
+            _context.Variables.Set("x", new ZohInt(0));
+            var thenVerb = CreateVerbCall("set", new ValueAst.Reference("x"), new ValueAst.Integer(1));
+            var elseVerb = CreateVerbCall("set", new ValueAst.Reference("x"), new ValueAst.Integer(5));
+            var call = CreateVerbCall("if",
+                new ValueAst.Boolean(false),
+                new ValueAst.Verb(thenVerb));
+            call = AddNamedParam(call, "else", new ValueAst.Verb(elseVerb));
+
+            var result = _context.ExecuteVerb(call);
+            Assert.True(result.IsSuccess, string.Join(", ", result.DiagnosticsOrEmpty));
+            Assert.Equal(5L, _context.Variables.Get("x").AsInt().Value);
+        }
+
+        [Fact]
+        public void If_DefaultComparison_InvalidTypeAfterSubjectEval()
+        {
+            _context.RegisterDriver("return_int42", new ReturnInt42Driver());
+            var subjectVerb = CreateVerbCall("return_int42");
+            var thenVerb = CreateVerbCall("set", new ValueAst.Reference("x"), new ValueAst.Integer(1));
+            _context.Variables.Set("x", new ZohInt(0));
+
+            var call = CreateVerbCall("if",
+                new ValueAst.Verb(subjectVerb),
+                new ValueAst.Verb(thenVerb));
+
+            var result = _context.ExecuteVerb(call);
+            Assert.True(result.IsFatal);
+            Assert.Contains(result.DiagnosticsOrEmpty, d => d.Code == "invalid_type");
         }
 
         [Fact]
@@ -324,6 +377,45 @@ namespace Zoh.Tests.Verbs.Flow
                 }
                 return DriverResult.Complete.Ok();
             }
+        }
+
+        class IfOrderSubjectDriver : IVerbDriver
+        {
+            public string Namespace => "test";
+            public string Name => "if_order_subject";
+            public DriverResult Execute(IExecutionContext context, VerbCallAst call)
+            {
+                context.Variables.Set("order", new ZohInt(1));
+                return DriverResult.Complete.Ok(new ZohBool(true));
+            }
+        }
+
+        class IfOrderThenDriver : IVerbDriver
+        {
+            public string Namespace => "test";
+            public string Name => "if_order_then";
+            public DriverResult Execute(IExecutionContext context, VerbCallAst call)
+            {
+                var order = context.Variables.Get("order");
+                if (order is not ZohInt i || i.Value != 1L)
+                {
+                    return DriverResult.Complete.Fatal(new Diagnostic(
+                        DiagnosticSeverity.Fatal,
+                        "test_failed",
+                        "then branch ran before subject or order mismatch",
+                        call.Start));
+                }
+                context.Variables.Set("x", new ZohInt(1));
+                return DriverResult.Complete.Ok();
+            }
+        }
+
+        class ReturnInt42Driver : IVerbDriver
+        {
+            public string Namespace => "test";
+            public string Name => "return_int42";
+            public DriverResult Execute(IExecutionContext context, VerbCallAst call)
+                => DriverResult.Complete.Ok(new ZohInt(42));
         }
     }
 }

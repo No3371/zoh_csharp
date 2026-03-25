@@ -3,6 +3,7 @@ using Zoh.Runtime.Execution;
 using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Types;
 using Zoh.Runtime.Diagnostics;
+using Zoh.Runtime.Verbs;
 
 namespace Zoh.Runtime.Verbs.Flow
 {
@@ -18,9 +19,18 @@ namespace Zoh.Runtime.Verbs.Flow
                 return DriverResult.Complete.Fatal(new Diagnostic(DiagnosticSeverity.Fatal, "parameter_not_found", "Use: /if condition, then_verb, [else_verb]", call.Start));
             }
 
-            // 1. Evaluate Condition
+            // 1. Evaluate condition (execute verb subject if present)
             var conditionValue = ValueResolver.Resolve(call.UnnamedParams[0], context);
-            
+            if (conditionValue is ZohVerb subjectVerb)
+            {
+                var subjectResult = context.ExecuteVerb(subjectVerb.VerbValue, context);
+                if (subjectResult is DriverResult.Suspend)
+                    return subjectResult;
+                if (subjectResult.IsFatal)
+                    return subjectResult;
+                conditionValue = subjectResult.ValueOrNothing;
+            }
+
             // 2. Resolve comparison value ('is' param), default true
             ZohValue compareVal;
             if (call.NamedParams.TryGetValue("is", out var isParamAst))
@@ -61,10 +71,15 @@ namespace Zoh.Runtime.Verbs.Flow
             }
             else
             {
-                if (call.UnnamedParams.Length >= 3)
+                ValueAst? elseAst = null;
+                if (call.NamedParams.TryGetValue("else", out var namedElse))
+                    elseAst = namedElse;
+                else if (call.UnnamedParams.Length >= 3)
+                    elseAst = call.UnnamedParams[2];
+
+                if (elseAst != null)
                 {
-                    var param2 = call.UnnamedParams[2];
-                    var elseVal = ValueResolver.Resolve(param2, context);
+                    var elseVal = ValueResolver.Resolve(elseAst, context);
                     if (elseVal is ZohVerb elseVerb)
                     {
                         return context.ExecuteVerb(elseVerb.VerbValue, context);

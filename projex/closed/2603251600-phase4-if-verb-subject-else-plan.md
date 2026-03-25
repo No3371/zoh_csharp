@@ -1,7 +1,9 @@
 # Phase 4: `/if` Verb Subject + Named `else`
 
-> **Status:** Ready
+> **Status:** Complete
 > **Created:** 2026-03-25
+> **Completed:** 2026-03-25
+> **Walkthrough:** `2603251600-phase4-if-verb-subject-else-walkthrough.md`
 > **Author:** Agent (split from `20260227-phase4-control-flow-gaps-fix-plan.md`)
 > **Source:** Split of `20260227-phase4-control-flow-gaps-fix-plan.md` Step 1 + matching tests
 > **Related Projex:** `20260227-phase4-control-flow-gaps-fix-plan.md` (umbrella), `2603251430-20260227-phase4-control-flow-gaps-fix-plan-review.md`
@@ -27,11 +29,11 @@ Complete `/if` per `spec/2_verbs.md`: execute a verb **subject** before the defa
 
 ### Success Criteria
 
-- [ ] After resolve, if subject is `ZohVerb`, execute it; use return value for default `is:true` guard and for `is:` comparison.
-- [ ] Named `else:` works; positional third arg remains when named `else` absent.
-- [ ] `/if *x, is: "a", /then;, else: /else;;` branches correctly.
-- [ ] Non-bool/nothing evaluated subject with `is` omitted → fatal `invalid_type`.
-- [ ] Targeted and full `dotnet test` pass.
+- [x] After resolve, if subject is `ZohVerb`, execute it; use return value for default `is:true` guard and for `is:` comparison.
+- [x] Named `else:` works; positional third arg remains when named `else` absent.
+- [x] `/if *x, is: "a", /then;, else: /else;;` branches correctly (named `else` + `is:` semantics preserved; covered by `If_UsesNamedElse` and existing tests).
+- [x] Non-bool/nothing evaluated subject with `is` omitted → fatal `invalid_type`.
+- [x] Targeted and full `dotnet test` pass.
 
 ### Out of Scope
 
@@ -110,8 +112,8 @@ if (subject is ZohVerb subjectVerb)
 
 ### Automated Checks
 
-- [ ] `dotnet test --filter "FullyQualifiedName~FlowTests"` (or narrower if tests named consistently)
-- [ ] `dotnet test`
+- [x] `dotnet test --filter "FullyQualifiedName~FlowTests"` (or narrower if tests named consistently)
+- [x] `dotnet test`
 
 ### Acceptance Criteria Validation
 
