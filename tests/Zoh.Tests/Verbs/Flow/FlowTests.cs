@@ -185,6 +185,30 @@ namespace Zoh.Tests.Verbs.Flow
         }
 
         [Fact]
+        public void Switch_EvaluatesVerbCaseValues()
+        {
+            _context.RegisterDriver("ret_a", new ReturnStrDriver("ret_a", "a"));
+            _context.RegisterDriver("ret_b", new ReturnStrDriver("ret_b", "b"));
+            _context.Variables.Set("res", new ZohInt(0));
+
+            // /switch "b", $/ret_a, /set res, 1;, $/ret_b, /set res, 2;;
+            var call = CreateVerbCall("switch",
+                new ValueAst.String("b"),
+                new ValueAst.Verb(CreateVerbCall("ret_a")),
+                new ValueAst.Verb(CreateVerbCall("set", new ValueAst.Reference("res"), new ValueAst.Integer(1))),
+                new ValueAst.Verb(CreateVerbCall("ret_b")),
+                new ValueAst.Verb(CreateVerbCall("set", new ValueAst.Reference("res"), new ValueAst.Integer(2)))
+            );
+
+            var result = _context.ExecuteVerb(call);
+            Assert.True(result.IsSuccess, string.Join(", ", result.DiagnosticsOrEmpty));
+
+            if (result.ValueOrNothing is ZohVerb v) _context.ExecuteVerb(v.VerbValue.Call);
+
+            Assert.Equal(2L, _context.Variables.Get("res").AsInt().Value);
+        }
+
+        [Fact]
         public void Switch_ReturnsValue()
         {
             // /switch "a", "a", 100, "b", 200; -> should return 100
@@ -416,6 +440,23 @@ namespace Zoh.Tests.Verbs.Flow
             public string Name => "return_int42";
             public DriverResult Execute(IExecutionContext context, VerbCallAst call)
                 => DriverResult.Complete.Ok(new ZohInt(42));
+        }
+
+        sealed class ReturnStrDriver : IVerbDriver
+        {
+            private readonly string _value;
+
+            public ReturnStrDriver(string name, string value)
+            {
+                Name = name;
+                _value = value;
+            }
+
+            public string Namespace => "test";
+            public string Name { get; }
+
+            public DriverResult Execute(IExecutionContext context, VerbCallAst call)
+                => DriverResult.Complete.Ok(new ZohStr(_value));
         }
     }
 }

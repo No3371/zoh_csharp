@@ -3,6 +3,7 @@ using Zoh.Runtime.Execution;
 using Zoh.Runtime.Parsing.Ast;
 using Zoh.Runtime.Types;
 using Zoh.Runtime.Diagnostics;
+using Zoh.Runtime.Verbs;
 
 namespace Zoh.Runtime.Verbs.Flow
 {
@@ -33,6 +34,15 @@ namespace Zoh.Runtime.Verbs.Flow
                 int caseIndex = 1 + (i * 2);
                 int actionIndex = caseIndex + 1;
                 var caseValue = ValueResolver.Resolve(call.UnnamedParams[caseIndex], context);
+                if (caseValue is ZohVerb caseVerb)
+                {
+                    var caseResult = context.ExecuteVerb(caseVerb.VerbValue, context);
+                    if (caseResult is DriverResult.Suspend)
+                        return caseResult;
+                    if (caseResult.IsFatal)
+                        return caseResult;
+                    caseValue = caseResult.ValueOrNothing;
+                }
 
                 if (caseValue.Equals(testValue))
                 {

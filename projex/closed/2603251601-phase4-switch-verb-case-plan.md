@@ -1,6 +1,8 @@
 # Phase 4: `/switch` Verb Case Evaluation
 
-> **Status:** In Progress
+> **Status:** Complete
+> **Completed:** 2026-03-25
+> **Walkthrough:** `2603251601-phase4-switch-verb-case-walkthrough.md`
 > **Created:** 2026-03-25
 > **Author:** Agent (split from `20260227-phase4-control-flow-gaps-fix-plan.md`)
 > **Source:** Split of `20260227-phase4-control-flow-gaps-fix-plan.md` Step 2 + matching tests
@@ -26,9 +28,9 @@ Case values that resolve to `ZohVerb` are compared without execution; spec requi
 
 ### Success Criteria
 
-- [ ] Each case operand: resolve; if `ZohVerb`, execute and use return value for `Equals` against tested value.
-- [ ] New test: verb case returns matching value → correct branch.
-- [ ] Full `dotnet test` passes.
+- [x] Each case operand: resolve; if `ZohVerb`, execute and use return value for `Equals` against tested value.
+- [x] New test: verb case returns matching value → correct branch.
+- [x] Full `dotnet test` passes.
 
 ### Out of Scope
 
@@ -76,8 +78,8 @@ if (caseValue.Equals(testValue)) ...
 
 ## Verification Plan
 
-- [ ] `dotnet test --filter "FullyQualifiedName~Switch_"`
-- [ ] `dotnet test`
+- [x] `dotnet test --filter "FullyQualifiedName~Switch_"`
+- [x] `dotnet test`
 
 ---
 
