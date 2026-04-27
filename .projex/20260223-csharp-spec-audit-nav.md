@@ -155,11 +155,11 @@ The audit baseline still spans Phases 1–9. **Phase 4 control-flow gaps** remai
 - **6.2 Channel IO:** `/push` (blocking vs. `wait: false` fire-and-forget), `/pull`.
   - Execution: `PushVerbDriver` and `PullVerbDriver` in `ChannelVerbs.cs`; `ChannelManager` rendezvous + `WaitRequest` channel records + `Context`/`ZohRuntime` wiring — landed `projex/2604270100-channel-blocking-pull-push-impl` squash on `main` (2026-04-28).
   - **Resolved (m6.2):** blocking `/pull`; default `/push` rendezvous; `timeout` on suspend path; `/close` wakes blocked parties; `Terminate` clears channel waiters.
-  - **Evidence:** `2604281500-channel-blocking-pull-push-impl-walkthrough.md` | `2604281500-channel-blocking-pull-push-impl-audit.md` (Partial — Step 7b test matrix not fully implemented).
-  - **Plans / review:** `2604270100-channel-blocking-pull-push-impl-plan.md` (Complete) | `2604270124-channel-blocking-pull-push-redteam.md` | `2604270022-channel-blocking-pull-push-impl-plan.md` (superseded duplicate).
+  - **Evidence:** `2604281500-channel-blocking-pull-push-impl-walkthrough.md` | `2604281500-channel-blocking-pull-push-impl-audit.md` (audit: Partial — Step 7b matrix not fully implemented) — in `closed/`.
+  - **Plans / review:** `2604270100-channel-blocking-pull-push-impl-plan.md` (in `closed/`) | `2604270124-channel-blocking-pull-push-redteam.md` | `2604270022-channel-blocking-pull-push-impl-plan.md` (superseded duplicate).
 - **6.3 Channel Timeouts:** Rendezvous timeouts on both push and pull sides, returning appropriate diagnostics.
-  - Execution: Named `timeout` is parsed on both drivers (ms from `ZohInt`/`ZohFloat`).
-  - **GAP:** For `**timeout > 0`**, `timeoutMs` is never consumed after parse — no wait loop and no pass-through to `ChannelManager`. Only `**timeout <= 0`** branches emit an immediate info diagnostic (`"The timeout was reached."`) and return without the channel op. Contrast: `WaitDriver` wires timeout into continuations correctly.
+  - Execution: Named `timeout` on push/pull now flows into `ChannelWaitCondition` + `ResolveWait` cleanup (m6.2).
+  - **GAP (m6.3 / broader):** timeout semantics audit on **other** verbs / cross-verb consistency / edge-case matrix beyond channel IO — channel path covered by m6.2 close set.
 
 ---
 
