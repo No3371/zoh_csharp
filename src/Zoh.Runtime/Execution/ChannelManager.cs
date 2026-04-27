@@ -1,28 +1,36 @@
 using System.Collections.Concurrent;
 using Zoh.Runtime.Types;
-using Zoh.Runtime.Diagnostics;
+using Zoh.Runtime.Verbs;
 
 namespace Zoh.Runtime.Execution;
 
 public class ChannelManager
 {
-    private class Channel
+    private sealed class BufferEntry
     {
-        public ConcurrentQueue<ZohValue> Queue { get; } = new();
-        public int Generation { get; init; }
-        public bool IsClosed { get; private set; }
+        public required ZohValue Value { get; init; }
+        public Context? Pusher { get; init; }
+        public int PusherToken { get; init; }
+    }
 
-        public void Close() => IsClosed = true;
+    private sealed class WaitingPuller
+    {
+        public required Context Ctx { get; init; }
+        public int Token { get; init; }
+    }
+
+    private sealed class Channel
+    {
+        public int Generation { get; init; }
+        public bool IsClosed { get; set; }
+        public LinkedList<BufferEntry> Buffer { get; } = new();
+        public LinkedList<WaitingPuller> Pullers { get; } = new();
+        public object Lock { get; } = new();
     }
 
     private readonly ConcurrentDictionary<string, Channel> _channels = new();
-    private int _generationCounter = 0;
+    private int _generationCounter;
 
-    /// <summary>
-    /// Opens/creates a channel. If closed channel exists with same name, 
-    /// creates new channel with incremented generation.
-    /// </summary>
-    /// <returns>The generation of the (possibly new) channel</returns>
     public int Open(string name)
     {
         name = name.ToLowerInvariant();
@@ -40,18 +48,12 @@ public class ChannelManager
         return channel.Generation;
     }
 
-    /// <summary>
-    /// Checks if a channel exists and is open.
-    /// </summary>
     public bool Exists(string name)
     {
         name = name.ToLowerInvariant();
         return _channels.TryGetValue(name, out var ch) && !ch.IsClosed;
     }
 
-    /// <summary>
-    /// Gets the generation of a channel. Returns 0 if not found or closed.
-    /// </summary>
     public int GetGeneration(string name)
     {
         name = name.ToLowerInvariant();
@@ -60,66 +62,218 @@ public class ChannelManager
         return 0;
     }
 
-    /// <summary>
-    /// Pushes a value to an open channel.
-    /// Returns false if channel doesn't exist or is closed.
-    /// </summary>
-    public bool TryPush(string name, ZohValue value)
-    {
-        name = name.ToLowerInvariant();
-        if (!_channels.TryGetValue(name, out var ch) || ch.IsClosed)
-            return false;
-
-        ch.Queue.Enqueue(value);
-        return true;
-    }
-
-    /// <summary>
-    /// Tries to pull a value from a channel (non-blocking).
-    /// Also verifies generation hasn't changed.
-    /// </summary>
-    public PullResult TryPull(string name, int expectedGeneration)
-    {
-        name = name.ToLowerInvariant();
-
-        if (!_channels.TryGetValue(name, out var ch))
-            return PullResult.NotFound;
-
-        if (ch.IsClosed)
-            return PullResult.Closed;
-
-        if (ch.Generation != expectedGeneration)
-            return PullResult.GenerationMismatch;
-
-        if (ch.Queue.TryDequeue(out var value))
-            return PullResult.Success(value);
-
-        return PullResult.Empty;
-    }
-
-    /// <summary>
-    /// Gets the count of items in a channel.
-    /// </summary>
     public int Count(string name)
     {
         name = name.ToLowerInvariant();
-        if (_channels.TryGetValue(name, out var ch) && !ch.IsClosed)
-            return ch.Queue.Count;
-        return 0;
+        if (!_channels.TryGetValue(name, out var ch) || ch.IsClosed) return 0;
+        lock (ch.Lock) return ch.Buffer.Count;
     }
 
-    /// <summary>
-    /// Closes a channel. Returns false if channel doesn't exist or already closed.
-    /// </summary>
+    public OfferPushResult OfferPush(string name, int expectedGeneration, ZohValue value, bool wait, Context pusher)
+    {
+        name = name.ToLowerInvariant();
+        if (!_channels.TryGetValue(name, out var ch)) return OfferPushResult.NotFound;
+        lock (ch.Lock)
+        {
+            if (ch.IsClosed) return OfferPushResult.Closed;
+            if (ch.Generation != expectedGeneration) return OfferPushResult.Closed;
+
+            if (ch.Pullers.First is { } pullerNode)
+            {
+                var waiter = pullerNode.Value;
+                ch.Pullers.RemoveFirst();
+                waiter.Ctx.Resume(new WaitCompleted(value), waiter.Token);
+                return OfferPushResult.Delivered;
+            }
+
+            if (!wait)
+            {
+                ch.Buffer.AddLast(new BufferEntry { Value = value });
+                return OfferPushResult.Buffered;
+            }
+
+            return OfferPushResult.MustSuspend;
+        }
+    }
+
+    public AttemptPullResult AttemptPull(string name, int expectedGeneration)
+    {
+        name = name.ToLowerInvariant();
+        if (!_channels.TryGetValue(name, out var ch)) return AttemptPullResult.NotFound();
+        lock (ch.Lock)
+        {
+            if (ch.IsClosed) return AttemptPullResult.Closed();
+            if (ch.Generation != expectedGeneration) return AttemptPullResult.Stale();
+
+            if (ch.Buffer.First is { } node)
+            {
+                var entry = node.Value;
+                ch.Buffer.RemoveFirst();
+                if (entry.Pusher is not null)
+                    entry.Pusher.Resume(new WaitCompleted(ZohNothing.Instance), entry.PusherToken);
+                return AttemptPullResult.Delivered(entry.Value);
+            }
+
+            return AttemptPullResult.Empty();
+        }
+    }
+
+    /// <summary>Called from Context.BlockOnRequest after ResumeToken bump for blocking push.</summary>
+    public void RegisterWaitingPusher(string name, ZohValue value, Context pusher, int pusherToken)
+    {
+        name = name.ToLowerInvariant();
+        if (!_channels.TryGetValue(name, out var ch)) return;
+        lock (ch.Lock)
+        {
+            if (ch.IsClosed)
+            {
+                pusher.Resume(new WaitCancelled("closed", $"Channel closed: {name}"), pusherToken);
+                return;
+            }
+
+            ch.Buffer.AddLast(new BufferEntry { Value = value, Pusher = pusher, PusherToken = pusherToken });
+        }
+    }
+
+    /// <summary>Called from Context.BlockOnRequest after ResumeToken bump for blocking pull.</summary>
+    public void RegisterWaitingPuller(string name, Context puller, int pullerToken)
+    {
+        name = name.ToLowerInvariant();
+        if (!_channels.TryGetValue(name, out var ch)) return;
+        lock (ch.Lock)
+        {
+            if (ch.IsClosed)
+            {
+                puller.Resume(new WaitCancelled("closed", $"Channel closed: {name}"), pullerToken);
+                return;
+            }
+
+            ch.Pullers.AddLast(new WaitingPuller { Ctx = puller, Token = pullerToken });
+        }
+    }
+
+    public void CancelPuller(string name, Context puller)
+    {
+        name = name.ToLowerInvariant();
+        if (!_channels.TryGetValue(name, out var ch)) return;
+        lock (ch.Lock)
+        {
+            for (var node = ch.Pullers.First; node != null; node = node.Next)
+            {
+                if (ReferenceEquals(node.Value.Ctx, puller))
+                {
+                    ch.Pullers.Remove(node);
+                    return;
+                }
+            }
+        }
+    }
+
+    public void CancelPusher(string name, Context pusher)
+    {
+        name = name.ToLowerInvariant();
+        if (!_channels.TryGetValue(name, out var ch)) return;
+        lock (ch.Lock)
+        {
+            for (var node = ch.Buffer.First; node != null; node = node.Next)
+            {
+                if (ReferenceEquals(node.Value.Pusher, pusher))
+                {
+                    ch.Buffer.Remove(node);
+                    return;
+                }
+            }
+        }
+    }
+
     public bool TryClose(string name)
     {
         name = name.ToLowerInvariant();
-        if (!_channels.TryGetValue(name, out var ch) || ch.IsClosed)
-            return false;
+        if (!_channels.TryGetValue(name, out var ch)) return false;
+        lock (ch.Lock)
+        {
+            if (ch.IsClosed) return false;
+            ch.IsClosed = true;
 
-        ch.Close();
+            foreach (var w in ch.Pullers)
+                w.Ctx.Resume(new WaitCancelled("closed", $"Channel closed: {name}"), w.Token);
+            ch.Pullers.Clear();
+
+            foreach (var e in ch.Buffer)
+            {
+                if (e.Pusher is not null)
+                    e.Pusher.Resume(new WaitCancelled("closed", $"Channel closed: {name}"), e.PusherToken);
+            }
+
+            ch.Buffer.Clear();
+        }
+
         return true;
     }
+
+    public bool TryPush(string name, ZohValue value)
+    {
+        name = name.ToLowerInvariant();
+        if (!_channels.TryGetValue(name, out var ch)) return false;
+        lock (ch.Lock)
+        {
+            if (ch.IsClosed) return false;
+            if (ch.Pullers.First is { } pullerNode)
+            {
+                var waiter = pullerNode.Value;
+                ch.Pullers.RemoveFirst();
+                waiter.Ctx.Resume(new WaitCompleted(value), waiter.Token);
+                return true;
+            }
+
+            ch.Buffer.AddLast(new BufferEntry { Value = value });
+            return true;
+        }
+    }
+
+    public PullResult TryPull(string name, int expectedGeneration)
+    {
+        var r = AttemptPull(name, expectedGeneration);
+        return r.Status switch
+        {
+            AttemptPullStatus.NotFound => PullResult.NotFound,
+            AttemptPullStatus.Closed => PullResult.Closed,
+            AttemptPullStatus.Stale => PullResult.GenerationMismatch,
+            AttemptPullStatus.Delivered => PullResult.Success(r.Value!),
+            AttemptPullStatus.Empty => PullResult.Empty,
+            _ => PullResult.NotFound
+        };
+    }
+}
+
+public enum OfferPushResult
+{
+    NotFound,
+    Closed,
+    Delivered,
+    Buffered,
+    MustSuspend
+}
+
+public enum AttemptPullStatus
+{
+    NotFound,
+    Closed,
+    Stale,
+    Delivered,
+    Empty
+}
+
+public readonly struct AttemptPullResult
+{
+    public AttemptPullStatus Status { get; init; }
+    public ZohValue? Value { get; init; }
+
+    public static AttemptPullResult NotFound() => new() { Status = AttemptPullStatus.NotFound };
+    public static AttemptPullResult Closed() => new() { Status = AttemptPullStatus.Closed };
+    public static AttemptPullResult Stale() => new() { Status = AttemptPullStatus.Stale };
+    public static AttemptPullResult Delivered(ZohValue v) => new() { Status = AttemptPullStatus.Delivered, Value = v };
+    public static AttemptPullResult Empty() => new() { Status = AttemptPullStatus.Empty };
 }
 
 public readonly struct PullResult

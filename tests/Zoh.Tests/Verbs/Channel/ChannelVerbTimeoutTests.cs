@@ -56,7 +56,7 @@ public class ChannelVerbTimeoutTests
         var story = runtime.LoadStory(@"
             @start
             /open <ch>;
-            /push <ch>, 42;
+            /push <ch>, 42, wait: false;
             /pull <ch>, timeout:?;
         ");
         var ctx = runtime.CreateContext(story);
@@ -110,7 +110,7 @@ public class ChannelVerbTimeoutTests
         var story = runtime.LoadStory(@"
             @start
             /open <ch>;
-            /push <ch>, 99, timeout:?;
+            /push <ch>, 99, wait: false, timeout:?;
             /pull <ch>;
         ");
         var ctx = runtime.CreateContext(story);

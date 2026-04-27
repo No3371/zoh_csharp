@@ -224,10 +224,13 @@ public class ZohRuntime
                 return null;
 
             case ContextState.WaitingChannel:
-                // Value delivery handled by PushDriver fast path.
-                // Scheduler only handles timeout.
                 if (ctx.WaitCondition is ChannelWaitCondition chan && chan.IsTimedOut(_elapsedMs))
+                {
+                    Channels.CancelPuller(chan.ChannelName, ctx);
+                    Channels.CancelPusher(chan.ChannelName, ctx);
                     return new WaitTimedOut();
+                }
+
                 return null;
 
             default:

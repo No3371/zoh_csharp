@@ -1,6 +1,8 @@
 # Plan: Blocking `/pull` + Rendezvous `/push` (m6.2)
 
-> **Status:** In Progress
+> **Status:** Complete
+> **Completed:** 2026-04-28
+> **Walkthrough:** 2604281500-channel-blocking-pull-push-impl-walkthrough.md
 > **Created:** 2026-04-27
 > **Author:** Antigravity (orchestrate-projex subagent)
 > **Source:** Direct request — orchestrate-projex against m6.2 of `20260223-csharp-spec-audit-nav.md`

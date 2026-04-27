@@ -155,6 +155,18 @@ public class Context : IExecutionContext
                 SetState(ContextState.WaitingHost);
                 break;
 
+            case ChannelPullRequest pullReq:
+                WaitCondition = new ChannelWaitCondition(pullReq.ChannelName, elapsedMs, pullReq.TimeoutMs);
+                SetState(ContextState.WaitingChannel);
+                ChannelManager.RegisterWaitingPuller(pullReq.ChannelName, this, ResumeToken);
+                break;
+
+            case ChannelPushRequest pushReq:
+                WaitCondition = new ChannelWaitCondition(pushReq.ChannelName, elapsedMs, pushReq.TimeoutMs);
+                SetState(ContextState.WaitingChannel);
+                ChannelManager.RegisterWaitingPusher(pushReq.ChannelName, pushReq.Value, this, ResumeToken);
+                break;
+
             default:
                 throw new InvalidOperationException($"Unhandled request type: {request.GetType().Name}");
         }
@@ -230,6 +242,13 @@ public class Context : IExecutionContext
         ExecuteDefers(_contextDefers);
 
         StatementState = null;
+
+        if (WaitCondition is ChannelWaitCondition chan)
+        {
+            ChannelManager.CancelPuller(chan.ChannelName, this);
+            ChannelManager.CancelPusher(chan.ChannelName, this);
+        }
+
         SignalManager.UnsubscribeContext(this);
 
         State = ContextState.Terminated;
